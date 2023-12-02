@@ -6,13 +6,14 @@
 #include <fstream>
 #include <sstream>
 
+#include <iostream>
 struct InstanceData {
     idx_t nrows{};
     std::vector<real_t> costs{};
     std::vector<real_t> solcosts{};
     std::vector<idx_t> matbeg{};
     std::vector<idx_t> matval{};
-    std::vector<idx_t> warmstart;
+    std::vector<idx_t> warmstart{};
 };
 
 // trim from start (in place)

@@ -1,28 +1,30 @@
 #include <fmt/core.h>
 
+#include "CliArgs.hpp"
 #include "Instance.hpp"
 #include "Refinement.hpp"
 #include "cft.hpp"
 #include "parsing.hpp"
 
+InstanceData parse_instance_data(const CliArgs& cli) {
+    if (cli.parser_type() == CliArgs::ParserType::CVRP) { return parse_cvrp_instance(cli.path()); }
+    if (cli.parser_type() == CliArgs::ParserType::RAILS) { return parse_rail_instance(cli.path()); }
+    if (cli.parser_type() == CliArgs::ParserType::SCP) { return parse_scp_instance(cli.path()); }
+    // Not reachable.
+    return InstanceData();
+}
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
 
-    if (argc < 2) {
-        fmt::print("Missing path to instance\n");
+    std::optional<CliArgs> cli = CliArgs::parse(argc, argv);
+    if (!cli.has_value()) {
+        fmt::print("An error occurred while parsing command line arguments.\n");
         return EXIT_FAILURE;
     }
 
-    const auto path = argv[1];
+    const auto data = parse_instance_data(*cli);
 
-    auto seed = 0UL;
-    if (argc > 2) { seed = std::stoul(argv[2]); }
-
-    const auto data = parse_cvrp_instance(path);
-    // const auto data = parse_rail_instance(path);
-    // const auto data = parse_scp_instance(path);
-
-    std::mt19937 rnd(seed);
+    std::mt19937 rnd(cli->seed());
 
     auto instance = Instance(data.nrows);
     instance.add_columns(data.costs, data.solcosts, data.matbeg, data.matval);
