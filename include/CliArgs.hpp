@@ -49,6 +49,8 @@ private:
                 } else {
                     fmt::print("Warning: Ignored unknown parser type.\n");
                 }
+            } else {
+                fmt::print("Warning: Ignored unknown argument {}.\n", key);
             }
         }
     }
