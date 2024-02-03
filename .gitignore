@@ -37,5 +37,6 @@ cmake-build-debug/*
 cmake-build-release/*
 
 # IDE stuff
-.idea/*
-.vscode/*
+.idea
+.vscode
+.cache

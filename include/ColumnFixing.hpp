@@ -9,27 +9,33 @@
 
 class ColumnFixing {
 public:
-    ColumnFixing(SubInstance& subinst_, Greedy& greedy_, MStar& covered_rows_) : subinst(subinst_), greedy(greedy_), covered_rows(covered_rows_) { }
+    ColumnFixing(SubInstance& subinst_, Greedy& greedy_)
+        : subinst(subinst_)
+        , greedy(greedy_) {
+    }
 
     idx_t operator()(LocalMultipliers& u_star, GlobalSolution& S_star) {
-        auto& cols = subinst.get_cols();
-        auto nrows = subinst.get_nrows();
+        auto& cols  = subinst.get_cols();
+        auto  nrows = subinst.get_nrows();
 
         std::sort(S_star.begin(), S_star.end());
 
         Q.clear();
-        for (idx_t j = 0; j < cols.size(); ++j) {
-            if (cols[j].compute_lagr_cost(u_star) < Q_THRESHOLD && std::binary_search(S_star.begin(), S_star.end(), subinst.get_global_col_idx(j))) {
+        for (idx_t j = 0; auto& col : cols) {
+            if (col.compute_lagr_cost(u_star) < Q_THRESHOLD &&
+                std::binary_search(S_star.begin(), S_star.end(), subinst.get_global_col_idx(j))) {
                 Q.emplace_back(j);
             }
+            ++j;
         }
 
-        covered_rows.reset_covered(cols, Q, nrows);
+        CountSet& covering_times = subinst.get_covering_times();
+        covering_times.reset_covered(cols, Q, nrows);
 
         columns_to_fix.clear();
-        for (auto j : Q) {
-            if (!covered_rows.is_redundant(cols[j])) { columns_to_fix.emplace_back(j); }
-        }
+        for (auto j : Q)
+            if (!covering_times.is_redundant(cols[j]))
+                columns_to_fix.emplace_back(j);
 
         LocalSolution S(columns_to_fix);
         greedy(u_star, std::max<idx_t>(nrows / 200, 1UL), S);
@@ -40,7 +46,8 @@ public:
 
         IF_DEBUG {
             assert(!subinst.is_corrupted());
-            for ([[maybe_unused]] auto& col : cols) { assert(!col.empty()); }
+            for ([[maybe_unused]] auto& col : cols)
+                assert(!col.empty());
         }
 
         return remaining_rows;
@@ -48,8 +55,7 @@ public:
 
 private:
     SubInstance& subinst;
-    Greedy& greedy;
-    MStar& covered_rows;
+    Greedy&      greedy;
 
     std::vector<idx_t> Q;
     std::vector<idx_t> columns_to_fix;

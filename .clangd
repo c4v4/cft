@@ -1,0 +1,104 @@
+
+CompileFlags:  
+  Add: ["-std=c++20", "-DCAV_COMP_TESTS"]
+Diagnostics:
+    UnusedIncludes: Strict
+    ClangTidy: 
+        CheckOptions:
+            misc-non-private-member-variables-in-classes: IgnoreClassesWithAllMemberVariablesBeingPublic
+            readability-function-cognitive-complexity.IgnoreMacros: True
+            readability-identifier-naming.MacroDefinitionCase: UPPER_CASE
+            readability-identifier-naming.TemplateParameterCase: CamelCase
+            readability-identifier-naming.TypeTemplateParameterCase: CamelCase
+            readability-identifier-naming.ValueTemplateParameterCase: CamelCase
+            readability-identifier-naming.ParameterPackCase: lower_case
+            readability-identifier-naming.AbstractClassCase: CamelCase
+            readability-identifier-naming.ClassCase: CamelCase
+            readability-identifier-naming.ClassMemberCase: lower_case
+            readability-identifier-naming.ConstantCase: lower_case
+            readability-identifier-naming.ConstexprVariableCase: lower_case
+            readability-identifier-naming.EnumCase: UPPER_CASE
+            readability-identifier-naming.EnumConstantCase: UPPER_CASE
+            readability-identifier-naming.FunctionCase: lower_case
+            readability-identifier-naming.GlobalConstantCase: UPPER_CASE
+            readability-identifier-naming.LocalVariableCase: lower_case
+            readability-identifier-naming.MemberCase: lower_case
+            readability-identifier-naming.NamespaceCase: lower_case
+            readability-identifier-naming.ParameterCase: lower_case
+            readability-identifier-naming.StructCase: aNy_CasE
+            readability-identifier-naming.TypeAliasCase: aNy_CasE
+            readability-identifier-naming.TypedefCase: aNy_CasE
+            readability-identifier-naming.StaticConstantCase: lower_case
+            readability-identifier-naming.StaticVariableCase: lower_case
+            readability-identifier-naming.UnionCase: lower_case
+            readability-identifier-naming.VariableCase: lower_case
+            readability-identifier-naming.PrivateMethodPrefix: "_"
+            readability-identifier-naming.ProtectedMethodPrefix: "_"
+
+
+        Add:    [abseil-*,
+            bugprone-*,
+            clang-analyzer-*,
+            cppcoreguidelines-*,
+            google-*,
+            hicpp-*,
+            llvm-*,
+            misc-*,
+            modernize-*,
+            performance-*,
+            portability-*,
+            readability-*            ]
+        Remove: [ # Personal programming style
+
+            google-build-namespaces, # anonymous namespace can be useful
+
+            bugprone-easily-swappable-parameters, # I get the intention, but, come on..
+            modernize-use-trailing-return-type, # No thanks, I'll wait for Carbon
+            readability-identifier-length, # Ok in general, but in some very nested scopes it is too pedantic 
+            modernize-use-auto, # Com'on, let me choose the most readeable one
+            misc-non-private-member-variables-in-classes,
+            hicpp-use-auto,
+
+            cppcoreguidelines-pro-type-vararg, # Used in templates
+            hicpp-vararg,                      #
+            
+            hicpp-avoid-c-arrays,             # Sometimes is the best type to use
+            modernize-avoid-c-arrays,         #
+            cppcoreguidelines-avoid-c-arrays, #
+
+            cppcoreguidelines-pro-bounds-array-to-pointer-decay, # Messes with asserts
+            hicpp-no-array-decay, 
+
+            google-readability-braces-around-statements, # No braces can be an explicit way 
+            hicpp-braces-around-statements,              # to mark on-line blocks. I find it
+            readability-braces-around-statements,        # simply more readable this way.
+            
+            
+            cppcoreguidelines-avoid-magic-numbers, # Ok in general, but not in every possible case,
+            readability-magic-numbers,             # sometimes there's simply not a meaningful name.
+
+            
+            readability-redundant-access-specifiers, # I actually use it to make "independent" blocks that can be moved around, divinding methods from fields.
+
+            readability-isolate-declaration, # Sometimes it just fits
+
+            cppcoreguidelines-avoid-do-while, # ????
+
+            cppcoreguidelines-macro-usage, # Sometimes it's just the best way to do it
+
+            cppcoreguidelines-pro-bounds-constant-array-index, # C for loops are still a thing
+
+            google-explicit-constructor, # In library code I use it often for abstractions
+            hicpp-explicit-conversions,
+
+            cppcoreguidelines-avoid-const-or-ref-data-members, # I understand the rationale, but  for some short-lived abstractions I use it quite often
+
+            modernize-pass-by-value,
+            ]
+            
+InlayHints:
+    Enabled: No
+    ParameterNames: Yes
+    DeducedTypes: Yes
+Hover:
+    ShowAKA: Yes

@@ -3,7 +3,6 @@
 #include <vector>
 
 #include "Instance.hpp"
-#include "LowerBound.hpp"
 #include "cft.hpp"
 
 class LocalMultipliers : public std::vector<real_t> {

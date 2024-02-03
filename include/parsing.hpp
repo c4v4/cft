@@ -5,6 +5,9 @@
 #include <cassert>
 #include <fstream>
 #include <sstream>
+#include <vector>
+
+#include "cft.hpp"
 
 #include <iostream>
 struct InstanceData {
@@ -156,7 +159,7 @@ InstanceData parse_cvrp_instance(const std::string& path) {
         inst.costs[j] = std::stof(tokens[0]);
         inst.solcosts[j] = std::stof(tokens[1]);
 
-       inst.matbeg.emplace_back(inst.matval.size());
+        inst.matbeg.emplace_back(inst.matval.size());
 
         for (auto n = 2UL; n < tokens.size(); n++) {
             const auto i = std::stoul(tokens[n]);
