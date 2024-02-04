@@ -1,5 +1,5 @@
-#ifndef CFT_INCLUDE_CFT_HPP
-#define CFT_INCLUDE_CFT_HPP
+#ifndef SCP_INCLUDE_CFT_HPP_
+#define SCP_INCLUDE_CFT_HPP_
 
 #include <cstdint>
 
@@ -23,11 +23,9 @@ using real_t = float;
 #define REAL_MAX    (std::numeric_limits<real_t>::max())
 #define REAL_LOWEST (std::numeric_limits<real_t>::lowest())
 
-#ifdef __GNUC__
-#define CFT_NODISCARD __attribute__((warn_unused_result))
-#elif defined(_MSC_VER) && _MSC_VER >= 1700
-#define CFT_NODISCARD _Check_return_
-#endif
+#define REMOVED_INDEX (std::numeric_limits<idx_t>::max())
+
+#define HAS_INTEGRAL_COSTS 1.0  // 1.0 if yes , 0.0 if no
 
 #include <random>
 
@@ -35,4 +33,4 @@ namespace cft {
 using prng_t = std::mt19937_64;
 }  // namespace cft
 
-#endif /* CFT_INCLUDE_CFT_HPP */
+#endif  // SCP_INCLUDE_CFT_HPP_

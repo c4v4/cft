@@ -1,224 +1,156 @@
-#ifndef SCP_INCLUDE_MSTAR_HPP_
-#define SCP_INCLUDE_MSTAR_HPP_
+#ifndef CFT_INCLUDE_COUNTSET_HPP
+#define CFT_INCLUDE_COUNTSET_HPP
 
-#include "CollectionOf.hpp"
+
+#include "SparseBinMat.hpp"
 #include "cft.hpp"
 
-class CountSet {
-public:
-    CountSet() = default;
+namespace cft {
 
-    explicit CountSet(idx_t nrows)
-        : covering_times(nrows, 0)
-        , zeros(nrows) {
+struct CountSet {
+    using counter_t = uint16_t;
+
+    std::vector<counter_t> cov_counters;
+
+    CFT_NODISCARD static CountSet create() {
+        return {{}};
     }
 
-    inline void reset_uncovered(idx_t nrows) {
-        zeros = nrows;
-        covering_times.assign(nrows, 0);
+    void reset_uncovered(idx_t nrows) {
+        cov_counters.assign(nrows, 0);
     }
 
-    /// inline void reset_covered(const std::vector<Column>& cols, idx_t nrows) {
-    template <typename Collection>
-    inline void reset_covered(Collection const& cols, idx_t nrows) {
+    idx_t reset_covered(SparseBinMat const& cols, idx_t nrows) {
         reset_uncovered(nrows);
-        for (auto& j_col : cols)
-            cover_rows(j_col);
+        idx_t covered = 0;
+        for (idx_t i : cols.idxs)
+            covered += cover(i) ? 1 : 0;
+        return covered;
     }
 
-    /// inline void reset_covered(const std::vector<Column>& cols, const std::vector<idx_t>&
-    /// indexes, idx_t nrows) {
-    template <typename Collection>
-    inline void reset_covered(Collection const&         cols,
-                              std::vector<idx_t> const& indexes,
-                              idx_t                     nrows) {
+    template <typename ColsT, typename IdxsT>
+    idx_t reset_covered(ColsT const& cols, IdxsT const& idxs, idx_t nrows) {
         reset_uncovered(nrows);
-        for (auto& j : indexes)
-            cover_rows(cols[j]);
+        idx_t covered = 0;
+        for (auto const& j : idxs)
+            covered += cover_rows(cols[j]);
+        return covered;
     }
 
-    inline bool is_redundant(SubInstCol const& col) {
-        for (auto const i : col) {
-            assert(covering_times[i] > 0);
-            if (covering_times[i] == 1)
+    template <typename IdxT>
+    idx_t cover_rows(Span<IdxT*> col) {
+        idx_t covered = 0;
+        for (auto i : col)
+            covered += cover(i) ? 1 : 0;
+        return covered;
+    }
+
+    template <typename IdxT>
+    idx_t uncover_rows(Span<IdxT*> col) {
+        idx_t uncovered = 0;
+        for (auto i : col)
+            uncovered += uncover(i) ? 1 : 0;
+        return uncovered;
+    }
+
+    bool cover(idx_t i) {
+        assert(i < cov_counters.size());
+        ++cov_counters[i];
+        return cov_counters[i] == 1;
+    }
+
+    bool uncover(idx_t i) {
+        assert(i < cov_counters.size());
+        --cov_counters[i];
+        return cov_counters[i] == 0;
+    }
+
+    template <typename IdxT>
+    CFT_NODISCARD bool is_redundant(Span<IdxT*> col) {
+        for (idx_t i : col)
+            if (cov_counters[i] == 1)
                 return false;
-        }
         return true;
     }
 
-    template <typename IterableList>
-    inline void cover_rows(IterableList const& rows) {
-        for (auto i : rows) {
-            assert(i < covering_times.size());
-            cover(i);
-        }
+    CFT_NODISCARD counter_t operator[](idx_t i) const {
+        assert(i < cov_counters.size());
+        return cov_counters[i];
     }
 
-    template <typename IterableList>
-    inline void uncover_rows(IterableList const& rows) {
-        for (auto i : rows) {
-            assert(i < covering_times.size());
-            uncover(i);
-        }
+    CFT_NODISCARD idx_t size() const {
+        return cov_counters.size();
     }
-
-    inline void cover(idx_t row) {
-        zeros -= static_cast<idx_t>(covering_times[row] == 0);
-        ++covering_times[row];
-    }
-
-    inline void uncover(idx_t row) {
-        zeros += static_cast<idx_t>(covering_times[row] == 1);
-        --covering_times[row];
-    }
-
-    [[nodiscard]] auto get(idx_t idx) const {
-        return covering_times[idx];
-    }
-
-    auto operator[](idx_t idx) const {
-        return covering_times[idx];
-    }
-
-    decltype(auto) operator[](idx_t idx) {
-        return covering_times[idx];
-    }
-
-    [[nodiscard]] inline auto begin() const {
-        return covering_times.begin();
-    }
-
-    [[nodiscard]] inline auto end() const {
-        return covering_times.end();
-    }
-
-    inline auto begin() {
-        return covering_times.begin();
-    }
-
-    inline auto end() {
-        return covering_times.end();
-    }
-
-    [[nodiscard]] idx_t get_uncovered() const {
-        return zeros;
-    }
-
-    [[nodiscard]] idx_t get_covered() const {
-        return covering_times.size() - zeros;
-    }
-
-    [[nodiscard]] idx_t size() const {
-        return covering_times.size();
-    }
-
-
-private:
-    std::vector<uint16_t> covering_times;
-    idx_t                 zeros{};
 };
 
-class BitSet {
-public:
-    BitSet() = default;
+struct BitSet {
+    std::vector<bool> cov_flags;
 
-    explicit BitSet(idx_t nrows)
-        : bit_set(nrows) {
+    CFT_NODISCARD static CountSet create() {
+        return {{}};
     }
 
-    inline void reset_uncovered(idx_t nrows) {
-        ntrue = 0;
-        bit_set.assign(nrows, false);
+    void reset_uncovered(idx_t nrows) {
+        cov_flags.assign(nrows, false);
     }
 
-    template <typename Collection>
-    inline void reset_covered(Collection const& cols, idx_t nrows) {
+    idx_t reset_covered(SparseBinMat const& cols, idx_t nrows) {
         reset_uncovered(nrows);
-        for (auto& j_col : cols)
-            cover_rows(j_col);
+        idx_t covered = 0;
+        for (idx_t i : cols.idxs)
+            covered += cover(i) ? 1 : 0;
+        return covered;
     }
 
-    /// inline void reset_covered(const std::vector<Column>& cols, const std::vector<idx_t>&
-    /// indexes, idx_t nrows) {
-    template <typename Collection>
-    inline void reset_covered(Collection const&         cols,
-                              std::vector<idx_t> const& indexes,
-                              idx_t                     nrows) {
+    template <typename ColsT, typename IdxsT>
+    idx_t reset_covered(ColsT const& cols, IdxsT const& idxs, idx_t nrows) {
         reset_uncovered(nrows);
-        for (idx_t j : indexes)
-            cover_rows(cols[j]);
+        idx_t covered = 0;
+        for (auto const& j : idxs)
+            covered += cover_rows(cols[j]);
+        return covered;
     }
 
-    template <typename IterableList>
-    inline void cover_rows(IterableList const& rows) {
-        for (auto i : rows) {
-            assert(i < bit_set.size());
-            cover(i);
-        }
+    template <typename IdxT>
+    idx_t cover_rows(Span<IdxT*> col) {
+        idx_t covered = 0;
+        for (auto i : col)
+            covered += cover(i) ? 1 : 0;
+        return covered;
     }
 
-    template <typename IterableList>
-    inline void uncover_rows(IterableList const& rows) {
-        for (auto i : rows) {
-            assert(i < bit_set.size());
-            uncover(i);
-        }
+    template <typename IdxT>
+    idx_t uncover_rows(Span<IdxT*> col) {
+        idx_t uncovered = 0;
+        for (auto i : col)
+            uncovered += uncover(i) ? 1 : 0;
+        return uncovered;
     }
 
-    inline void cover(idx_t row) {
-        ntrue += bit_set[row] ? 0 : 1;
-        bit_set[row] = true;
+    bool cover(idx_t i) {
+        assert(i < cov_flags.size());
+        bool was_covered = cov_flags[i];
+        cov_flags[i]     = true;
+        return !was_covered;
     }
 
-    inline void uncover(idx_t row) {
-        ntrue += bit_set[row] ? -1 : 0;
-        bit_set[row] = true;
+    bool uncover(idx_t i) {
+        assert(i < cov_flags.size());
+        bool was_covered = cov_flags[i];
+        cov_flags[i]     = false;
+        return was_covered;
     }
 
-    [[nodiscard]] decltype(auto) get(idx_t idx) const {
-        return bit_set[idx];
+    CFT_NODISCARD bool operator[](idx_t i) const {
+        assert(i < cov_flags.size());
+        return cov_flags[i];
     }
 
-    decltype(auto) operator[](idx_t idx) const {
-        return bit_set[idx];
+    CFT_NODISCARD idx_t size() const {
+        return cov_flags.size();
     }
-
-    decltype(auto) operator[](idx_t idx) {
-        return bit_set[idx];
-    }
-
-    [[nodiscard]] inline auto begin() const {
-        return bit_set.begin();
-    }
-
-    [[nodiscard]] inline auto end() const {
-        return bit_set.end();
-    }
-
-    inline auto begin() {
-        return bit_set.begin();
-    }
-
-    inline auto end() {
-        return bit_set.end();
-    }
-
-    [[nodiscard]] idx_t get_uncovered() const {
-        return bit_set.size() - ntrue;
-    }
-
-    [[nodiscard]] idx_t get_covered() const {
-        return ntrue;
-    }
-
-    [[nodiscard]] idx_t size() const {
-        return bit_set.size();
-    }
-
-
-private:
-    std::vector<bool> bit_set;
-    idx_t             ntrue = {};
 };
+}  // namespace cft
 
-#endif
+
+#endif /* CFT_INCLUDE_COUNTSET_HPP */

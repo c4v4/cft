@@ -1,10 +1,13 @@
 
 CompileFlags:  
-  Add: ["-std=c++20", "-DCAV_COMP_TESTS"]
+  Add: ["-std=c++11"]
 Diagnostics:
     UnusedIncludes: Strict
     ClangTidy: 
         CheckOptions:
+            modernize-use-auto.MinTypeNameLength: 8
+            modernize-use-auto.UseAssignment: True
+            modernize-use-default-member-init.UseAssignment: true 
             misc-non-private-member-variables-in-classes: IgnoreClassesWithAllMemberVariablesBeingPublic
             readability-function-cognitive-complexity.IgnoreMacros: True
             readability-identifier-naming.MacroDefinitionCase: UPPER_CASE
@@ -35,8 +38,9 @@ Diagnostics:
             readability-identifier-naming.PrivateMethodPrefix: "_"
             readability-identifier-naming.ProtectedMethodPrefix: "_"
 
-
-        Add:    [abseil-*,
+        Add:    [
+            modernize-*,
+            abseil-*,
             bugprone-*,
             clang-analyzer-*,
             cppcoreguidelines-*,
@@ -44,10 +48,10 @@ Diagnostics:
             hicpp-*,
             llvm-*,
             misc-*,
-            modernize-*,
             performance-*,
             portability-*,
-            readability-*            ]
+            readability-*    
+            ]
         Remove: [ # Personal programming style
 
             google-build-namespaces, # anonymous namespace can be useful
@@ -55,9 +59,7 @@ Diagnostics:
             bugprone-easily-swappable-parameters, # I get the intention, but, come on..
             modernize-use-trailing-return-type, # No thanks, I'll wait for Carbon
             readability-identifier-length, # Ok in general, but in some very nested scopes it is too pedantic 
-            modernize-use-auto, # Com'on, let me choose the most readeable one
             misc-non-private-member-variables-in-classes,
-            hicpp-use-auto,
 
             cppcoreguidelines-pro-type-vararg, # Used in templates
             hicpp-vararg,                      #
@@ -93,7 +95,7 @@ Diagnostics:
 
             cppcoreguidelines-avoid-const-or-ref-data-members, # I understand the rationale, but  for some short-lived abstractions I use it quite often
 
-            modernize-pass-by-value,
+            modernize-pass-by-value
             ]
             
 InlayHints:

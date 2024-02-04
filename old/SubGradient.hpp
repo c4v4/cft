@@ -135,6 +135,7 @@ private:
                 return;
             }
 
+            // Note: can be handled bit by bit earlier
             real_LB = lb_maintainer.update(subinst, delta_u);
 
             if (real_LB > LB_star) {

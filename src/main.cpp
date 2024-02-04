@@ -26,14 +26,12 @@ int main(int argc, char** argv) {
     }
 
     auto const data = parse_instance_data(*cli);
+    auto       rnd  = cft::prng_t{cli->seed()};
 
-    cft::prng_t rnd(cli->seed());
-
-    auto instance = Instance(data.nrows);
+    auto instance = Instance{data.nrows};
     instance.add_columns(data.costs, data.solcosts, data.matbeg, data.matval);
 
-    Refinement cft(instance, rnd);
-
+    auto cft      = Refinement{instance, rnd};
     auto solution = cft(data.warmstart);
 
     real_t sol_cost = 0.0;
