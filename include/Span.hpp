@@ -1,6 +1,7 @@
 #ifndef CFT_INCLUDE_SPAN_HPP
 #define CFT_INCLUDE_SPAN_HPP
 
+#include <cassert>
 #include <cstddef>
 #include <iterator>
 
@@ -21,10 +22,6 @@ struct Span {
     iterator start;
     iterator finish;
 
-    CFT_NODISCARD static Span create() {
-        return {{}, {}};
-    }
-
     CFT_NODISCARD size_type size() const {
         return finish - start;
     }
@@ -41,11 +38,27 @@ struct Span {
         return finish;
     }
 
-    CFT_NODISCARD ItT const& operator[](size_type i) const {
-        assert(i < finish - start);
+    CFT_NODISCARD value_type& operator[](size_type i) const {
+        assert(finish > start);
+        assert(i < static_cast<size_t>(finish - start));
         return start[i];
     }
 };
+
+template <typename ItT>
+CFT_NODISCARD static Span<ItT> make_span() {
+    return {{}, {}};
+}
+
+template <typename ItT>
+CFT_NODISCARD static Span<ItT> make_span(ItT beg, ItT end) {
+    return {beg, end};
+}
+
+template <typename ItT>
+CFT_NODISCARD static Span<ItT> make_span(ItT beg, size_t sz) {
+    return {beg, beg + sz};
+}
 
 }  // namespace cft
 

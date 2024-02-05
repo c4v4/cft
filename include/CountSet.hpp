@@ -7,6 +7,7 @@
 
 namespace cft {
 
+/// @brief Data structure to keep track of the number of times a row is covered by a set of columns
 struct CountSet {
     using counter_t = uint16_t;
 
@@ -83,12 +84,13 @@ struct CountSet {
     }
 };
 
+CFT_NODISCARD inline CountSet make_count_set(idx_t nrows) {
+    return {std::vector<uint16_t>(nrows)};
+}
+
+/// @brief Data structure to keep track what rows are covered by a set of columns
 struct BitSet {
     std::vector<bool> cov_flags;
-
-    CFT_NODISCARD static CountSet create() {
-        return {{}};
-    }
 
     void reset_uncovered(idx_t nrows) {
         cov_flags.assign(nrows, false);
@@ -150,6 +152,11 @@ struct BitSet {
         return cov_flags.size();
     }
 };
+
+CFT_NODISCARD inline BitSet make_bit_set(idx_t nrows) {
+    return {std::vector<bool>(nrows)};
+}
+
 }  // namespace cft
 
 

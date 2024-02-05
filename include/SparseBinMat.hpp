@@ -16,10 +16,6 @@ struct SparseBinMat {
     std::vector<idx_t>  idxs;
     std::vector<size_t> begs;
 
-    CFT_NODISCARD static SparseBinMat create() {
-        return {{}, {0}};
-    }
-
     CFT_NODISCARD Span<idx_t*> operator[](std::size_t i) {
         assert(i < begs.size() - 1);
         assert(begs[i] < idxs.size());
@@ -54,6 +50,11 @@ struct SparseBinMat {
         begs.push_back(idxs.size());
     }
 };
+
+CFT_NODISCARD inline SparseBinMat make_sparse_bin_mat() {
+    return {std::vector<idx_t>(), std::vector<size_t>(0)};
+}
+
 }  // namespace cft
 
 #endif /* CFT_INCLUDE_SPARSEBINMAT_HPP */
