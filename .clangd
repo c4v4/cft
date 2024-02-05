@@ -95,7 +95,9 @@ Diagnostics:
 
             cppcoreguidelines-avoid-const-or-ref-data-members, # I understand the rationale, but  for some short-lived abstractions I use it quite often
 
-            modernize-pass-by-value
+            modernize-pass-by-value,
+
+            cppcoreguidelines-pro-type-union-access # custom variant-like
             ]
             
 InlayHints:

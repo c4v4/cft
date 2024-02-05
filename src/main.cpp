@@ -1,48 +1,58 @@
 #include <fmt/core.h>
 
-#include "CliArgs.hpp"
+#include "Expected.hpp"
 #include "Instance.hpp"
-#include "Refinement.hpp"
 #include "cft.hpp"
-#include "parsing.hpp"
 
-InstanceData parse_instance_data(CliArgs const& cli) {
-    if (cli.parser_type() == CliArgs::ParserType::CVRP)
-        return parse_cvrp_instance(cli.path());
-    if (cli.parser_type() == CliArgs::ParserType::RAILS)
-        return parse_rail_instance(cli.path());
-    if (cli.parser_type() == CliArgs::ParserType::SCP)
-        return parse_scp_instance(cli.path());
-    // Not reachable.
-    return {};
-}
+enum class ERR { LESS1, INVALID, OUT_OF_RANGE };
 
-int main(int argc, char** argv) {
+struct S {
+    int x;
 
-    std::optional<CliArgs> cli = CliArgs::parse(argc, argv);
-    if (!cli.has_value()) {
-        fmt::print("An error occurred while parsing command line arguments.\n");
-        return EXIT_FAILURE;
+    S(int y)
+        : x(y) {
+        fmt::print("S({})\n", y);
     }
 
-    auto const data = parse_instance_data(*cli);
-    auto       rnd  = cft::prng_t{cli->seed()};
+    ~S() {
+        fmt::print("~S({})\n", x);
+    }
+};
 
-    auto instance = Instance{data.nrows};
-    instance.add_columns(data.costs, data.solcosts, data.matbeg, data.matval);
+cft::Expected<S, ERR> init_if_ge_1(std::string arg) noexcept {
+    try {
+        int val = std::stoi(arg);
+        if (val >= 1)
+            return cft::make_expected<S, ERR>(S{val});
+        return cft::make_expected<S, ERR>(ERR::LESS1);
 
-    auto cft      = Refinement{instance, rnd};
-    auto solution = cft(data.warmstart);
+    } catch (std::invalid_argument& e) {
+        return cft::make_expected<S, ERR>(ERR::INVALID);
 
-    real_t sol_cost = 0.0;
-    for (auto j : solution)
-        sol_cost += instance.get_col(j).get_cost();
-    fmt::print("Solution (cost {}):\n{}\n", sol_cost, fmt::join(solution, ", "));
+    } catch (std::out_of_range& e) {
+        return cft::make_expected<S, ERR>(ERR::OUT_OF_RANGE);
+    }
+}
 
-    CountSet coverage;
-    coverage.reset_covered(instance.get_cols(), solution, instance.get_nrows());
-    fmt::print("Row coverage:\n{}\n", fmt::join(coverage, ", "));
+int main(int argc, char const** argv) {
 
+    auto args      = cft::make_span(argv, argc);
+    auto maybe_int = init_if_ge_1(args[1]);
 
+    if (maybe_int.has_value)
+        fmt::print("The first argument is {}\n", maybe_int.value.x);
+
+    else
+        switch (maybe_int.error) {
+        case ERR::LESS1:
+            fmt::print("The first argument is less than 1\n");
+            return static_cast<int>(maybe_int.error);
+        case ERR::INVALID:
+            fmt::print("The first argument is not a valid integer\n");
+            return static_cast<int>(maybe_int.error);
+        case ERR::OUT_OF_RANGE:
+            fmt::print("The first argument is out of range\n");
+            return static_cast<int>(maybe_int.error);
+        }
     return 0;
 }

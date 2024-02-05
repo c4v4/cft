@@ -33,6 +33,10 @@ using real_t = float;
 
 namespace cft {
 using prng_t = std::mt19937_64;
+
+template <bool C, typename T = void>
+using requires_t = typename std::enable_if<C, T>::type;
+
 }  // namespace cft
 
 #endif /* CFT_INCLUDE_CFT_HPP */
