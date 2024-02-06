@@ -7,15 +7,15 @@
 namespace cft {
 
 struct Instance {
-    SparseBinMat        cols      = {};
-    std::vector<real_t> col_costs = {};
+    SparseBinMat<cidx_t> cols      = {};
+    std::vector<real_t>  col_costs = {};
 
-    std::vector<idx_t> active_cols;
-    std::vector<idx_t> fixed_cols;
+    std::vector<cidx_t> active_cols;
+    std::vector<cidx_t> fixed_cols;
 
-    idx_t             nrows        = {};
+    ridx_t            nrows        = {};
     std::vector<bool> active_rows  = {};
-    idx_t             nactive_rows = {};
+    ridx_t            nactive_rows = {};
     real_t            fixed_cost   = {};
 };
 }  // namespace cft

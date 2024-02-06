@@ -1,5 +1,7 @@
 #include <fmt/core.h>
 
+#include <cstdlib>
+
 #include "Expected.hpp"
 #include "Instance.hpp"
 #include "cft.hpp"
@@ -7,9 +9,9 @@
 enum class ERR { LESS1, INVALID, OUT_OF_RANGE };
 
 struct S {
-    int x;
+    cft::cidx_t x;
 
-    S(int y)
+    S(cft::cidx_t y)
         : x(y) {
         fmt::print("S({})\n", y);
     }
@@ -19,11 +21,11 @@ struct S {
     }
 };
 
-cft::Expected<S, ERR> init_if_ge_1(std::string arg) noexcept {
+cft::Expected<S, ERR> init_if_ge_1(std::string const& arg) noexcept {
     try {
-        int val = std::stoi(arg);
+        cft::cidx_t val = std::stoul(arg);
         if (val >= 1)
-            return cft::make_expected<S, ERR>(S{val});
+            return cft::make_expected<S, ERR>(S(val));
         return cft::make_expected<S, ERR>(ERR::LESS1);
 
     } catch (std::invalid_argument& e) {
@@ -39,10 +41,7 @@ int main(int argc, char const** argv) {
     auto args      = cft::make_span(argv, argc);
     auto maybe_int = init_if_ge_1(args[1]);
 
-    if (maybe_int.has_value)
-        fmt::print("The first argument is {}\n", maybe_int.value.x);
-
-    else
+    if (!maybe_int.has_value)
         switch (maybe_int.error) {
         case ERR::LESS1:
             fmt::print("The first argument is less than 1\n");
@@ -54,5 +53,9 @@ int main(int argc, char const** argv) {
             fmt::print("The first argument is out of range\n");
             return static_cast<int>(maybe_int.error);
         }
-    return 0;
+
+    cft::cidx_t idx = maybe_int.value.x;
+    fmt::print("The first argument is {}\n", idx);
+
+    return EXIT_SUCCESS;
 }

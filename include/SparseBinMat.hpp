@@ -11,19 +11,20 @@ namespace cft {
 /// @brief A simple sparse binary matrix.
 /// Operator[] returns a span to the i-th element (row or column).
 /// For finer control, idxs and begs are public.
+template <typename IdxT>
 struct SparseBinMat {
 
-    std::vector<idx_t>  idxs;
+    std::vector<IdxT>   idxs;
     std::vector<size_t> begs;
 
-    CFT_NODISCARD Span<idx_t*> operator[](std::size_t i) {
+    CFT_NODISCARD Span<IdxT*> operator[](std::size_t i) {
         assert(i < begs.size() - 1);
         assert(begs[i] < idxs.size());
         assert(begs[i + 1] < idxs.size());
         return {idxs.data() + begs[i], idxs.data() + begs[i + 1]};
     }
 
-    CFT_NODISCARD Span<idx_t const*> operator[](std::size_t i) const {
+    CFT_NODISCARD Span<IdxT const*> operator[](std::size_t i) const {
         assert(i < begs.size());
         assert(begs[i] < idxs.size());
         assert(begs[i + 1] < idxs.size());
@@ -51,8 +52,9 @@ struct SparseBinMat {
     }
 };
 
-CFT_NODISCARD inline SparseBinMat make_sparse_bin_mat() {
-    return {std::vector<idx_t>(), std::vector<size_t>(0)};
+template <typename IdxT>
+CFT_NODISCARD inline SparseBinMat<IdxT> make_sparse_bin_mat() {
+    return {std::vector<IdxT>(), std::vector<size_t>(0)};
 }
 
 }  // namespace cft
