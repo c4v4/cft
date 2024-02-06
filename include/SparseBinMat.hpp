@@ -27,7 +27,7 @@ struct SparseBinMat {
     CFT_NODISCARD Span<IdxT const*> operator[](std::size_t i) const {
         assert(i < begs.size());
         assert(begs[i] < idxs.size());
-        assert(begs[i + 1] < idxs.size());
+        assert(begs[i + 1] <= idxs.size());
         return {idxs.data() + begs[i], idxs.data() + begs[i + 1]};
     }
 

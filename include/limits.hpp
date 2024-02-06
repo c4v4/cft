@@ -19,14 +19,22 @@
 #include <limits>
 
 namespace cft {
-///////// NUMERIC MAX AND MIN /////////
 
 /// @brief Syntactic sugar for numeric max and min values.
 ///  It can be extended to defined max and min for other types.
 template <typename T>
 struct limits {
-    static constexpr T max = std::numeric_limits<T>::max();
-    static constexpr T min = std::numeric_limits<T>::lowest();
+    static constexpr T max() {
+        return std::numeric_limits<T>::max();
+    }
+
+    static constexpr T min() {
+        return std::numeric_limits<T>::lowest();
+    }
+
+    static constexpr T inf() {
+        return std::numeric_limits<T>::infinity();
+    }
 };
 
 }  // namespace cft

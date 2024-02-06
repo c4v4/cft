@@ -1,6 +1,8 @@
 #ifndef CFT_INCLUDE_SPAN_HPP
 #define CFT_INCLUDE_SPAN_HPP
 
+#include <bits/iterator_concepts.h>
+
 #include <cassert>
 #include <cstddef>
 #include <iterator>
@@ -46,17 +48,17 @@ struct Span {
 };
 
 template <typename ItT>
-CFT_NODISCARD static Span<ItT> make_span() {
+CFT_NODISCARD inline Span<ItT> make_span() {
     return {{}, {}};
 }
 
 template <typename ItT>
-CFT_NODISCARD static Span<ItT> make_span(ItT beg, ItT end) {
+CFT_NODISCARD inline Span<ItT> make_span(ItT beg, ItT end) {
     return {beg, end};
 }
 
 template <typename ItT>
-CFT_NODISCARD static Span<ItT> make_span(ItT beg, size_t sz) {
+CFT_NODISCARD inline Span<ItT> make_span(ItT beg, size_t sz) {
     return {beg, beg + sz};
 }
 
