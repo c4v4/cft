@@ -1,61 +1,42 @@
 #include <fmt/core.h>
+#include <fmt/ranges.h>
 
-#include <cstdlib>
+#include <algorithm>
 
-#include "Expected.hpp"
-#include "Instance.hpp"
-#include "cft.hpp"
+#include "parsing.hpp"
 
-enum class ERR { LESS1, INVALID, OUT_OF_RANGE };
+void print_inst_summary(cft::InstanceData const& inst) {
+    fmt::print("Instance summary:\n");
+    fmt::print("  nrows:     {}\n", inst.nrows);
+    fmt::print("  ncols:     {}\n", inst.cols.size());
+    fmt::print("  costs:     {} {} {} {} ...\n",
+               inst.costs[0],
+               inst.costs[1],
+               inst.costs[2],
+               inst.costs[3]);
+    fmt::print("  solcosts:  {} {} {} {} ...\n",
+               inst.solcosts[0],
+               inst.solcosts[1],
+               inst.solcosts[2],
+               inst.solcosts[3]);
+    if (!inst.warmstart.empty())
+        fmt::print("  warmstart: {} {} {} {} ...\n",
+                   inst.warmstart[0],
+                   inst.warmstart[1],
+                   inst.warmstart[2],
+                   inst.warmstart[3]);
 
-struct S {
-    cft::cidx_t x;
-
-    S(cft::cidx_t y)
-        : x(y) {
-        fmt::print("S({})\n", y);
-    }
-
-    ~S() {
-        fmt::print("~S({})\n", x);
-    }
-};
-
-cft::Expected<S, ERR> init_if_ge_1(std::string const& arg) noexcept {
-    try {
-        cft::cidx_t val = std::stoul(arg);
-        if (val >= 1)
-            return cft::make_expected<S, ERR>(S(val));
-        return cft::make_expected<S, ERR>(ERR::LESS1);
-
-    } catch (std::invalid_argument& e) {
-        return cft::make_expected<S, ERR>(ERR::INVALID);
-
-    } catch (std::out_of_range& e) {
-        return cft::make_expected<S, ERR>(ERR::OUT_OF_RANGE);
-    }
+    // print first 10 columns
+    for (size_t i = 0; i < 4; ++i)
+        fmt::print("  col[{}]: {}\n", i, fmt::join(inst.cols[i], ", "));
 }
 
 int main(int argc, char const** argv) {
+    auto args = cft::make_span(argv, argc);
 
-    auto args      = cft::make_span(argv, argc);
-    auto maybe_int = init_if_ge_1(args[1]);
-
-    if (!maybe_int.has_value)
-        switch (maybe_int.error) {
-        case ERR::LESS1:
-            fmt::print("The first argument is less than 1\n");
-            return static_cast<int>(maybe_int.error);
-        case ERR::INVALID:
-            fmt::print("The first argument is not a valid integer\n");
-            return static_cast<int>(maybe_int.error);
-        case ERR::OUT_OF_RANGE:
-            fmt::print("The first argument is out of range\n");
-            return static_cast<int>(maybe_int.error);
-        }
-
-    cft::cidx_t idx = maybe_int.value.x;
-    fmt::print("The first argument is {}\n", idx);
+    print_inst_summary(cft::parse_scp_instance(args[1]));
+    print_inst_summary(cft::parse_rail_instance(args[2]));
+    print_inst_summary(cft::parse_cvrp_instance(args[3]));
 
     return EXIT_SUCCESS;
 }
