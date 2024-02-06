@@ -1,6 +1,24 @@
 # AC-CFT
 Accorsi Luca and Cavaliere Francesco implementation of the CFT algorithm for the Set Covering problem.
 
+## Build and run unit tests
+To build unit tests
+```
+cmake .. -DUNITTESTS=1
+make -j
+```
+To run the tests
+```
+./tests
+```
+To get code coverage statistics
+```
+gcovr --html-details build/coverage.html
+```
+from the main project directory (not from the `build` dir!).
+Then checkout `build/coverage.html`.
+
+
 ## How to contribute
 Create a new branch
 ```
