@@ -85,7 +85,7 @@ private:
         const idx_t nrows = subinst.get_rows().size();
 
         // PARAMETERS
-        if constexpr (!heuristic_phase)
+        if constexpr (!heuristic_phase) // TODO: I think the step size should be changed during the heuristic phase too.
             lambda = StepSizeFactor(0.1, 20);                            // step size
         auto T = PricingPeriod(10, std::min<idx_t>(1000UL, nrows / 3));  // pricing frequency
         auto time_to_exit = ExitCondition(300U);
