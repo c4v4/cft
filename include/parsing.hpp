@@ -29,9 +29,8 @@ namespace cft {
 
 struct InstanceData {
     ridx_t               nrows;
-    std::vector<real_t>  costs;
     std::vector<real_t>  solcosts;
-    SparseBinMat<cidx_t> cols;
+    SparseBinMat<ridx_t> cols;
     std::vector<cidx_t>  warmstart;
 };
 
@@ -45,11 +44,11 @@ inline InstanceData parse_scp_instance(std::string const& path) {
     cidx_t ncols   = string_to<cidx_t>::consume(line_view);
     assert(line_view.empty());
 
-    inst.costs = std::vector<real_t>(ncols);
+    auto cobjs = std::vector<real_t>(ncols);
     for (cidx_t j = 0; j < ncols; ++j) {
         if (line_view.empty())
             line_view = file_iter.next();
-        inst.costs[j] = string_to<real_t>::consume(line_view);
+        cobjs[j] = string_to<real_t>::consume(line_view);
     }
 
     // For each row: row_size
@@ -69,14 +68,10 @@ inline InstanceData parse_scp_instance(std::string const& path) {
         }
     }
 
-    for (auto const& col : cols) {
-        inst.cols.begs.push_back(inst.cols.idxs.size());
-        for (ridx_t i : col)
-            inst.cols.idxs.push_back(i);
-    }
-
-    inst.cols.begs.push_back(inst.cols.idxs.size());
     inst.solcosts = std::vector<real_t>(ncols, limits<real_t>::max());
+    inst.cols     = make_sparse_bin_mat<ridx_t>();
+    for (cidx_t j = 0; j < ncols; ++j)
+        inst.cols.add_col(cols[j], cobjs[j]);
 
     return inst;
 }
@@ -91,18 +86,21 @@ inline InstanceData parse_rail_instance(std::string const& path) {
     cidx_t ncols   = string_to<cidx_t>::consume(line_view);
     assert(line_view.empty());
 
-    inst.costs = std::vector<real_t>(ncols);
+    auto cobjs = std::vector<real_t>(ncols);
+    auto cbegs = std::vector<size_t>();
+    auto cidxs = std::vector<ridx_t>();
     for (auto j = 0UL; j < ncols; j++) {
-        line_view     = file_iter.next();
-        inst.costs[j] = string_to<real_t>::consume(line_view);
-        auto j_nrows  = string_to<ridx_t>::consume(line_view);
+        line_view    = file_iter.next();
+        cobjs[j]     = string_to<real_t>::consume(line_view);
+        auto j_nrows = string_to<ridx_t>::consume(line_view);
 
-        inst.cols.begs.push_back(inst.cols.idxs.size());
+        cbegs.push_back(cidxs.size());
         for (size_t n = 0; n < j_nrows; n++)
-            inst.cols.idxs.push_back(string_to<cidx_t>::consume(line_view) - 1);
+            cidxs.push_back(string_to<cidx_t>::consume(line_view) - 1);
     }
 
-    inst.cols.begs.push_back(inst.cols.idxs.size());
+    cbegs.push_back(cidxs.size());
+    inst.cols     = make_sparse_bin_mat(std::move(cidxs), std::move(cbegs), std::move(cobjs));
     inst.solcosts = std::vector<real_t>(ncols, limits<real_t>::max());
 
     return inst;
@@ -118,20 +116,23 @@ inline InstanceData parse_cvrp_instance(std::string const& path) {
     cidx_t ncols   = string_to<cidx_t>::consume(line_view);
     assert(line_view.empty());
 
-    inst.costs    = std::vector<real_t>(ncols);
+    auto cbegs    = std::vector<size_t>();
+    auto cidxs    = std::vector<ridx_t>();
+    auto cobjs    = std::vector<real_t>(ncols);
     inst.solcosts = std::vector<real_t>(ncols);
 
     for (cidx_t j = 0; j < ncols; j++) {
         line_view        = file_iter.next();
-        inst.costs[j]    = string_to<real_t>::consume(line_view);
+        cobjs[j]         = string_to<real_t>::consume(line_view);
         inst.solcosts[j] = string_to<real_t>::consume(line_view);
 
-        inst.cols.begs.push_back(inst.cols.idxs.size());
+        cbegs.push_back(cidxs.size());
         while (!line_view.empty())
-            inst.cols.idxs.push_back(string_to<ridx_t>::consume(line_view));
+            cidxs.push_back(string_to<ridx_t>::consume(line_view));
     }
 
-    inst.cols.begs.push_back(inst.cols.idxs.size());
+    cbegs.push_back(cidxs.size());
+    inst.cols = make_sparse_bin_mat(std::move(cidxs), std::move(cbegs), std::move(cobjs));
 
     auto warmstart = std::vector<cidx_t>();
     line_view      = file_iter.next();
