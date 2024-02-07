@@ -28,6 +28,7 @@ set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS
 add_executable(tests
     test/parsing_unittests.cpp
     test/StringView_unittests.cpp
+    test/coverage_unittests.cpp
 )
 target_link_libraries(tests PUBLIC ${LIBRARIES} Catch2::Catch2)
 
