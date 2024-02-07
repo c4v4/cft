@@ -35,27 +35,39 @@ struct InstanceData {
     std::vector<cidx_t>  warmstart;
 };
 
+inline InstanceData make_instance_data() {
+    return {0, {}, {}, make_sparse_bin_mat<ridx_t>(), {}};
+}
+
+inline InstanceData make_instance_data(cidx_t ncols, ridx_t nrows) {
+    auto inst  = InstanceData{0, {}, {}, make_sparse_bin_mat<ridx_t>(), {}};
+    inst.nrows = nrows;
+    inst.costs.reserve(ncols);
+    inst.solcosts.reserve(ncols);
+    inst.cols.begs.reserve(ncols + 1);
+    return inst;
+}
+
 inline InstanceData parse_scp_instance(std::string const& path) {
-    auto inst      = InstanceData{};
     auto file_iter = make_file_line_iterator(path);
+    auto line_view = file_iter.next();
 
     // Read nrows & ncols
-    auto line_view = file_iter.next();
-    inst.nrows     = string_to<ridx_t>::consume(line_view);
-    cidx_t ncols   = string_to<cidx_t>::consume(line_view);
+    ridx_t nrows = string_to<ridx_t>::consume(line_view);
+    cidx_t ncols = string_to<cidx_t>::consume(line_view);
+    auto   inst  = make_instance_data(ncols, nrows);
     assert(line_view.empty());
 
-    inst.costs = std::vector<real_t>(ncols);
     for (cidx_t j = 0; j < ncols; ++j) {
         if (line_view.empty())
             line_view = file_iter.next();
-        inst.costs[j] = string_to<real_t>::consume(line_view);
+        inst.costs.push_back(string_to<real_t>::consume(line_view));
     }
 
     // For each row: row_size
     //               list of row_size columns that cover the row
     auto cols = std::vector<std::vector<ridx_t>>(ncols);
-    for (size_t i = 0; i < inst.nrows; ++i) {
+    for (size_t i = 0; i < nrows; ++i) {
         line_view    = file_iter.next();
         auto i_ncols = string_to<cidx_t>::consume(line_view);
         assert(line_view.empty());
@@ -70,68 +82,61 @@ inline InstanceData parse_scp_instance(std::string const& path) {
     }
 
     for (auto const& col : cols) {
-        inst.cols.begs.push_back(inst.cols.idxs.size());
         for (ridx_t i : col)
             inst.cols.idxs.push_back(i);
+        inst.cols.begs.push_back(inst.cols.idxs.size());
     }
 
-    inst.cols.begs.push_back(inst.cols.idxs.size());
     inst.solcosts = std::vector<real_t>(ncols, limits<real_t>::max());
+    inst.cols     = make_sparse_bin_mat<ridx_t>();
+    for (auto& col : cols)
+        inst.cols.push_back(col);
 
     return inst;
 }
 
 inline InstanceData parse_rail_instance(std::string const& path) {
-    auto inst      = InstanceData{};
     auto file_iter = make_file_line_iterator(path);
+    auto line_view = file_iter.next();
 
     // Read nrows & ncols
-    auto line_view = file_iter.next();
-    inst.nrows     = string_to<ridx_t>::consume(line_view);
-    cidx_t ncols   = string_to<cidx_t>::consume(line_view);
+    ridx_t nrows = string_to<ridx_t>::consume(line_view);
+    cidx_t ncols = string_to<cidx_t>::consume(line_view);
+    auto   inst  = make_instance_data(ncols, nrows);
     assert(line_view.empty());
 
-    inst.costs = std::vector<real_t>(ncols);
-    for (auto j = 0UL; j < ncols; j++) {
-        line_view     = file_iter.next();
-        inst.costs[j] = string_to<real_t>::consume(line_view);
-        auto j_nrows  = string_to<ridx_t>::consume(line_view);
+    for (cidx_t j = 0; j < ncols; j++) {
+        line_view = file_iter.next();
+        inst.costs.push_back(string_to<real_t>::consume(line_view));
+        auto j_nrows = string_to<ridx_t>::consume(line_view);
 
-        inst.cols.begs.push_back(inst.cols.idxs.size());
         for (size_t n = 0; n < j_nrows; n++)
             inst.cols.idxs.push_back(string_to<cidx_t>::consume(line_view) - 1);
+        inst.cols.begs.push_back(inst.cols.idxs.size());
     }
-
-    inst.cols.begs.push_back(inst.cols.idxs.size());
     inst.solcosts = std::vector<real_t>(ncols, limits<real_t>::max());
 
     return inst;
 }
 
 inline InstanceData parse_cvrp_instance(std::string const& path) {
-    auto inst      = InstanceData{};
     auto file_iter = make_file_line_iterator(path);
+    auto line_view = file_iter.next();
 
     // Read nrows & ncols
-    auto line_view = file_iter.next();
-    inst.nrows     = string_to<ridx_t>::consume(line_view);
-    cidx_t ncols   = string_to<cidx_t>::consume(line_view);
+    ridx_t nrows = string_to<ridx_t>::consume(line_view);
+    cidx_t ncols = string_to<cidx_t>::consume(line_view);
+    auto   inst  = make_instance_data(ncols, nrows);
     assert(line_view.empty());
 
-    inst.costs    = std::vector<real_t>(ncols);
-    inst.solcosts = std::vector<real_t>(ncols);
-
     for (cidx_t j = 0; j < ncols; j++) {
-        line_view        = file_iter.next();
-        inst.costs[j]    = string_to<real_t>::consume(line_view);
-        inst.solcosts[j] = string_to<real_t>::consume(line_view);
-
-        inst.cols.begs.push_back(inst.cols.idxs.size());
+        line_view = file_iter.next();
+        inst.costs.push_back(string_to<real_t>::consume(line_view));
+        inst.solcosts.push_back(string_to<real_t>::consume(line_view));
         while (!line_view.empty())
             inst.cols.idxs.push_back(string_to<ridx_t>::consume(line_view));
+        inst.cols.begs.push_back(inst.cols.idxs.size());
     }
-
-    inst.cols.begs.push_back(inst.cols.idxs.size());
 
     auto warmstart = std::vector<cidx_t>();
     line_view      = file_iter.next();
