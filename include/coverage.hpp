@@ -44,8 +44,10 @@ struct CoverCounters {
     template <typename IterableT>
     CFT_NODISCARD bool is_redundant(IterableT const& col) {
         for (IdxT i : col)
-            if (cov_counters[i] == 1)
+            if (cov_counters[i] <= 1) {
+                assert(cov_counters[i] > 0);
                 return false;
+            }
         return true;
     }
 
