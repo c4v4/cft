@@ -43,14 +43,14 @@ public:
 
             IF_VERBOSE { fmt::print("┌─ 3-PHASE: iter {:2} ────────────────────────────────────────────────────────────────\n", iter); }
 
-            //LocalSolution S_curr = greedy(u_k);
-            //real_t S_curr_cost = S_curr.compute_cost(subinst);
-            //assert(S_curr_cost > 0);
+            // LocalSolution S_curr = greedy(u_k);
+            // real_t S_curr_cost = S_curr.compute_cost(subinst);
+            // assert(S_curr_cost > 0);
 
             const auto subgrad_UB = glo_UB_star - subinst.get_fixed_cost();
 
             // 1. SUBGRADIENT PHASE
-            u_k = subgradient.solve(subgrad_UB, u_k);    // use S_curr_cost because u_k refers to the current sub-problem
+            u_k = subgradient.solve(subgrad_UB, u_k);     // use S_curr_cost because u_k refers to the current sub-problem
             real_t local_LB = subgradient.get_best_LB();  // u_k.compute_lb(subinst);
             real_t global_LB = subinst.get_fixed_cost() + local_LB;
             if (iter == 1) { glo_u = GlobalMultipliers(subinst, u_k); }
@@ -97,7 +97,8 @@ public:
                         glo_UB_star = gS_cost;
                         S_star = GlobalSolution(subinst, S);
                         IF_VERBOSE {
-                            fmt::print("│ ══> [{:3}] Improved global UB: {} (fixed {} + local-cost {})\n", &u - &u_list[0], S_star.get_cost(), subinst.get_fixed_cost(), S_cost);
+                            fmt::print("│ ══> [{:3}] Improved global UB: {} (fixed {} + local-cost {})\n", &u - &u_list[0], S_star.get_cost(),
+                                       subinst.get_fixed_cost(), S_cost);
                         }
                     } else {
                         IF_VERBOSE {

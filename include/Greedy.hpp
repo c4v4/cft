@@ -32,7 +32,7 @@ public:
         return S;
     }
 
-    void operator()(const LocalMultipliers& u_k, idx_t Ssize, LocalSolution& S) {
+    NO_INLINE void operator()(const LocalMultipliers& u_k, idx_t Ssize, LocalSolution& S) {
 
         M_star.reset_covered(subinst.get_cols(), S, subinst.get_nrows());
 

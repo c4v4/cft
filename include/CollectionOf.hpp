@@ -264,7 +264,7 @@ public:
     }
 
     inline void new_col_discard() {
-        finish = reinterpret_cast<char*>(offsets.back());
+        finish = start + offsets.back();
         offsets.pop_back();
     }
 

@@ -123,7 +123,7 @@ public:
         return cols_to_remove;
     }
 
-    void operator()(LocalSolution& S, const LocalMultipliers& u_k, MStar& M_star) {
+    NO_INLINE void operator()(LocalSolution& S, const LocalMultipliers& u_k, MStar& M_star) {
         reset(S, M_star);
         cols_to_remove = heur_enum_removal(u_k, M_star);
         S.remove(cols_to_remove);

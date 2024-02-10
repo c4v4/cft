@@ -77,7 +77,6 @@ public:
     [[nodiscard]] idx_t size() const { return M_star.size(); }
 
 
-private:
     std::vector<idx_t> M_star;
     idx_t zeros{};
 };

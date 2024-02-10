@@ -19,7 +19,7 @@
 
 class Instance {
 public:
-    explicit Instance(const idx_t nrows_) : nrows(nrows_), active_rows(nrows, true), nactive_rows(nrows), fixed_cost(0.0) { }
+    explicit Instance(const idx_t nrows_) : nrows(nrows_), rows(nrows_), active_rows(nrows, true), nactive_rows(nrows), fixed_cost(0.0) { }
 
     [[nodiscard]] inline auto get_ncols() const { return cols.size(); }
     [[nodiscard]] inline idx_t get_nrows() const { return nrows; }
@@ -33,7 +33,6 @@ public:
 
     void reset_fixing() {
 
-        assert(std::is_sorted(active_cols.begin(), active_cols.end()));
         assert(std::is_sorted(fixed_cols.begin(), fixed_cols.end()));
 
         active_rows.assign(nrows, true);
@@ -102,11 +101,14 @@ public:
             cols.emplace_back(matval.data() + matbeg[j], matval.data() + matbeg[j + 1], costs[j], sol_costs[j]);
             active_cols.emplace_back(old_ncols + j);
             inserted_cols_idxs.emplace_back(old_ncols + j);
+            for (idx_t n = matbeg[j]; n < matbeg[j + 1]; ++n) { rows[matval[n]].push_back(j); }
         }
 
         assert(cols.size() == costs.size());
         return inserted_cols_idxs;
     }
+
+    std::vector<idx_t> &get_row(idx_t i) { return rows[i]; }
 
 private:
     void _fix_columns(const std::vector<idx_t> &idxs) {
@@ -117,6 +119,7 @@ private:
             for (idx_t i : col) {
                 if (active_rows[i]) {
                     active_cols[iok++] = j;
+                    assert(std::count(idxs.begin(), idxs.end(), j) == 0);
                     break;
                 }
             }
@@ -134,6 +137,7 @@ private:
     std::vector<idx_t> active_cols;
     std::vector<idx_t> fixed_cols;
 
+    std::vector<std::vector<idx_t>> rows;
     std::vector<bool> active_rows;
     idx_t nactive_rows;
 
@@ -143,7 +147,7 @@ private:
 class SubInstance {
 
 public:
-    explicit SubInstance(Instance &inst_) : inst(inst_), best_cols(inst_.get_nrows()), fixed_cost(inst_.get_fixed_cost()) { }
+    explicit SubInstance(Instance &inst_) : inst(inst_), fixed_cost(inst_.get_fixed_cost()) { }
 
     [[nodiscard]] inline auto get_ncols() const { return cols.size(); }
     [[nodiscard]] inline auto get_nrows() const { return rows.size(); }
@@ -365,14 +369,8 @@ public:
         _init_priced_cols(priced_cols);
         local_to_global_col_idxs.clear();
 
-        covering_times.reset_uncovered(inst.get_nrows());
-        _select_C2_cols(priced_cols, covering_times, local_to_global_col_idxs);
-        // fmt::print("C2: {} ", local_to_global_col_idxs.size());
-        // auto old_s = local_to_global_col_idxs.size();
-
+        _select_C2_cols(priced_cols, local_to_global_col_idxs);
         _select_C0_cols(priced_cols, local_to_global_col_idxs);
-        // fmt::print("C0: {}\n", local_to_global_col_idxs.size() - old_s);
-
         replace_columns(local_to_global_col_idxs);
 
         IF_VERBOSE { fmt::print("Sub-instance size = {}x{}.\n", rows.size(), cols.size()); }
@@ -383,30 +381,11 @@ public:
     NO_INLINE real_t price(const std::vector<real_t> &u_k) {
 
         real_t global_LB = _price_active_cols(u_k, priced_cols);
-
         local_to_global_col_idxs.clear();
-
-
-        covering_times.reset_uncovered(inst.get_nrows());  // reset convered_rows to consider only reduced costs covering for C2
-        _select_C1_cols(priced_cols, covering_times, local_to_global_col_idxs);
-        // fmt::print("C1: {} ", local_to_global_col_idxs.size());
-        // auto old_s = local_to_global_col_idxs.size();
-
-        _select_C2_cols(priced_cols, covering_times, local_to_global_col_idxs);
-        // fmt::print("C2: {} ", local_to_global_col_idxs.size() - old_s);
-        // old_s = local_to_global_col_idxs.size();
-
+        _select_C1_cols(priced_cols, local_to_global_col_idxs);
+        _select_C2_cols(priced_cols, local_to_global_col_idxs);
         _select_C0_cols(priced_cols, local_to_global_col_idxs);
-        // fmt::print("C0: {}\n", local_to_global_col_idxs.size() - old_s);
-
         replace_columns(local_to_global_col_idxs);
-
-
-        IF_DEBUG {
-            covering_times.reset_covered(cols, rows.size());
-            assert(covering_times.get_uncovered() == 0);
-        }
-
         return global_LB;
     }
 
@@ -422,7 +401,7 @@ public:
             // fmt::print("lj: {}, gj: {} \n", lj, gj);
 
             assert(gj != REMOVED_INDEX);
-            assert(std::find(fixed_cols_global_idxs.begin(), fixed_cols_global_idxs.end(), gj) == fixed_cols_global_idxs.end());
+            assert(std::count(fixed_cols_global_idxs.begin(), fixed_cols_global_idxs.end(), gj) == 0);
 
             fixed_cols_global_idxs.emplace_back(gj);
             const auto &col = cols[lj];
@@ -487,7 +466,7 @@ public:
         return rows_left;
     }
 
-    void replace_columns(const std::vector<idx_t> &glob_cols_idxs) {
+    void replace_columns(std::vector<idx_t> &glob_cols_idxs) {
         assert(!glob_cols_idxs.empty());
 
         rows.resize(local_to_global_row_idxs.size());
@@ -498,10 +477,10 @@ public:
         cols.clear();
         cols.reserve(ncols);
 
-        for (idx_t lj = 0; lj < glob_cols_idxs.size(); ++lj) {
-            idx_t gj = glob_cols_idxs[lj];
+        idx_t lj = 0;
+        for (idx_t &gj : glob_cols_idxs) {
 
-            assert(std::find(fixed_cols_global_idxs.begin(), fixed_cols_global_idxs.end(), gj) == fixed_cols_global_idxs.end());
+            assert(std::count(fixed_cols_global_idxs.begin(), fixed_cols_global_idxs.end(), gj) == 0);
             assert(!inst.get_col(gj).empty());
 
             const auto &gcol = inst.get_col(gj);
@@ -514,8 +493,14 @@ public:
                     rows[li].emplace_back(lj);
                 }
             }
-            assert(!cols[lj].empty());
+            if (cols.back().empty()) {
+                cols.new_col_discard();
+                gj = REMOVED_INDEX;
+            } else {
+                ++lj;
+            }
         }
+        glob_cols_idxs.erase(std::remove(glob_cols_idxs.begin(), glob_cols_idxs.end(), REMOVED_INDEX), glob_cols_idxs.end());
         assert(!is_corrupted());
     }
 
@@ -571,9 +556,9 @@ public:
         IF_DEBUG {
             auto &sifc = fixed_cols_global_idxs;
             auto &ifc = inst.get_fixed_cols();
-            for ([[maybe_unused]] idx_t lj : local_sol) { assert(std::find(glob_sol.begin(), glob_sol.end(), local_to_global_col_idxs[lj]) != glob_sol.end()); }
-            for ([[maybe_unused]] idx_t gj : sifc) { assert(std::find(glob_sol.begin(), glob_sol.end(), gj) != glob_sol.end()); }
-            for ([[maybe_unused]] idx_t gj : ifc) { assert(std::find(glob_sol.begin(), glob_sol.end(), gj) != glob_sol.end()); }
+            for ([[maybe_unused]] idx_t lj : local_sol) { assert(std::count(glob_sol.begin(), glob_sol.end(), local_to_global_col_idxs[lj]) == 1); }
+            for ([[maybe_unused]] idx_t gj : sifc) { assert(std::count(glob_sol.begin(), glob_sol.end(), gj) == 1); }
+            for ([[maybe_unused]] idx_t gj : ifc) { assert(std::count(glob_sol.begin(), glob_sol.end(), gj) == 1); }
             for ([[maybe_unused]] idx_t gj : glob_sol) {
 
                 [[maybe_unused]] bool check1 = [&]() {
@@ -593,11 +578,12 @@ public:
     }
 
 private:
-    struct Priced_Col {
-        idx_t j;
-        real_t c_u;
-        real_t sol_cost;
-    };
+    // struct Priced_Col {
+    //     idx_t j;
+    //     real_t c_u;
+    //     real_t sol_cost;
+    // };
+    using Priced_Col = real_t;
 
     class Priced_Columns : public std::vector<Priced_Col> {
     public:
@@ -608,11 +594,8 @@ private:
             resize(ncols);
         }
 
-        inline void select(idx_t n) {
-            (*this)[n].j = REMOVED_INDEX;
-            (*this)[n].c_u = (*this)[n].sol_cost = REAL_MAX;
-        }
-        inline bool is_selected(idx_t n) const { return (*this)[n].j == REMOVED_INDEX; }
+        inline void select(idx_t n) { (*this)[n] = REAL_MAX; }
+        inline bool is_selected(idx_t n) const { return (*this)[n] == REAL_MAX; }
     };
 
     struct Col_Comp {
@@ -621,82 +604,49 @@ private:
 
     void _init_priced_cols(Priced_Columns &_priced_cols) {
         _priced_cols.reset(inst.get_active_cols().size());
-
-        idx_t p_idx = 0;
-        for (idx_t gj : inst.get_active_cols()) {
-            assert(gj < inst.get_ncols());
-
-            /// Column *col = std::addressof(inst.get_col(gj));
-            InstCol &col = inst.get_col(gj);
-            for (idx_t gi : col) {
-                if (_is_global_row_active(gi)) {
-                    _priced_cols[p_idx++] = {gj, col.get_cost(), col.get_solcost()};
-                    break;
-                }
-            }
-        }
-        _priced_cols.resize(p_idx);
-
-        std::sort(_priced_cols.begin(), _priced_cols.end(), [](const Priced_Col &c1, const Priced_Col &c2) { return c1.c_u < c2.c_u; });
+        for (idx_t gj : inst.get_active_cols()) { _priced_cols[gj] = inst.get_col(gj).get_cost(); }
     }
 
-    real_t _price_active_cols(const std::vector<real_t> &u_k, Priced_Columns &_priced_cols) {
+    NO_INLINE real_t _price_active_cols(const std::vector<real_t> &u_k, Priced_Columns &_priced_cols) {
 
         _priced_cols.reset(inst.get_active_cols().size());
+        std::vector<real_t> gu_k(inst.get_nrows());
+        for (idx_t li = 0; li < u_k.size(); ++li) { gu_k[local_to_global_row_idxs[li]] = u_k[li]; }
 
         // price all active columns and add their contribution to the LB
-        real_t global_LB = std::reduce(u_k.begin(), u_k.end(), static_cast<real_t>(0.0));
+        real_t global_LB = 0.0;
+        for (real_t u : u_k) global_LB += u;
         // fmt::print("global LB base: {} | ", global_LB);
 
-        idx_t p_idx = 0;
         for (idx_t gj : inst.get_active_cols()) {
             assert(gj < inst.get_ncols());
 
-            /// Column *col = std::addressof(inst.get_col(gj));
             InstCol &col = inst.get_col(gj);
-            real_t c_u = col.get_cost();
-
-            bool is_empty = true;
-            for (idx_t gi : col) {
-                if (_is_global_row_active(gi)) {
-                    is_empty = false;
-                    idx_t li = global_to_local_row_idxs[gi];  // retrieve the mapped row index
-                    c_u -= u_k[li];
-                }
-            }
-
-            if (!is_empty) {  // check for empty columns
-                if (c_u < 0.0) { global_LB += c_u; }
-
-                _priced_cols[p_idx++] = {gj, c_u, col.get_solcost()};
-            }
+            _priced_cols[gj] = col.get_cost();
+            for (idx_t gi : col) { _priced_cols[gj] -= gu_k[gi]; }
+            if (_priced_cols[gj] < 0.0) { global_LB += _priced_cols[gj]; }
         }
 
-        _priced_cols.resize(p_idx);
-
+        for (idx_t gj : fixed_cols_global_idxs) { _priced_cols.select(gj); }
         return global_LB;
     }
 
     NO_INLINE void _select_C0_cols(Priced_Columns &_priced_cols, std::vector<idx_t> &global_col_idxs) {
         idx_t fivem = std::min<idx_t>(MIN_SOLCOST_COV * inst.get_active_rows_size(), _priced_cols.size());
         global_col_idxs.reserve(fivem);
+        auto &active_cols = inst.get_active_cols();
 
-        // std::stable_sort(_priced_cols.begin(), _priced_cols.end(),
-        std::nth_element(_priced_cols.begin(), _priced_cols.begin() + fivem, _priced_cols.end(),
-                         [](const Priced_Col &c1, const Priced_Col &c2) { return c1.sol_cost < c2.sol_cost; });
+        std::nth_element(active_cols.begin(), active_cols.begin() + fivem, active_cols.end(),
+                         [&](idx_t j1, idx_t j2) { return inst.get_col(j1).get_solcost() < inst.get_col(j2).get_solcost(); });
 
-        if (_priced_cols[0].sol_cost == REAL_MAX) { return; }
+        if (inst.get_col(active_cols[0]).get_solcost() == REAL_MAX) { return; }
 
         for (idx_t n = 0; n < fivem; ++n) {
-            assert(n < _priced_cols.size());
-
-            if (_priced_cols.is_selected(n) || _priced_cols[n].sol_cost == REAL_MAX) { continue; }
-
-            idx_t gj = _priced_cols[n].j;
-            assert(gj < inst.get_ncols());
-
+            idx_t gj = active_cols[n];
+            if (_priced_cols.is_selected(gj) || inst.get_col(gj).get_solcost() == REAL_MAX) { continue; }
+            assert(std::count(fixed_cols_global_idxs.begin(), fixed_cols_global_idxs.end(), gj) == 0);
             global_col_idxs.emplace_back(gj);
-            _priced_cols.select(n);
+            _priced_cols.select(gj);
         }
 
         IF_DEBUG {
@@ -705,26 +655,21 @@ private:
         }
     }
 
-    NO_INLINE void _select_C1_cols(Priced_Columns &_priced_cols, MStar &_covering_times, std::vector<idx_t> &global_col_idxs) {
+    NO_INLINE void _select_C1_cols(Priced_Columns &_priced_cols, std::vector<idx_t> &global_col_idxs) {
 
         idx_t fivem = std::min<idx_t>(MIN_COV * inst.get_active_rows_size(), _priced_cols.size());
         global_col_idxs.reserve(fivem);
 
-        std::sort(_priced_cols.begin(), _priced_cols.end(),
-                  // std::nth_element(_priced_cols.begin(), _priced_cols.begin() + fivem, _priced_cols.end(),
-                  [](const Priced_Col &c1, const Priced_Col &c2) { return c1.c_u < c2.c_u; });
+        auto &active_cols = inst.get_active_cols();
+        std::nth_element(active_cols.begin(), active_cols.begin() + fivem, active_cols.end(),
+                         [&](idx_t j1, idx_t j2) { return _priced_cols[j1] < _priced_cols[j2]; });
 
         for (idx_t n = 0; n < fivem; n++) {
-            assert(n < _priced_cols.size());
-
-            if (_priced_cols.is_selected(n) || _priced_cols[n].c_u >= 0.1) { continue; }
-
-            idx_t gj = _priced_cols[n].j;
-            assert(gj < inst.get_ncols());
-
+            idx_t gj = active_cols[n];
+            if (_priced_cols[gj] >= 0.1) { continue; }
+            _priced_cols.select(gj);
+            assert(std::count(fixed_cols_global_idxs.begin(), fixed_cols_global_idxs.end(), gj) == 0);
             global_col_idxs.emplace_back(gj);
-            _covering_times.cover_rows(inst.get_col(gj));
-            _priced_cols.select(n);
         }
 
         IF_DEBUG {
@@ -733,66 +678,56 @@ private:
         }
     }
 
-    NO_INLINE void _select_C2_cols(Priced_Columns &_priced_cols, MStar &_covering_times, std::vector<idx_t> &global_col_idxs) {
-
-        assert(std::is_sorted(_priced_cols.begin() + global_col_idxs.size(), _priced_cols.end(),
-                              [](const Priced_Col &c1, const Priced_Col &c2) { return c1.c_u < c2.c_u; }));
+    NO_INLINE void _select_C2_cols(Priced_Columns &_priced_cols, std::vector<idx_t> &global_col_idxs) {
 
         idx_t fivem = std::min<idx_t>(MIN_COV * inst.get_active_rows_size(), _priced_cols.size());
         global_col_idxs.reserve(fivem);
 
         // check for still-uncovered rows
-        idx_t rows_to_cover = 0;
         for (idx_t gi = 0; gi < inst.get_nrows(); ++gi) {
-            if (_is_global_row_active(gi)) {
-                _covering_times[gi] = MIN_COV - std::min<idx_t>(MIN_COV, _covering_times[gi]);
-                rows_to_cover += static_cast<idx_t>(_covering_times[gi] > 0);
-            } else {
-                _covering_times[gi] = 0;
+            if (!_is_global_row_active(gi)) { continue; }
+            TrivialHeap<std::pair<idx_t, real_t>, MIN_COV, Col_Comp> heap;
+            for (idx_t gj : inst.get_row(gi)) { heap.try_insert(std::pair{gj, _priced_cols[gj]}); }
+            for (auto [gj, c_u] : heap) {
+                if (_priced_cols.is_selected(gj)) { continue; }
+                _priced_cols.select(gj);
+                global_col_idxs.push_back(gj);
+                assert(std::count(fixed_cols_global_idxs.begin(), fixed_cols_global_idxs.end(), gj) == 0);
             }
         }
-
-        for (auto &heap : best_cols) { heap.clear(); }
-
-        for (idx_t n = global_col_idxs.size(); n < _priced_cols.size(); ++n) {
+        /*
+        idx_t n = global_col_idxs.size();
+        for (; n < _priced_cols.size(); ++n) {
             assert(!_priced_cols.is_selected(n));
 
-            InstCol &col = inst.get_col(_priced_cols[n].j);
-            auto pair = std::make_pair(n, _priced_cols[n].c_u);
-            for (idx_t gi : col) {
-
+            idx_t gj = _priced_cols[n].j;
+            bool to_add = false;
+            for (idx_t gi : inst.get_col(gj)) {
                 if (_covering_times[gi] == 0) { continue; }
-
-                assert(gi < best_cols.size());
+                to_add = true;
                 --_covering_times[gi];
-                best_cols[gi].push_back(pair);
-                // best_cols[gi].try_insert(pair);
-
                 rows_to_cover -= static_cast<idx_t>(_covering_times[gi] == 0);
-                if (rows_to_cover == 0) {
-                    assert(std::count(_covering_times.begin(), _covering_times.end(), 0) == _covering_times.size());
-                    break;
-                }
             }
-        }
 
-        for (auto &heap : best_cols) {
-            for (auto [n, c_u] : heap) {
-                if (_priced_cols.is_selected(n)) { continue; }
-
-                idx_t gj = _priced_cols[n].j;
-                assert(gj < inst.get_ncols());
-
+            if (to_add) {
                 global_col_idxs.emplace_back(gj);
-
                 _priced_cols.select(n);
             }
+
+            if (rows_to_cover == 0) {
+                assert(std::count(_covering_times.begin(), _covering_times.end(), 0) == _covering_times.size());
+                break;
+            }
+        }
+        fmt::print("n {:2.0f}%\n", n * 100.0 / _priced_cols.size());
+        for (idx_t gi = 0; gi < inst.get_nrows(); ++gi) {
+            if (_covering_times[gi] > 0) { fmt::print("gi: {}, cov: {}, is_active: {}\n", gi, _covering_times[gi], _is_global_row_active(gi)); }
         }
 
         IF_DEBUG {
             [[maybe_unused]] auto old_end = global_col_idxs.end();
             assert(std::unique(global_col_idxs.begin(), global_col_idxs.end()) == old_end);
-        }
+        } */
     }
 
     inline bool _is_global_row_active(const idx_t gbl_idx) {
@@ -810,7 +745,6 @@ private:
     std::vector<idx_t> global_to_local_row_idxs;
     std::vector<idx_t> local_to_global_row_idxs;
 
-    std::vector<TrivialHeap<std::pair<idx_t, real_t>, MIN_COV, Col_Comp>> best_cols;
     Priced_Columns priced_cols;
 
     real_t fixed_cost;

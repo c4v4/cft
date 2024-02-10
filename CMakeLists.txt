@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 set(WARNING_FLAGS "-Wall -Wextra -Wpedantic -Wuninitialized -Wshadow ")
 set(SANITIZERS_FLAGS "-fno-omit-frame-pointer -fsanitize=address -fsanitize-address-use-after-scope -fsanitize=undefined")
-set(OPT_FLAGS "-O3 -march=native -flto=auto")
+set(OPT_FLAGS "-O3 -g -fno-omit-frame-pointer")
 
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WARNING_FLAGS}")

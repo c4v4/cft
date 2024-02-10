@@ -3,8 +3,9 @@
 
 #include <array>
 #include <cinttypes>
+#include <functional>
 
-template <typename T, std::size_t Nm, typename Comp>
+template <typename T, std::size_t Nm, typename Comp = std::less<T>>
 class TrivialHeap {
 public:
     inline auto size() const { return sz; }

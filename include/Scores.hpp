@@ -63,7 +63,7 @@ public:
 
 
     // Setup for step 2
-    inline void setup_scores(const LocalMultipliers& u_k, MStar& M_star) {
+    NO_INLINE inline void setup_scores(const LocalMultipliers& u_k, MStar& M_star) {
 
         auto& cols = subinst.get_cols();
         Bsize = cols.size();
@@ -78,7 +78,7 @@ public:
     }
 
     // Step 1
-    inline idx_t argmin_score() {
+    NO_INLINE inline idx_t argmin_score() {
 
         idx_t bj = 0;
         while (bj < Bsize && gam_mu_sig[B[bj]].is_marked()) { ++bj; }
@@ -108,7 +108,7 @@ public:
 
 
     // Step 2'
-    inline void update_scores(const LocalMultipliers& u_k, const idx_t j_star, const MStar& M_star) {
+    NO_INLINE inline void update_scores(const LocalMultipliers& u_k, const idx_t j_star, const MStar& M_star) {
         assert(!gam_mu_sig[j_star].is_marked());
         gam_mu_sig[j_star].inserted_in_S();
         ++Ssize;
@@ -126,7 +126,7 @@ public:
 
 
 private:
-    inline real_t _compute_B_and_tau(idx_t size) {
+    NO_INLINE inline real_t _compute_B_and_tau(idx_t size) {
         auto last = size - 1;
         assert(last < B.size());
         Bsize = size;
