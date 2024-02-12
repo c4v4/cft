@@ -1,7 +1,6 @@
 #ifndef CAV_INCLUDE_INSTANCE_HPPCFT_
 #define CAV_INCLUDE_INSTANCE_HPPCFT_
 
-#include <stdexcept>
 
 #include "SparseBinMat.hpp"
 #include "cft.hpp"
@@ -13,9 +12,9 @@
 namespace cft {
 
 
-/// @brief `IdxMaps` tracks index mappings for a new Instance. It is used to maintains a
+/// @brief `IdxMaps` tracks index mappings for a new Instance. It is used to maintain a
 /// local-to-global mapping with the original instance when stored within Instance, and to
-/// communicates old-to-new mappings when part of the instance is fixed.
+/// communicate old-to-new mappings when part of the instance is fixed.
 /// An empty map signifies no changes, acting as an identity mapping.
 struct IdxMaps {
     std::vector<cidx_t> col_idxs;
@@ -56,26 +55,25 @@ struct Instance {
     real_t              fixed_cost;
 
     void invariants_check() const {
-        IF_DEBUG {
-            for (cidx_t j = 0; j < cols.size(); ++j) {
-                assert("Col is empty" && !cols[j].empty());
-                assert("Col does not exist" && j < cols.size());
-                for (ridx_t i : cols[j])
-                    assert("Col not in row" && any(rows[i], [j](cidx_t rj) { return rj == j; }));
-            }
+        for (cidx_t j = 0; j < cols.size(); ++j) {
+            assert("Col is empty" && !cols[j].empty());
+            assert("Col does not exist" && j < cols.size());
+            for (ridx_t i : cols[j])
+                assert("Col not in row" && any(rows[i], [j](cidx_t rj) { return rj == j; }));
+        }
 
-            for (ridx_t i = 0; i < rows.size(); ++i) {
-                assert("Row is empty" && !rows[i].empty());
-                assert("Row does not exist" && i < rows.size());
-                for (cidx_t j : rows[i])
-                    assert("Row not in col" && any(cols[j], [i](cidx_t ci) { return ci == i; }));
-            }
+        for (ridx_t i = 0; i < rows.size(); ++i) {
+            assert("Row is empty" && !rows[i].empty());
+            assert("Row does not exist" && i < rows.size());
+            for (cidx_t j : rows[i])
+                assert("Row not in col" && any(cols[j], [i](cidx_t ci) { return ci == i; }));
         }
     }
 
     /// @brief Modifies instance by fixing columns in-place.
     /// New indexes are always <= old ones, allowing in-place external data structure updates.
-    /// Note: Column fixing is irreversible.
+    /// Note: Column fixing is irreversible, i.e., you cannot get the original instance from the
+    /// subinstance.
     IdxMaps fix_columns(std::vector<cidx_t> const& cols_to_fix) {
         auto idx_maps = make_idx_maps();
         fix_columns(cols_to_fix, idx_maps);
@@ -177,6 +175,7 @@ private:
 };
 
 namespace {
+    /// @brief Complete instance initialization by creating rows and orig_maps
     inline void complete_init(Instance& partial_inst, ridx_t nrows) {
         partial_inst.rows            = std::vector<std::vector<cidx_t>>(nrows);
         partial_inst.orig_maps       = make_idx_maps(partial_inst.cols.size(), nrows);
@@ -196,7 +195,7 @@ inline Instance make_instance(InstanceData&& inst_data) {
     inst.solcosts = std::move(inst_data.solcosts);
 
     complete_init(inst, inst_data.nrows);
-    IF_DEBUG inst.invariants_check();
+    IF_DEBUG(inst.invariants_check());
 
     return inst;
 }
@@ -208,7 +207,7 @@ inline Instance make_instance(InstanceData const& inst_data) {
     inst.solcosts = inst_data.solcosts;
 
     complete_init(inst, inst_data.nrows);
-    IF_DEBUG inst.invariants_check();
+    IF_DEBUG(inst.invariants_check());
 
     return inst;
 }

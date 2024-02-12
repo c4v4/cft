@@ -6,15 +6,15 @@
 #define NO_INLINE  //__attribute__((noinline))
 
 #ifdef VERBOSE
-#define IF_VERBOSE
+#define IF_VERBOSE(...) __VA_ARGS__
 #else
-#define IF_VERBOSE if constexpr (false)
+#define IF_VERBOSE(...)
 #endif
 
 #ifdef NDEBUG
-#define IF_DEBUG if constexpr (false)
+#define IF_DEBUG(...)
 #else
-#define IF_DEBUG
+#define IF_DEBUG(...) __VA_ARGS__
 #endif
 
 namespace cft {
