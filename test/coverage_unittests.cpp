@@ -2,6 +2,7 @@
 #include <catch2/catch.hpp>
 #include <cstring>
 
+#include "../include/SparseBinMat.hpp"
 #include "../include/coverage.hpp"
 
 namespace cft {

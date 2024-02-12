@@ -1,8 +1,9 @@
 #ifndef CFT_INCLUDE_COUNTSET_HPP
 #define CFT_INCLUDE_COUNTSET_HPP
 
+#include <cassert>
+#include <vector>
 
-#include "SparseBinMat.hpp"
 #include "cft.hpp"
 
 namespace cft {
