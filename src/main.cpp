@@ -3,7 +3,9 @@
 
 #include <algorithm>
 
+#include "Instance.hpp"
 #include "parsing.hpp"
+#include "subgradient.hpp"
 
 void print_inst_summary(cft::InstanceData const& inst) {
     fmt::print("Instance summary:\n");
@@ -35,8 +37,14 @@ int main(int argc, char const** argv) {
     auto args = cft::make_span(argv, argc);
 
     print_inst_summary(cft::parse_scp_instance(args[1]));
-    print_inst_summary(cft::parse_rail_instance(args[2]));
-    print_inst_summary(cft::parse_cvrp_instance(args[3]));
+    // print_inst_summary(cft::parse_rail_instance(args[2]));
+    // print_inst_summary(cft::parse_cvrp_instance(args[3]));
+
+    cft::Instance inst = cft::make_instance(cft::parse_scp_instance(args[1]));
+
+    cft::subgradient::optimize(inst,
+                              /*upper_bound=*/1000,
+                              cft::subgradient::make_greedy_multipliers(inst));
 
     return EXIT_SUCCESS;
 }
