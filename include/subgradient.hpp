@@ -2,6 +2,7 @@
 #define CFT_INCLUDE_SUBGRADIENT_HPP
 
 #include <algorithm>
+#include <random>
 #include <vector>
 
 #include "Instance.hpp"
@@ -21,7 +22,7 @@ namespace subgradient {
         // Best lower bound found during the execution.
         real_t lower_bound;
     };
-}
+}  // namespace subgradient
 
 namespace {
 
@@ -56,7 +57,7 @@ namespace {
         }
     };
 
-    StepSizeManager make_step_size_manager(real_t initial_step, size_t period) {
+    inline StepSizeManager make_step_size_manager(real_t initial_step, size_t period) {
         return StepSizeManager{initial_step,
                                period,
                                /*iter=*/0,
@@ -85,7 +86,7 @@ namespace {
             iter = 0;
 
             real_t const delta = (local_lower_bound - global_lower_bound) / global_upper_bound;
-            if (delta <= 0.000001)
+            if (delta <= 1e-6)
                 period = cft::min(max_period, period * 10);
             else if (delta <= 0.02)
                 period = cft::min(max_period, period * 5);
@@ -96,7 +97,7 @@ namespace {
         }
     };
 
-    PricingPeriodManager make_pricing_period_manager(size_t period, size_t max_period) {
+    inline PricingPeriodManager make_pricing_period_manager(size_t period, size_t max_period) {
         return PricingPeriodManager{period, max_period, /*iter=*/0};
     }
 
@@ -125,7 +126,7 @@ namespace {
         }
     };
 
-    ExitConditionManager make_exit_condition_manager(size_t period) {
+    inline ExitConditionManager make_exit_condition_manager(size_t period) {
         return ExitConditionManager{period,
                                     /*iter=*/0,
                                     /*reference_lower_bound=*/limits<real_t>::min()};
@@ -141,63 +142,63 @@ namespace {
     };
 
     // Computes a solution by inspection by including all columns having a negative reduced cost.
-    Solution compute_solution(Instance const& inst, std::vector<real_t> const& multipliers) {
-        auto solution = Solution{};
+    inline Solution make_solution(Instance const& inst, std::vector<real_t> const& lagr_mult) {
+        auto sol = Solution{};
 
-        solution.lower_bound = 0;
-        for (real_t const value : multipliers)
-            solution.lower_bound += value;
+        sol.lower_bound = 0;
+        for (real_t const value : lagr_mult)
+            sol.lower_bound += value;
 
         for (size_t j = 0; j < inst.cols.size(); ++j) {
 
             real_t reduced_cost = inst.costs[j];
             for (ridx_t i : inst.cols[j])
-                reduced_cost -= multipliers[i];
+                reduced_cost -= lagr_mult[i];
 
-            if (reduced_cost < 0) {
-                solution.col_info.emplace_back(j, reduced_cost);
-                solution.lower_bound += reduced_cost;
+            if (reduced_cost < 0.0) {
+                sol.col_info.emplace_back(j, reduced_cost);
+                sol.lower_bound += reduced_cost;
             }
         }
 
-        return solution;
+        return sol;
     }
 
     // Computes the row coverage of the given solution.
-    CoverCounters<uint16_t> compute_solution_row_coverage(Instance const& inst,
-                                                          Solution&       solution,
-                                                          bool include_redundant_columns) {
+    inline CoverCounters<uint16_t> compute_solution_row_coverage(Instance const& inst,
+                                                                 Solution&       sol,
+                                                                 bool include_redundant_columns) {
         // TODO: consider moving to member.
-        CoverCounters<uint16_t> solution_row_coverage = make_cover_counters(inst.rows.size());
+        CoverCounters<uint16_t> sol_row_coverage = make_cover_counters(inst.rows.size());
 
         if (include_redundant_columns)
-            for (auto const& c : solution.col_info)
-                solution_row_coverage.cover(inst.cols[c.first]);
+            for (auto const& c : sol.col_info)
+                sol_row_coverage.cover(inst.cols[c.first]);
         else {
-            std::sort(solution.col_info.begin(),
-                      solution.col_info.end(),
+            std::sort(sol.col_info.begin(),
+                      sol.col_info.end(),
                       [](std::pair<cidx_t, real_t> const& a, std::pair<cidx_t, real_t> const& b) {
                           return a.second < b.second;
                       });
-            for (auto const& c : solution.col_info) {
+            for (auto const& c : sol.col_info) {
                 auto const& col = inst.cols[c.first];
                 if (!solution_row_coverage.is_redundant_cover(col))
                     solution_row_coverage.cover(col);
             }
         }
 
-        return solution_row_coverage;
+        return sol_row_coverage;
     }
 
     // Computes the subgradient squared norm according to the rows covered by the given solution.
-    uint32_t compute_subgradient_squared_norm(
+    inline uint32_t compute_subgradient_squared_norm(
         Instance const&                inst,
-        CoverCounters<uint16_t> const& solution_row_coverage) {
+        CoverCounters<uint16_t> const& sol_row_coverage) {
 
         uint32_t norm = 0.0;
 
         for (size_t i = 0; i < inst.rows.size(); ++i) {
-            uint32_t violation = 1 - solution_row_coverage[i];
+            uint32_t violation = 1 - sol_row_coverage[i];
             norm += violation * violation;
         }
 
@@ -207,13 +208,11 @@ namespace {
     // Performs a dual ascent on the given instance.
     // According to the explore flag, the result will be a single near-optimal multipliers, when
     // explore is false, or a list of them, when explore is true.
-    subgradient::Result dual_ascent(Instance const&            inst,
-                                    real_t                     upper_bound,
-                                    std::vector<real_t> const& initial_multipliers,
-                                    size_t                     max_iterations,
-                                    bool                       explore) {
-
-        auto best = subgradient::Result{};
+    inline subgradient::Result dual_ascent(Instance const&            inst,
+                                           real_t                     upper_bound,
+                                           std::vector<real_t> const& initial_lagr_mult,
+                                           size_t                     max_iterations,
+                                           bool                       explore) {
 
         auto step_size_manager = make_step_size_manager(/*initial_step=*/0.1, /*period=*/20);
 
@@ -228,22 +227,22 @@ namespace {
         real_t best_lower_bound = limits<real_t>::min();
 
         // TODO: consider moving to members.
-        auto multipliers      = initial_multipliers;
-        auto best_multipliers = initial_multipliers;
+        auto lagr_mult      = initial_lagr_mult;
+        auto best_lagr_mult = initial_lagr_mult;
 
         // TODO: Maybe use subgradient::Result directly.
-        auto multipliers_list = std::vector<std::vector<real_t>>();
+        auto lagr_mult_list = std::vector<std::vector<real_t>>();
 
         for (size_t iter = 0; iter < max_iterations; ++iter) {
 
-            auto solution = compute_solution(inst, multipliers);
+            auto sol = make_solution(inst, lagr_mult);
 
-            CoverCounters<uint16_t> solution_row_coverage = compute_solution_row_coverage(
+            CoverCounters<uint16_t> sol_row_coverage = compute_solution_row_coverage(
                 inst,
-                solution,
+                sol,
                 /*include_redundant_columns=*/explore);
 
-            uint32_t squared_norm = compute_subgradient_squared_norm(inst, solution_row_coverage);
+            uint32_t squared_norm = compute_subgradient_squared_norm(inst, sol_row_coverage);
 
             // The subgradient squared norm can only be 0 when no constraint is violated, i.e., we
             // found a feasible primal solution during a lower bound computation, then the solution
@@ -253,50 +252,45 @@ namespace {
                 // TODO: store u / solution and return?
             }
 
-            fmt::print("Lower bound = {}\n", solution.lower_bound);
-
-            if (solution.lower_bound > best_lower_bound) {
-                fmt::print("                                                Lower bound = {}\n",
-                           solution.lower_bound);
-                best_lower_bound = solution.lower_bound;
-                best_multipliers = multipliers;
+            if (sol.lower_bound > best_lower_bound) {
+                fmt::print("Lower bound = {}\n", sol.lower_bound);
+                best_lower_bound = sol.lower_bound;
+                best_lagr_mult   = lagr_mult;
             }
 
             if (explore) {
-                multipliers_list.emplace_back(multipliers);
+                lagr_mult_list.emplace_back(lagr_mult);
             } else {
                 if (exit_condition_manager.finished(best_lower_bound))
                     break;
 
                 bool const should_price = pricing_period_manager.increment();
                 if (should_price) {
-                    pricing_period_manager.reset(/*TODO: global_lower_bound*/ solution.lower_bound,
-                                                 solution.lower_bound,
+                    pricing_period_manager.reset(/*TODO: global_lower_bound*/ sol.lower_bound,
+                                                 sol.lower_bound,
                                                  upper_bound);
 
                     // TODO: pricing is missing!
                 }
             }
 
-            step_size_manager.update(solution.lower_bound);
+            step_size_manager.update(sol.lower_bound);
 
             // Update the multipliers.
             for (size_t i = 0; i < inst.rows.size(); ++i) {
 
-                real_t const normalized_bound_diff = (upper_bound - solution.lower_bound) /
-                                                     squared_norm;
-                real_t const violation = 1 - solution_row_coverage[i];
+                real_t const normalized_bound_diff = (upper_bound - sol.lower_bound) / squared_norm;
+                real_t const violation             = 1 - sol_row_coverage[i];
 
-                multipliers[i] = cft::max(
-                    0.0,
-                    multipliers[i] + step_size_manager.step * normalized_bound_diff * violation);
+                real_t delta_mult = step_size_manager.step * normalized_bound_diff * violation;
+                lagr_mult[i]      = cft::max(0.0, lagr_mult[i] + delta_mult);
             }
         }
 
         if (explore)
-            return subgradient::Result{multipliers_list, best_lower_bound};
-        else
-            return subgradient::Result{{best_multipliers}, best_lower_bound};
+            return subgradient::Result{lagr_mult_list, best_lower_bound};
+
+        return subgradient::Result{{best_lagr_mult}, best_lower_bound};
     }
 
 
@@ -306,27 +300,27 @@ namespace subgradient {
 
     // Greedily creates lagrangian multipliers for the given instance.
     std::vector<real_t> make_greedy_multipliers(Instance const& inst) {
-        auto multipliers = std::vector<real_t>(inst.rows.size(), limits<real_t>::max());
+        auto lagr_mult = std::vector<real_t>(inst.rows.size(), limits<real_t>::max());
 
         for (size_t i = 0; i < inst.rows.size(); ++i) {
             for (cidx_t const j : inst.rows[i]) {
                 real_t const candidate = inst.costs[j] / inst.cols[j].size();
-                multipliers[i]         = cft::min(multipliers[i], candidate);
+                lagr_mult[i]           = cft::min(lagr_mult[i], candidate);
             }
         }
 
-        return multipliers;
+        return lagr_mult;
     }
 
     std::vector<real_t> make_perturbed_multipliers(std::vector<real_t> const& multipliers,
                                                    cft::prng_t&               rnd) {
-        auto perturbed_multipliers = std::vector<real_t>(multipliers.size());
-        auto urd                   = std::uniform_real_distribution<real_t>(0.9, 1.1);
+        auto perturbed_lagr_mult = std::vector<real_t>(multipliers.size());
+        auto urd                 = std::uniform_real_distribution<real_t>(0.9, 1.1);
 
         for (size_t i = 0; i < multipliers.size(); ++i)
-            perturbed_multipliers[i] = urd(rnd) * multipliers[i];
+            perturbed_lagr_mult[i] = urd(rnd) * multipliers[i];
 
-        return perturbed_multipliers;
+        return perturbed_lagr_mult;
     }
 
     // Runs the subgradient phase on the given instance.
