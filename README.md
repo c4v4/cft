@@ -1,4 +1,7 @@
 # AC-CFT
+
+[![CMake on multiple platforms](https://github.com/falcopt/scp/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/falcopt/scp/actions/workflows/c-cpp.yml)
+
 Accorsi Luca and Cavaliere Francesco implementation of the CFT algorithm for the Set Covering problem.
 
 ## Build and run unit tests
