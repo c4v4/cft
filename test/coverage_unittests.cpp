@@ -54,12 +54,19 @@ TEST_CASE("test_multiples_rows_cover_set_coverage") {
     for (cidx_t j = 0; j < 4; ++j)
         REQUIRE(cs.cover(cols[j]) == cols[j].size());
     for (cidx_t j = 4; j < cols.size(); ++j) {
-        REQUIRE(!cs.is_redundant(cols[j]));
+        REQUIRE(cs.is_redundant_cover(cols[j]));
+        REQUIRE(!cs.is_redundant_uncover(cols[j]));
         REQUIRE(cs.cover(cols[j]) == 0);
-        REQUIRE(cs.is_redundant(cols[j]));
+
+        REQUIRE(cs.is_redundant_cover(cols[j]));
+        REQUIRE(cs.is_redundant_uncover(cols[j]));
         REQUIRE(cs.uncover(cols[j]) == 0);
-        REQUIRE(!cs.is_redundant(cols[j]));
+
+        REQUIRE(cs.is_redundant_cover(cols[j]));
+        REQUIRE(!cs.is_redundant_uncover(cols[j]));
         REQUIRE(cs.uncover(cols[j]) == cols[j].size());
+       
+        REQUIRE(!cs.is_redundant_cover(cols[j]));
     }
 
     cs.reset(nrows);
@@ -93,8 +100,10 @@ TEST_CASE("test_single_row_bit_set_coverage") {
     bs.reset(nrows);
     for (ridx_t i = 0; i < nrows; ++i)
         REQUIRE(bs[i] == 0);
-    for (cidx_t j = 0; j < ncols; ++j)
+    for (cidx_t j = 0; j < ncols; ++j){
+        REQUIRE(!bs.is_redundant_cover(cols[j]));
         REQUIRE(bs.cover(cols[j]) == cols[j].size());
+    }
 }
 
 TEST_CASE("test_multiples_rows_bit_set_coverage") {

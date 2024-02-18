@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "cft.hpp"
+#include "util_functions.hpp"
 
 namespace cft {
 
@@ -43,13 +44,21 @@ struct CoverCounters {
         return uncovered;
     }
 
+    /// @brief Check if all the elements of a subset are already covered.
     template <typename IterableT>
-    CFT_NODISCARD bool is_redundant(IterableT const& subset) {
+    CFT_NODISCARD bool is_redundant_cover(IterableT const& subset) {
         for (auto i : subset)
-            if (cov_counters[i] <= 1) {
-                assert(cov_counters[i] > 0);
+            if (cov_counters[i] == 0)
                 return false;
-            }
+        return true;
+    }
+
+    /// @brief Check if all the elements would still be covered if the subset was removed.
+    template <typename IterableT>
+    CFT_NODISCARD bool is_redundant_uncover(IterableT const& subset) {
+        for (auto i : subset)
+            if (cov_counters[i] <= 1)
+                return false;
         return true;
     }
 
@@ -98,6 +107,15 @@ struct CoverBits {
             uncovered += was_covered ? 1 : 0;
         }
         return uncovered;
+    }
+
+    /// @brief Check if all the elements of a subset are already covered.
+    template <typename IterableT>
+    CFT_NODISCARD bool is_redundant_cover(IterableT const& subset) {
+        for (auto i : subset)
+            if (!cov_flags[i])
+                return false;
+        return true;
     }
 
     CFT_NODISCARD bool operator[](size_t i) const {
