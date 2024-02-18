@@ -44,14 +44,22 @@ struct CoverCounters {
         return uncovered;
     }
 
+    /// @brief Check if all the elements of a subset are already covered.
     template <typename IterableT>
     CFT_NODISCARD bool is_redundant_cover(IterableT const& subset) {
-        return all(subset, [this](size_t i) { return cov_counters[i] > 0; });
+        for (auto i : subset)
+            if (cov_counters[i] == 0)
+                return false;
+        return true;
     }
 
+    /// @brief Check if all the elements would still be covered if the subset was removed.
     template <typename IterableT>
     CFT_NODISCARD bool is_redundant_uncover(IterableT const& subset) {
-        return all(subset, [this](size_t i) { return cov_counters[i] > 1; });
+        for (auto i : subset)
+            if (cov_counters[i] <= 1)
+                return false;
+        return true;
     }
 
     CFT_NODISCARD counter_t operator[](size_t i) const {
@@ -101,9 +109,13 @@ struct CoverBits {
         return uncovered;
     }
 
+    /// @brief Check if all the elements of a subset are already covered.
     template <typename IterableT>
     CFT_NODISCARD bool is_redundant_cover(IterableT const& subset) {
-        return all(subset, [this](size_t i) { return cov_flags[i]; });
+        for (auto i : subset)
+            if (!cov_flags[i])
+                return false;
+        return true;
     }
 
     CFT_NODISCARD bool operator[](size_t i) const {
