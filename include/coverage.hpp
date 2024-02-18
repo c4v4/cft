@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "cft.hpp"
+#include "util_functions.hpp"
 
 namespace cft {
 
@@ -44,13 +45,13 @@ struct CoverCounters {
     }
 
     template <typename IterableT>
-    CFT_NODISCARD bool is_redundant(IterableT const& subset) {
-        for (auto i : subset)
-            if (cov_counters[i] <= 1) {
-                assert(cov_counters[i] > 0);
-                return false;
-            }
-        return true;
+    CFT_NODISCARD bool is_redundant_cover(IterableT const& subset) {
+        return all(subset, [this](size_t i) { return cov_counters[i] > 0; });
+    }
+
+    template <typename IterableT>
+    CFT_NODISCARD bool is_redundant_uncover(IterableT const& subset) {
+        return all(subset, [this](size_t i) { return cov_counters[i] > 1; });
     }
 
     CFT_NODISCARD counter_t operator[](size_t i) const {
@@ -98,6 +99,11 @@ struct CoverBits {
             uncovered += was_covered ? 1 : 0;
         }
         return uncovered;
+    }
+
+    template <typename IterableT>
+    CFT_NODISCARD bool is_redundant_cover(IterableT const& subset) {
+        return all(subset, [this](size_t i) { return cov_flags[i]; });
     }
 
     CFT_NODISCARD bool operator[](size_t i) const {
