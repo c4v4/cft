@@ -1,3 +1,4 @@
+#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
 #include <array>
 #include <catch2/catch.hpp>
 #include <cstring>
@@ -99,7 +100,6 @@ TEST_CASE("test_single_row_bit_set_coverage") {
 TEST_CASE("test_multiples_rows_bit_set_coverage") {
 
     cidx_t nrows = 40;
-    ridx_t ncols = 7;
 
     auto cols = make_sparse_bin_mat<ridx_t>();
     cols.push_back({1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
@@ -128,7 +128,6 @@ TEST_CASE("test_multiples_rows_bit_set_coverage") {
     REQUIRE(bs.cover(cols.idxs) == nrows);
 
     size_t cover_count = 0;
-    size_t nnz         = 0;
     for (ridx_t i = 0; i < bs.size(); ++i)
         cover_count += bs[i] ? 1 : 0;
     REQUIRE(cover_count == nrows);

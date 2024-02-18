@@ -16,23 +16,31 @@ option(UNIT_TESTS "Build unit tests." OFF)
 
 if (UNIT_TESTS) # Build unit tests only.
 
-FetchContent_Declare(catch2 GIT_REPOSITORY https://github.com/catchorg/Catch2  GIT_TAG v2.x)
-FetchContent_MakeAvailable(Catch2)
+    FetchContent_Declare(catch2 GIT_REPOSITORY https://github.com/catchorg/Catch2  GIT_TAG v2.x)
+    FetchContent_MakeAvailable(Catch2)
+    set(LIBRARIES ${LIBRARIES} Catch2::Catch2)
 
-set(GCC_COVERAGE_COMPILE_FLAGS "-fprofile-arcs -ftest-coverage")
-set(GCC_COVERAGE_LINK_FLAGS    "-lgcov --coverage")
+    set(GCC_COVERAGE_COMPILE_FLAGS "-fprofile-arcs -ftest-coverage")
+    set(GCC_COVERAGE_LINK_FLAGS    "-lgcov --coverage")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WARNING_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
-set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}" )
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WARNING_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}" )
 
-add_executable(tests
-    test/parsing_unittests.cpp
-    test/StringView_unittests.cpp
-    test/coverage_unittests.cpp
-)
-target_link_libraries(tests PUBLIC ${LIBRARIES} Catch2::Catch2)
 
-else() # Build the actual solver.
+    # Simplified from fmtlib's CMakeLists.txt
+    function(add_cft_test name)
+        set(sources test/${name}.cpp)
+        add_executable(${name} ${sources})
+        target_link_libraries(${name} PUBLIC ${LIBRARIES})
+        add_test(NAME ${name} COMMAND ${name})
+    endfunction()
+
+    add_cft_test(parsing_unittests)
+    add_cft_test(StringView_unittests)
+    add_cft_test(coverage_unittests)
+    enable_testing()
+
+endif() # End -- Build the actual solver.
 
 set(WARNING_FLAGS "-Wall -Wextra -Wpedantic -Wuninitialized -Wshadow -Werror")
 set(SANITIZERS_FLAGS "-fno-omit-frame-pointer -fsanitize=address -fsanitize-address-use-after-scope -fsanitize=undefined")
@@ -60,10 +68,8 @@ else()
 endif()
 
 
-include_directories(include cavlib/include)
+include_directories(include)
 
 add_executable(accft ${SOURCE})
 
 target_link_libraries(accft PUBLIC ${LIBRARIES})
-
-endif() # End -- Build the actual solver.
