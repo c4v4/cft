@@ -4,6 +4,7 @@
 #include <algorithm>
 
 #include "Instance.hpp"
+#include "cft.hpp"
 #include "parsing.hpp"
 #include "subgradient.hpp"
 
@@ -42,9 +43,8 @@ int main(int argc, char const** argv) {
 
     cft::Instance inst = cft::make_instance(cft::parse_scp_instance(args[1]));
 
-    cft::subgradient::optimize(inst,
-                              /*upper_bound=*/1000,
-                              cft::subgradient::make_greedy_multipliers(inst));
+    cft::real_t upper_bound = 1000;
+    cft::optimize(inst, upper_bound, cft::compute_greedy_multipliers(inst));
 
     return EXIT_SUCCESS;
 }
