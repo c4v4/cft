@@ -30,42 +30,38 @@ struct ExploreResult {
     std::vector<std::vector<real_t>> lagr_mult_list;
 };
 
-// Stores data related to step size and its management.
-struct StepSizeData {
-    size_t iter;
+// Step size manager functor.
+struct StepSizeManager {
     size_t period;
+    size_t next_update_iter;
+    real_t curr_step_size;
     real_t min_lower_bound;
     real_t max_lower_bound;
+
+    // Computes the next step size.
+    CFT_NODISCARD real_t operator()(size_t iter, real_t lower_bound) {
+        min_lower_bound = cft::min(min_lower_bound, lower_bound);
+        max_lower_bound = cft::max(max_lower_bound, lower_bound);
+        if (iter == next_update_iter) {
+            real_t const diff = (max_lower_bound - min_lower_bound) / max_lower_bound;
+            if (diff > 0.01)
+                curr_step_size /= 2.0;
+            else if (diff <= 0.001)
+                curr_step_size *= 1.5;
+            next_update_iter += period;
+            min_lower_bound = limits<real_t>::max();
+            max_lower_bound = limits<real_t>::min();
+        }
+        return curr_step_size;
+    }
 };
 
-inline StepSizeData make_step_size_data(size_t period) {
-    size_t iter            = 0;
-    real_t min_lower_bound = limits<real_t>::max();
-    real_t max_lower_bound = limits<real_t>::min();
-    return StepSizeData{iter, period, min_lower_bound, max_lower_bound};
-}
-
-// Computes the next step size.
-inline real_t next_step_size(StepSizeData& d, real_t step_size, real_t lower_bound) {
-    d.min_lower_bound = cft::min(d.min_lower_bound, lower_bound);
-    d.max_lower_bound = cft::max(d.max_lower_bound, lower_bound);
-
-    ++d.iter;
-    if (d.iter == d.period) {
-
-        real_t const diff = (d.max_lower_bound - d.min_lower_bound) / d.max_lower_bound;
-        if (diff > 0.01)
-            step_size /= 2.0;
-        else if (diff <= 0.001)
-            step_size *= 1.5;
-
-        d.iter = 0;
-
-        d.max_lower_bound = limits<real_t>::min();
-        d.min_lower_bound = limits<real_t>::max();
-    }
-
-    return step_size;
+inline StepSizeManager make_step_size_manager(size_t period, real_t init_step_size) {
+    return StepSizeManager{period,
+                           period,
+                           init_step_size,
+                           limits<real_t>::max(),
+                           limits<real_t>::min()};
 }
 
 // A solution, i.e., a set of columns and its associated lower bound.
@@ -141,8 +137,7 @@ OptimizeResult optimize(Instance const&            inst,
                         real_t                     upper_bound,
                         std::vector<real_t> const& initial_lagr_mult) {
 
-    auto   step_size_data = make_step_size_data(20);
-    real_t step_size      = 0.1;
+    auto next_step_size = make_step_size_manager(20, 0.1);
 
     // TODO: consider moving to members.
     auto lagr_mult = initial_lagr_mult;
@@ -167,7 +162,7 @@ OptimizeResult optimize(Instance const&            inst,
 
         // TODO: add pricing.
 
-        step_size = next_step_size(step_size_data, step_size, sol.lower_bound);
+        real_t step_size = next_step_size(iter, sol.lower_bound);
 
         for (size_t i = 0; i < inst.rows.size(); ++i) {
             real_t normalized_bound_diff = (upper_bound - sol.lower_bound) / norm;
