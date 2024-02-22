@@ -44,7 +44,11 @@ int main(int argc, char const** argv) {
     cft::Instance inst = cft::make_instance(cft::parse_scp_instance(args[1]));
 
     cft::real_t upper_bound = 1000;
-    cft::optimize(inst, upper_bound, cft::compute_greedy_multipliers(inst));
+    cft::prng_t rnd(0); 
+    auto        opt_res = cft::optimize(inst, upper_bound, cft::compute_greedy_multipliers(inst));
+    auto        exp_res = cft::explore(inst,
+                                upper_bound,
+                                cft::compute_perturbed_multipliers(opt_res.lagr_mult, rnd));
 
     return EXIT_SUCCESS;
 }
