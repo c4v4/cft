@@ -54,6 +54,7 @@ struct Instance {
     std::vector<cidx_t> fixed_orig_idxs;
     real_t              fixed_cost;
 
+#ifndef NDEBUG
     void invariants_check() const {
         for (cidx_t j = 0; j < cols.size(); ++j) {
             assert("Col is empty" && !cols[j].empty());
@@ -69,6 +70,7 @@ struct Instance {
                 assert("Row not in col" && any(cols[j], [i](cidx_t ci) { return ci == i; }));
         }
     }
+#endif
 
     /// @brief Modifies instance by fixing columns in-place.
     /// New indexes are always <= old ones, allowing in-place external data structure updates.
