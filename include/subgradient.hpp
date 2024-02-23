@@ -2,6 +2,7 @@
 #define CFT_INCLUDE_SUBGRADIENT_HPP
 
 #include <vector>
+#include <random>
 
 #include "Instance.hpp"
 #include "cft.hpp"
