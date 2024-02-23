@@ -89,7 +89,7 @@ inline ExitConditionManager make_exit_condition_manager(size_t period) {
 }
 
 // A solution, i.e., a set of columns and its associated lower bound.
-struct Solution {
+struct SubgradientSolution {
 
     // Info describing a column in solution.
     struct ColInfo {
@@ -107,8 +107,9 @@ struct Solution {
 };
 
 // Computes a solution by inspection by including all columns having a negative reduced cost.
-inline Solution compute_solution(Instance const& inst, std::vector<real_t> const& lagr_mult) {
-    auto sol = Solution{};
+inline SubgradientSolution compute_subgradient_solution(Instance const&            inst,
+                                                        std::vector<real_t> const& lagr_mult) {
+    auto sol = SubgradientSolution{};
 
     sol.lower_bound = 0;
     for (real_t const value : lagr_mult)
@@ -121,7 +122,7 @@ inline Solution compute_solution(Instance const& inst, std::vector<real_t> const
             reduced_cost -= lagr_mult[i];
 
         if (reduced_cost < 0.0) {
-            sol.col_info.push_back(Solution::ColInfo{j, reduced_cost});
+            sol.col_info.push_back(SubgradientSolution::ColInfo{j, reduced_cost});
             sol.lower_bound += reduced_cost;
         }
     }
@@ -130,9 +131,10 @@ inline Solution compute_solution(Instance const& inst, std::vector<real_t> const
 }
 
 // Computes the row coverage of the given solution.
-inline CoverCounters<uint16_t> compute_row_coverage(Instance const& inst, Solution const& sol) {
+inline CoverCounters<uint16_t> compute_row_coverage(Instance const&            inst,
+                                                    SubgradientSolution const& sol) {
     // TODO: consider moving to member.
-    CoverCounters<uint16_t> row_coverage = make_cover_counters(inst.rows.size());
+    auto row_coverage = make_cover_counters(inst.rows.size());
 
     for (auto const& c : sol.col_info)
         row_coverage.cover(inst.cols[c.idx]);
@@ -141,14 +143,16 @@ inline CoverCounters<uint16_t> compute_row_coverage(Instance const& inst, Soluti
 }
 
 // Computes the row coverage of the given solution by including the best non-redundant columns.
-inline CoverCounters<uint16_t> compute_reduced_row_coverage(Instance const& inst, Solution& sol) {
+inline CoverCounters<uint16_t> compute_reduced_row_coverage(Instance const&      inst,
+                                                            SubgradientSolution& sol) {
     // TODO: consider moving to member.
     CoverCounters<uint16_t> row_coverage = make_cover_counters(inst.rows.size());
 
-    std::sort(
-        sol.col_info.begin(),
-        sol.col_info.end(),
-        [](Solution::ColInfo a, Solution::ColInfo b) { return a.reduced_cost < b.reduced_cost; });
+    std::sort(sol.col_info.begin(),
+              sol.col_info.end(),
+              [](SubgradientSolution::ColInfo a, SubgradientSolution::ColInfo b) {
+                  return a.reduced_cost < b.reduced_cost;
+              });
 
     // TODO: consider the opposite approach in which we first add all columns, identify the
     // redundant ones, sort them and remove the worst. This may allows us to sort less columns.
@@ -162,9 +166,9 @@ inline CoverCounters<uint16_t> compute_reduced_row_coverage(Instance const& inst
 }
 
 // Computes the subgradient squared norm according to the given row coverage.
-inline uint32_t compute_subgradient_norm(Instance const&                inst,
-                                         CoverCounters<uint16_t> const& row_coverage) {
-    uint32_t norm = 0.0;
+inline real_t compute_subgradient_norm(Instance const&                inst,
+                                       CoverCounters<uint16_t> const& row_coverage) {
+    uint32_t norm = 0;
     for (size_t i = 0; i < inst.rows.size(); ++i) {
         uint32_t violation = 1 - row_coverage[i];
         norm += violation * violation;
@@ -173,7 +177,7 @@ inline uint32_t compute_subgradient_norm(Instance const&                inst,
 }
 
 // Greedily creates lagrangian multipliers for the given instance.
-std::vector<real_t> compute_greedy_multipliers(Instance const& inst) {
+inline std::vector<real_t> compute_greedy_multipliers(Instance const& inst) {
     auto lagr_mult = std::vector<real_t>(inst.rows.size(), limits<real_t>::max());
 
     for (size_t i = 0; i < inst.rows.size(); ++i) {
@@ -187,8 +191,8 @@ std::vector<real_t> compute_greedy_multipliers(Instance const& inst) {
 }
 
 // Defines lagrangian multipliers as a perturbation of the given ones.
-std::vector<real_t> compute_perturbed_multipliers(std::vector<real_t> const& multipliers,
-                                                  cft::prng_t&               rnd) {
+inline std::vector<real_t> compute_perturbed_multipliers(std::vector<real_t> const& multipliers,
+                                                         cft::prng_t&               rnd) {
     auto perturbed_lagr_mult = std::vector<real_t>(multipliers.size());
     auto urd                 = std::uniform_real_distribution<real_t>(0.9, 1.1);
 
@@ -199,9 +203,9 @@ std::vector<real_t> compute_perturbed_multipliers(std::vector<real_t> const& mul
 }
 
 // TODO: Consider implementing it as a functor.
-OptimizeResult optimize(Instance const&            inst,
-                        real_t                     upper_bound,
-                        std::vector<real_t> const& initial_lagr_mult) {
+inline OptimizeResult optimize(Instance const&            inst,
+                               real_t                     upper_bound,
+                               std::vector<real_t> const& initial_lagr_mult) {
 
     auto next_step_size = make_step_size_manager(20, 0.1);
     auto should_exit    = make_exit_condition_manager(300);
@@ -212,9 +216,9 @@ OptimizeResult optimize(Instance const&            inst,
 
     size_t max_iters = 10 * inst.rows.size();
     for (size_t iter = 0; iter < max_iters; ++iter) {
-        auto     sol          = compute_solution(inst, lagr_mult);
-        auto     row_coverage = compute_row_coverage(inst, sol);
-        uint32_t norm         = compute_subgradient_norm(inst, row_coverage);
+        auto   sol          = compute_subgradient_solution(inst, lagr_mult);
+        auto   row_coverage = compute_row_coverage(inst, sol);
+        real_t norm         = compute_subgradient_norm(inst, row_coverage);
 
         // No constraints violated. Optimal (sub) instance solution?
         if (norm == 0) {
@@ -244,18 +248,18 @@ OptimizeResult optimize(Instance const&            inst,
 }
 
 // TODO: Consider implementing it as a functor.
-ExploreResult explore(Instance const&            inst,
-                      real_t                     upper_bound,
-                      std::vector<real_t> const& initial_lagr_mult) {
+inline ExploreResult explore(Instance const&            inst,
+                             real_t                     upper_bound,
+                             std::vector<real_t> const& initial_lagr_mult) {
 
     auto lagr_mult = initial_lagr_mult;
     auto res       = make_explore_result();
 
     size_t max_iters = 250;
     for (size_t iter = 0; iter < max_iters; ++iter) {
-        auto     sol          = compute_solution(inst, lagr_mult);
-        auto     row_coverage = compute_reduced_row_coverage(inst, sol);
-        uint32_t norm         = compute_subgradient_norm(inst, row_coverage);
+        auto   sol          = compute_subgradient_solution(inst, lagr_mult);
+        auto   row_coverage = compute_reduced_row_coverage(inst, sol);
+        real_t norm         = compute_subgradient_norm(inst, row_coverage);
 
         // No constraints violated. Optimal (sub) instance solution?
         if (norm == 0) {
