@@ -158,7 +158,7 @@ inline CoverCounters<uint16_t> compute_reduced_row_coverage(Instance const&     
     // redundant ones, sort them and remove the worst. This may allows us to sort less columns.
     for (auto const& c : sol.col_info) {
         auto const& col = inst.cols[c.idx];
-        if (!row_coverage.is_redundant(col))
+        if (!row_coverage.is_redundant_cover(col))
             row_coverage.cover(col);
     }
 
