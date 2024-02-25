@@ -38,6 +38,7 @@ if (UNIT_TESTS) # Build unit tests only.
     add_cft_test(parsing_unittests)
     add_cft_test(StringView_unittests)
     add_cft_test(coverage_unittests)
+    add_cft_test(SortedArray_unittests)
     enable_testing()
 
 endif() # End -- Build the actual solver.
