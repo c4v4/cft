@@ -1,13 +1,13 @@
 #ifndef CFT_INCLUDE_SUBGRADIENT_HPP
 #define CFT_INCLUDE_SUBGRADIENT_HPP
 
-#include <vector>
 #include <random>
+#include <vector>
 
-#include "Instance.hpp"
-#include "cft.hpp"
-#include "coverage.hpp"
-#include "util_functions.hpp"
+#include "core/cft.hpp"
+#include "core/coverage.hpp"
+#include "core/util_functions.hpp"
+#include "instance/Instance.hpp"
 
 namespace cft {
 

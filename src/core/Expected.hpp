@@ -4,7 +4,7 @@
 #include <cassert>
 #include <type_traits>
 
-#include "cft.hpp"
+#include "core/cft.hpp"
 
 namespace cft {
 

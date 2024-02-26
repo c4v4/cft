@@ -25,8 +25,8 @@
 #include <stdexcept>
 #include <type_traits>
 
-#include "StringView.hpp"
-#include "limits.hpp"
+#include "core/StringView.hpp"
+#include "core/limits.hpp"
 
 namespace cft {
 

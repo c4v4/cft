@@ -3,8 +3,8 @@
 
 #include <cassert>
 
-#include "Span.hpp"
-#include "cft.hpp"
+#include "core/Span.hpp"
+#include "core/cft.hpp"
 
 namespace cft {
 

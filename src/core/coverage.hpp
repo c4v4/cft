@@ -4,8 +4,8 @@
 #include <cassert>
 #include <vector>
 
-#include "cft.hpp"
-#include "util_functions.hpp"
+#include "core/cft.hpp"
+#include "core/util_functions.hpp"
 
 namespace cft {
 

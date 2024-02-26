@@ -22,7 +22,7 @@
 #include <functional>
 #include <utility>
 
-#include "cft.hpp"
+#include "core/cft.hpp"
 
 namespace cft {
 template <typename T, std::size_t Nm, typename Comp = std::less<T>>

@@ -19,11 +19,11 @@
 #include <cassert>
 #include <vector>
 
-#include "SparseBinMat.hpp"
-#include "StringView.hpp"
-#include "cft.hpp"
-#include "limits.hpp"
-#include "parse_utils.hpp"
+#include "core/SparseBinMat.hpp"
+#include "core/StringView.hpp"
+#include "core/cft.hpp"
+#include "core/limits.hpp"
+#include "instance/parse_utils.hpp"
 
 namespace cft {
 
