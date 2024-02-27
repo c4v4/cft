@@ -2,7 +2,7 @@
 #include <catch2/catch.hpp>
 #include <cstring>
 
-#include "../include/StringView.hpp"
+#include "core/StringView.hpp"
 
 namespace cft {
 

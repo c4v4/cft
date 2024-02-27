@@ -16,7 +16,7 @@
 #ifndef CAV_INCLUDE_UTIL_FUNCTIONS_HPP
 #define CAV_INCLUDE_UTIL_FUNCTIONS_HPP
 
-#include "cft.hpp"
+#include "core/cft.hpp"
 
 namespace cft {
 

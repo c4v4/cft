@@ -2,10 +2,10 @@
 #define CAV_INCLUDE_INSTANCE_HPPCFT_
 
 
-#include "SparseBinMat.hpp"
-#include "cft.hpp"
-#include "parsing.hpp"
-#include "util_functions.hpp"
+#include "core/SparseBinMat.hpp"
+#include "core/cft.hpp"
+#include "core/util_functions.hpp"
+#include "instance/parsing.hpp"
 
 #define REMOVED_INDEX (cft::limits<cidx_t>::max())
 

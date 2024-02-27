@@ -3,8 +3,8 @@
 #include <catch2/catch.hpp>
 #include <cstring>
 
-#include "../include/SparseBinMat.hpp"
-#include "../include/coverage.hpp"
+#include "core/SparseBinMat.hpp"
+#include "core/coverage.hpp"
 
 namespace cft {
 

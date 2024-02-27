@@ -3,10 +3,10 @@
 
 #include <algorithm>
 
-#include "Instance.hpp"
-#include "cft.hpp"
-#include "parsing.hpp"
-#include "subgradient.hpp"
+#include "core/cft.hpp"
+#include "instance/Instance.hpp"
+#include "instance/parsing.hpp"
+#include "subgradient/subgradient.hpp"
 
 void print_inst_summary(cft::InstanceData const& inst) {
     fmt::print("Instance summary:\n");
@@ -44,7 +44,7 @@ int main(int argc, char const** argv) {
     cft::Instance inst = cft::make_instance(cft::parse_scp_instance(args[1]));
 
     cft::real_t upper_bound = 1000;
-    cft::prng_t rnd(0); 
+    cft::prng_t rnd(0);
     auto        opt_res = cft::optimize(inst, upper_bound, cft::compute_greedy_multipliers(inst));
     auto        exp_res = cft::explore(inst,
                                 upper_bound,
