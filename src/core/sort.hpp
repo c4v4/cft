@@ -32,11 +32,17 @@ namespace {
     using container_size_type_t = decltype(std::declval<C>().size());
 }  // namespace
 
+struct IdentityFtor {
+    template <typename T>
+    T&& operator()(T&& t) const noexcept {
+        return std::forward<T>(t);
+    }
+};
 
 struct Sorter {
     // Temporary implementation with fallback to std::nth_element
-    template <typename C, typename K>
-    void nth_element(C& container, size_t nth_elem, K&& key) {
+    template <typename C, typename K = IdentityFtor>
+    void nth_element(C& container, size_t nth_elem, K&& key = {}) {
         using value_type = container_value_type_t<C>;
         std::nth_element(container.begin(),
                          container.begin() + nth_elem,
@@ -45,8 +51,8 @@ struct Sorter {
     }
 
     // Temporary implementation with fallback to std::sort
-    template <typename C, typename K>
-    void sort(C& container, K&& key) {
+    template <typename C, typename K = IdentityFtor>
+    void sort(C& container, K&& key = {}) {
         using value_type = container_value_type_t<C>;
         std::sort(container.begin(),
                   container.end(),
