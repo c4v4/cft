@@ -81,6 +81,39 @@ bool all(T const& container, O&& op) {
     return true;
 }
 
+template <typename C>
+size_t size(C const& container) {
+    return container.size();
+}
+
+template <typename C, size_t N>
+constexpr size_t size(C const (& /*unused*/)[N]) {
+    return N;
+}
+
+template <typename C, typename K>
+size_t argmin(C const& container, K key) {
+    size_t min_i   = 0;
+    auto   min_val = key(container[0]);
+    for (size_t i = 1; i < size(container); ++i) {
+        auto k = key(container[i]);
+        if (k < min_val) {
+            min_val = k;
+            min_i   = i;
+        }
+    }
+    return min_i;
+}
+
+template <typename C, typename O>
+void remove_if(C& container, O op) {
+    size_t w = 0;
+    for (size_t r = 0; r < size(container); ++r)
+        if (!op(container[r]))
+            container[w++] = container[r];
+    container.resize(w);
+}
+
 
 }  // namespace cft
 

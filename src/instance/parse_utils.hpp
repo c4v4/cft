@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef CAV_INCLUDE_FILELINEITER_HPPCFT_
-#define CAV_INCLUDE_FILELINEITER_HPPCFT_
+#ifndef CFT_INCLUDE_FILELINEITER_HPP
+#define CFT_INCLUDE_FILELINEITER_HPP
 
 #include <fmt/format.h>
 
@@ -135,4 +135,4 @@ inline FileLineIterator make_file_line_iterator(char const* path) {
 
 }  // namespace cft
 
-#endif /* CAV_INCLUDE_FILELINEITER_HPPCFT_ */
+#endif /* CFT_INCLUDE_FILELINEITER_HPP */

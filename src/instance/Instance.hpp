@@ -1,10 +1,9 @@
-#ifndef CAV_INCLUDE_INSTANCE_HPPCFT_
-#define CAV_INCLUDE_INSTANCE_HPPCFT_
+#ifndef CFT_INCLUDE_INSTANCE_HPP
+#define CFT_INCLUDE_INSTANCE_HPP
 
 
 #include "core/SparseBinMat.hpp"
 #include "core/cft.hpp"
-#include "core/util_functions.hpp"
 #include "instance/parsing.hpp"
 
 #define REMOVED_INDEX (cft::limits<cidx_t>::max())
@@ -216,4 +215,4 @@ inline Instance make_instance(InstanceData const& inst_data) {
 
 }  // namespace cft
 
-#endif /* CAV_INCLUDE_INSTANCE_HPPCFT_ */
+#endif /* CFT_INCLUDE_INSTANCE_HPP */

@@ -1,5 +1,5 @@
-#ifndef CAV_INCLUDE_EXPECTED_HPPCFT_
-#define CAV_INCLUDE_EXPECTED_HPPCFT_
+#ifndef CFT_INCLUDE_EXPECTED_HPP
+#define CFT_INCLUDE_EXPECTED_HPP
 
 #include <cassert>
 #include <type_traits>
@@ -53,4 +53,4 @@ CFT_NODISCARD static Expected<T, E> make_expected(T const& val) {
 
 }  // namespace cft
 
-#endif /* CAV_INCLUDE_EXPECTED_HPPCFT_ */
+#endif /* CFT_INCLUDE_EXPECTED_HPP */

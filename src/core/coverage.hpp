@@ -73,7 +73,7 @@ struct CoverCounters {
 };
 
 template <typename CounterT = uint16_t>
-CFT_NODISCARD inline CoverCounters<CounterT> make_cover_counters(size_t nelems) {
+CFT_NODISCARD inline CoverCounters<CounterT> make_cover_counters(size_t nelems = 0) {
     return {std::vector<CounterT>(nelems)};
 }
 
@@ -128,7 +128,7 @@ struct CoverBits {
     }
 };
 
-CFT_NODISCARD inline CoverBits make_cover_bits(size_t nelems) {
+CFT_NODISCARD inline CoverBits make_cover_bits(size_t nelems = 0) {
     return {std::vector<bool>(nelems)};
 }
 
