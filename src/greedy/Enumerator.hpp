@@ -18,6 +18,7 @@
 
 #include "core/cft.hpp"
 #include "greedy/RedundancySet.hpp"
+#include "instance/Instance.hpp"
 
 #define ENUM_VARS 10
 
@@ -28,7 +29,11 @@ struct Enumerator;
 
 template <>
 struct Enumerator<ENUM_VARS> {
-    static void invoke(RedundancyData& state, real_t lb, bool const* vars, bool* sol) {
+    static void invoke(Instance const& /*inst*/,
+                       RedundancyData& state,
+                       real_t          lb,
+                       bool const*     vars,
+                       bool*           sol) {
         if (lb < state.ub) {
             state.ub = lb;
             for (cidx_t s = 0; s < ENUM_VARS; ++s)
@@ -39,24 +44,28 @@ struct Enumerator<ENUM_VARS> {
 
 template <size_t Cur>
 struct Enumerator {
-    static void invoke(RedundancyData& red_data, real_t lb, bool* vars, bool* sol) {
+    static void invoke(Instance const& inst,
+                       RedundancyData& red_data,
+                       real_t          lb,
+                       bool*           vars,
+                       bool*           sol) {
         if (Cur == red_data.redund_set.size()) {
-            Enumerator<ENUM_VARS>::invoke(red_data, lb, vars, sol);
+            Enumerator<ENUM_VARS>::invoke(inst, red_data, lb, vars, sol);
             return;
         }
 
-        auto col    = red_data.redund_set[Cur].col;
-        auto new_lb = lb + red_data.redund_set[Cur].cost;
-        if (new_lb < red_data.ub && !red_data.cover_bits.is_redundant_cover(col)) {
+        auto col_idx = red_data.redund_set[Cur].col;
+        auto new_lb  = lb + red_data.redund_set[Cur].cost;
+        if (new_lb < red_data.ub && !red_data.cover_bits.is_redundant_cover(inst.cols[col_idx])) {
             vars[Cur] = true;
-            red_data.cover_bits.cover(col);
-            Enumerator<Cur + 1>::invoke(red_data, new_lb, vars, sol);
+            red_data.cover_bits.cover(inst.cols[col_idx]);
+            Enumerator<Cur + 1>::invoke(inst, red_data, new_lb, vars, sol);
             vars[Cur] = false;
-            red_data.cover_bits.uncover(col);
+            red_data.cover_bits.uncover(inst.cols[col_idx]);
         }
 
-        if (red_data.cover_counts.is_redundant_uncover(col))
-            Enumerator<Cur + 1>::invoke(red_data, lb, vars, sol);
+        if (red_data.cover_counts.is_redundant_uncover(inst.cols[col_idx]))
+            Enumerator<Cur + 1>::invoke(inst, red_data, lb, vars, sol);
     }
 };
 

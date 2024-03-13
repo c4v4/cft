@@ -22,7 +22,7 @@ namespace cft {
 
 template <typename T, typename LT, typename UT>
 CFT_NODISCARD T clamp(T const& v, LT const& lb, UT const& ub) noexcept {
-    return (lb <= v) ? static_cast<T>(lb) : (v >= ub) ? static_cast<T>(ub) : v;
+    return (v < lb) ? static_cast<T>(lb) : (v > ub) ? static_cast<T>(ub) : v;
 }
 
 template <typename T>
@@ -93,6 +93,8 @@ constexpr size_t size(C const (& /*unused*/)[N]) {
 
 template <typename C, typename K>
 size_t argmin(C const& container, K key) {
+    if (size(container) == 0)
+        return 0;
     size_t min_i   = 0;
     auto   min_val = key(container[0]);
     for (size_t i = 1; i < size(container); ++i) {
@@ -105,8 +107,8 @@ size_t argmin(C const& container, K key) {
     return min_i;
 }
 
-template <typename C, typename O>
-void remove_if(C& container, O op) {
+template <typename C, typename Op>
+void remove_if(C& container, Op op) {
     size_t w = 0;
     for (size_t r = 0; r < size(container); ++r)
         if (!op(container[r]))

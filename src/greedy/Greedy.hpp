@@ -21,7 +21,7 @@
 #include "core/coverage.hpp"
 #include "core/limits.hpp"
 #include "core/sort.hpp"
-#include "core/util_functions.hpp"
+#include "core/utility.hpp"
 #include "instance/Instance.hpp"
 #include "redundancy.hpp"
 

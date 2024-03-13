@@ -6,7 +6,7 @@
 #include "core/cft.hpp"
 #include "instance/parsing.hpp"
 
-#define REMOVED_INDEX (cft::limits<cidx_t>::max())
+#define CFT_REMOVED_IDX (cft::limits<cidx_t>::max())
 
 namespace cft {
 
@@ -106,14 +106,14 @@ private:
         size_t removed_rows = 0;
         for (cidx_t lj : cols_to_fix) {
             cidx_t gj = orig_maps.col_idxs[lj];
-            assert("Columns removed twice" && gj != REMOVED_INDEX);
+            assert("Columns removed twice" && gj != CFT_REMOVED_IDX);
 
             fixed_cost += costs[lj];                 // update fixed cost with new fixing
             fixed_orig_idxs.emplace_back(gj);        // add new fixed indexes
-            orig_maps.col_idxs[lj] = REMOVED_INDEX;  // mark column to be removed
+            orig_maps.col_idxs[lj] = CFT_REMOVED_IDX;  // mark column to be removed
             for (ridx_t li : cols[lj]) {
-                removed_rows += orig_maps.row_idxs[li] == REMOVED_INDEX ? 0 : 1;
-                orig_maps.row_idxs[li] = REMOVED_INDEX;  // mark row to be removed
+                removed_rows += orig_maps.row_idxs[li] == CFT_REMOVED_IDX ? 0 : 1;
+                orig_maps.row_idxs[li] = CFT_REMOVED_IDX;  // mark row to be removed
             }
         }
         return removed_rows;
@@ -134,7 +134,7 @@ private:
         ridx_t new_li = 0;
         for (ridx_t old_li = 0; old_li < old_nrows; ++old_li) {
             idx_maps.row_idxs[old_li] = new_li;
-            if (orig_maps.row_idxs[old_li] != REMOVED_INDEX) {
+            if (orig_maps.row_idxs[old_li] != CFT_REMOVED_IDX) {
                 rows[new_li]               = std::move(rows[old_li]);
                 orig_maps.row_idxs[new_li] = orig_maps.row_idxs[old_li];
                 ++new_li;
@@ -150,7 +150,7 @@ private:
         cidx_t new_lj = 0;
         for (ridx_t old_lj = 0; old_lj < old_ncols; ++old_lj) {
             idx_maps.col_idxs[old_lj] = new_lj;
-            if (orig_maps.col_idxs[old_lj] == REMOVED_INDEX)
+            if (orig_maps.col_idxs[old_lj] == CFT_REMOVED_IDX)
                 continue;
 
             if (new_lj != old_lj) {  // move col forward to new position

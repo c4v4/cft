@@ -6,7 +6,7 @@
 
 #include "core/cft.hpp"
 #include "core/coverage.hpp"
-#include "core/util_functions.hpp"
+#include "core/utility.hpp"
 #include "instance/Instance.hpp"
 
 namespace cft {

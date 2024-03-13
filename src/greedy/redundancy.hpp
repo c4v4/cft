@@ -77,7 +77,7 @@ inline real_t enumeration_removal(RedundancyData& red_set, Instance const& inst,
     bool vars[ENUM_VARS] = {};
     bool opt[ENUM_VARS]  = {};
 
-    Enumerator<0>::invoke(red_set, lb, vars, opt);
+    Enumerator<0>::invoke(inst, red_set, lb, vars, opt);
 
     for (cidx_t r = 0; r < red_set.redund_set.size(); ++r)
         if (!opt[r])

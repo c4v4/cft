@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "core/cft.hpp"
-#include "core/util_functions.hpp"
+#include "core/utility.hpp"
 
 namespace cft {
 

@@ -8,15 +8,18 @@
 #include "instance/Instance.hpp"
 
 namespace cft {
+struct ScoreData {
+    real_t gamma;
+    real_t score;
+    cidx_t col_idx;
+    ridx_t cover_count;
+};
 
-namespace {
-    struct ScoreData {
-        real_t gamma;
-        real_t score;
-        cidx_t col_idx;
-        ridx_t cover_count;
-    };
-}  // namespace
+struct ScoreFtor {
+    CFT_NODISCARD real_t operator()(ScoreData sd) const {
+        return sd.score;
+    }
+};
 
 struct Scores {
 private:
@@ -25,7 +28,7 @@ private:
     cidx_t                 good_size = 0;
 
     static inline real_t _compute_score(real_t gamma, ridx_t mu) {
-        if (mu == 0 || mu == REMOVED_INDEX)
+        if (mu == 0 || mu == CFT_REMOVED_IDX)
             return limits<real_t>::max();
         if (gamma > 0)
             return gamma / static_cast<real_t>(mu);
@@ -66,7 +69,7 @@ private:
                         cidx_t                     score_argmin) {
 
         cidx_t jstar                 = scores[score_argmin].col_idx;
-        scores[score_argmin].col_idx = REMOVED_INDEX;
+        scores[score_argmin].col_idx = CFT_REMOVED_IDX;
 
         auto col_star = inst.cols[jstar];
         for (ridx_t i : col_star) {
@@ -74,7 +77,7 @@ private:
                 continue;
             for (cidx_t j : inst.rows[i]) {
                 auto& score_data = scores[score_map[j]];
-                if (score_data.col_idx == REMOVED_INDEX)
+                if (score_data.col_idx == CFT_REMOVED_IDX)
                     continue;
                 score_data.cover_count -= 1;
                 score_data.gamma += lagr_mult[i];
@@ -100,7 +103,7 @@ public:
             _init_partial_sol_scores(inst, lagr_mult, cover_bits);
 
         good_size = min(nrows, ncols - sol_size);
-        sorter.nth_element(scores, good_size, [](ScoreData sd) { return sd.score; });
+        sorter.nth_element(scores, good_size, ScoreFtor{});
 
         score_map.resize(ncols);
         for (cidx_t s = 0; s < scores.size(); ++s)
@@ -113,14 +116,14 @@ public:
                                        Sorter&                    sorter) {
 
         auto   good_scores  = make_span(scores.begin(), good_size);
-        cidx_t score_argmin = argmin(good_scores, [](ScoreData sd) { return sd.score; });
+        cidx_t score_argmin = argmin(good_scores, ScoreFtor{});
         real_t score_min    = good_scores[score_argmin].score;
 
         if (score_min > scores[good_size].score) {
-            sorter.nth_element(scores, good_size, [](ScoreData sd) { return sd.score; });
+            sorter.nth_element(scores, good_size, ScoreFtor{});
             for (cidx_t s = 0; s < scores.size(); ++s)
                 score_map[scores[s].col_idx] = s;
-            score_argmin = argmin(good_scores, [](ScoreData sd) { return sd.score; });
+            score_argmin = argmin(good_scores, ScoreFtor{});
         }
 
         _update_scores(inst, lagr_mult, cover_bits, score_argmin);

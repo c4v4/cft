@@ -4,6 +4,7 @@
 #include <algorithm>
 
 #include "core/cft.hpp"
+#include "greedy/Greedy.hpp"
 #include "instance/Instance.hpp"
 #include "instance/parsing.hpp"
 #include "subgradient/subgradient.hpp"
@@ -49,6 +50,13 @@ int main(int argc, char const** argv) {
     auto        exp_res = cft::explore(inst,
                                 upper_bound,
                                 cft::compute_perturbed_multipliers(opt_res.lagr_mult, rnd));
+
+    auto greedy = cft::make_greedy();
+    for (auto& u_k : exp_res.lagr_mult_list) {
+        auto        inout_sol = std::vector<cft::cidx_t>{};
+        cft::real_t sol_cost  = greedy(inst, u_k, inout_sol);
+        fmt::print("Greedy solution cost: {} (sol: {})\n", sol_cost, inout_sol);
+    }
 
     return EXIT_SUCCESS;
 }

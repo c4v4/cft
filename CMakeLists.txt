@@ -36,6 +36,7 @@ if (UNIT_TESTS) # Build unit tests only.
     endfunction()
 
     add_cft_test(parsing_unittests)
+    add_cft_test(utility_unittests)
     add_cft_test(StringView_unittests)
     add_cft_test(coverage_unittests)
     add_cft_test(SortedArray_unittests)
