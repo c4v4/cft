@@ -51,12 +51,18 @@ int main(int argc, char const** argv) {
                                 upper_bound,
                                 cft::compute_perturbed_multipliers(opt_res.lagr_mult, rnd));
 
-    auto greedy = cft::make_greedy();
+    auto greedy    = cft::make_greedy();
+    auto best_cost = cft::limits<cft::real_t>::max();
     for (auto& u_k : exp_res.lagr_mult_list) {
         auto        inout_sol = std::vector<cft::cidx_t>{};
-        cft::real_t sol_cost  = greedy(inst, u_k, inout_sol);
-        fmt::print("Greedy solution cost: {} (sol: {})\n", sol_cost, inout_sol);
+        cft::real_t sol_cost  = greedy(inst, u_k, inout_sol, best_cost);
+        best_cost             = std::min(best_cost, sol_cost);
+        fmt::print("Greedy solution cost: {}, best: {} (sol: {})\n",
+                   sol_cost,
+                   best_cost,
+                   inout_sol);
     }
+
 
     return EXIT_SUCCESS;
 }

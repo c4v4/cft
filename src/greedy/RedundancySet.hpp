@@ -27,12 +27,13 @@ struct CidxAndCost {  // TODO(cava): if used elsewhere, can be move in core/
     real_t cost;
 };
 
+/// @brief Data structure to store the redundancy set and related information
 struct RedundancyData {
-    std::vector<CidxAndCost> redund_set;
-    CoverCounters<>          cover_counts;
-    CoverBits                cover_bits;
-    std::vector<cidx_t>      cols_to_remove;
-    real_t                   ub;
+    std::vector<CidxAndCost> redund_set;      // redundant columns + their cost
+    CoverCounters<>          total_cover;     // row-cov if all the remaining columns are selected
+    CoverBits                curr_cover;      // row-cov if we selected the current column
+    std::vector<cidx_t>      cols_to_remove;  // list of columns to remove
+    real_t                   ub;              // current best upper bound
 };
 
 inline RedundancyData make_redundancy_data(ridx_t nrows = 0) {
