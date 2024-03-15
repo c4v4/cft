@@ -72,14 +72,18 @@ inline StepSizeManager make_step_size_manager(size_t period, real_t init_step_si
 struct ExitConditionManager {
     size_t period;
     size_t next_update_iter;
-    real_t reference_lower_bound;
+    real_t prev_lower_bound;
 
+    /// @brief Evaluates the exit condition by comparing the current best lower-bound with the
+    /// previous period's best lower-bound. Returns the original CFT exit condition based on the
+    /// absolute and relative improvement in the lower-bound.
     CFT_NODISCARD bool operator()(size_t iter, real_t lower_bound) {
         if (iter == next_update_iter) {
             next_update_iter += period;
-            real_t improvement = lower_bound - reference_lower_bound;
-            real_t gap         = improvement / lower_bound;
-            return improvement < 1.0 && gap < 0.001;
+            real_t abs_improvement      = lower_bound - prev_lower_bound;
+            real_t relative_improvement = abs_improvement / lower_bound;
+            prev_lower_bound            = lower_bound;
+            return abs_improvement < 1.0 && relative_improvement < 0.001;
         }
         return false;
     }
