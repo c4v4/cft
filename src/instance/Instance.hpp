@@ -4,6 +4,7 @@
 
 #include "core/SparseBinMat.hpp"
 #include "core/cft.hpp"
+#include "core/utility.hpp"
 #include "instance/parsing.hpp"
 
 #define CFT_REMOVED_IDX (cft::limits<cidx_t>::max())
@@ -13,7 +14,7 @@ namespace cft {
 
 /// @brief `IdxMaps` tracks index mappings for a new Instance. It is used to maintain a
 /// local-to-global mapping with the original instance when stored within Instance, and to
-/// communicate old-to-new mappings when part of the instance is fixed.
+/// communicate new-to-old mappings when part of the instance is fixed.
 /// An empty map signifies no changes, acting as an identity mapping.
 struct IdxMaps {
     std::vector<cidx_t> col_idxs;
@@ -70,109 +71,6 @@ struct Instance {
         }
     }
 #endif
-
-    /// @brief Modifies instance by fixing columns in-place.
-    /// New indexes are always <= old ones, allowing in-place external data structure updates.
-    /// Note: Column fixing is irreversible, i.e., you cannot get the original instance from the
-    /// subinstance.
-    IdxMaps fix_columns(std::vector<cidx_t> const& cols_to_fix) {
-        auto idx_maps = make_idx_maps();
-        fix_columns(cols_to_fix, idx_maps);
-        return idx_maps;
-    }
-
-    void fix_columns(std::vector<cidx_t> const& cols_to_fix, IdxMaps& idx_maps) {
-        idx_maps.clear();
-        if (cols_to_fix.empty())
-            return;
-
-        ridx_t removed_rows = _mark_and_update_fixed_elements(cols_to_fix);
-
-        // If all rows were removed, clear everything
-        if (removed_rows == rows.size()) {
-            _set_inst_as_empty();
-            return;
-        }
-
-        // Map old rows and columns to new ones based on whats has been marked
-        _adjust_rows_pos_and_fill_map(idx_maps);
-        _adjust_cols_pos_and_idxs_and_fill_map(idx_maps);
-        _adjust_rows_idxs(idx_maps);
-    }
-
-private:
-    /// @brief Mark columns and rows to be removed and update fixed cols and costs
-    ridx_t _mark_and_update_fixed_elements(std::vector<cidx_t> const& cols_to_fix) {
-        size_t removed_rows = 0;
-        for (cidx_t lj : cols_to_fix) {
-            cidx_t gj = orig_maps.col_idxs[lj];
-            assert("Columns removed twice" && gj != CFT_REMOVED_IDX);
-
-            fixed_cost += costs[lj];                   // update fixed cost with new fixing
-            fixed_orig_idxs.emplace_back(gj);          // add new fixed indexes
-            orig_maps.col_idxs[lj] = CFT_REMOVED_IDX;  // mark column to be removed
-            for (ridx_t li : cols[lj]) {
-                removed_rows += orig_maps.row_idxs[li] == CFT_REMOVED_IDX ? 0 : 1;
-                orig_maps.row_idxs[li] = CFT_REMOVED_IDX;  // mark row to be removed
-            }
-        }
-        return removed_rows;
-    }
-
-    void _set_inst_as_empty() {
-        cols.clear();
-        rows.clear();
-        costs.clear();
-        solcosts.clear();
-        orig_maps.clear();
-    }
-
-    /// @brief Remove marked rows and make old->new row mapping
-    void _adjust_rows_pos_and_fill_map(IdxMaps& idx_maps) {
-        ridx_t old_nrows = rows.size();
-        idx_maps.row_idxs.resize(old_nrows);
-        ridx_t new_li = 0;
-        for (ridx_t old_li = 0; old_li < old_nrows; ++old_li) {
-            idx_maps.row_idxs[old_li] = new_li;
-            if (orig_maps.row_idxs[old_li] != CFT_REMOVED_IDX) {
-                rows[new_li]               = std::move(rows[old_li]);
-                orig_maps.row_idxs[new_li] = orig_maps.row_idxs[old_li];
-                ++new_li;
-            }
-        }
-        orig_maps.row_idxs.resize(new_li);
-    }
-
-    /// @brief Remove marked columns adjusting row indexes and make old->new col mapping
-    void _adjust_cols_pos_and_idxs_and_fill_map(IdxMaps& idx_maps) {
-        cidx_t old_ncols = cols.size();
-        idx_maps.col_idxs.resize(old_ncols);
-        cidx_t new_lj = 0;
-        for (ridx_t old_lj = 0; old_lj < old_ncols; ++old_lj) {
-            idx_maps.col_idxs[old_lj] = new_lj;
-            if (orig_maps.col_idxs[old_lj] == CFT_REMOVED_IDX)
-                continue;
-
-            if (new_lj != old_lj) {  // move col forward to new position
-                cols.begs[new_lj + 1] = cols.begs[new_lj] + cols[old_lj].size();
-                size_t n = cols.begs[new_lj], o = cols.begs[old_lj];
-                while (o < cols.begs[old_lj + 1])
-                    cols.idxs[n++] = idx_maps.row_idxs[cols.idxs[o++]];
-            }
-            costs[new_lj]              = costs[old_lj];
-            solcosts[new_lj]           = solcosts[old_lj];
-            orig_maps.col_idxs[new_lj] = orig_maps.col_idxs[old_lj];
-            ++new_lj;
-        }
-        orig_maps.col_idxs.resize(new_lj);
-    }
-
-    /// @brief Adjust column indexes stored in eanch row
-    void _adjust_rows_idxs(IdxMaps const& idx_maps) {
-        for (auto& row : rows)
-            for (cidx_t& j : row)
-                j = idx_maps.col_idxs[j];
-    }
 };
 
 namespace {
