@@ -77,7 +77,7 @@ struct ColFixing {
         //}
         for (ridx_t ri = 0; ri < lagr_mult.size(); ++ri)
             if (idx_map.row_idxs[ri] != CFT_REMOVED_IDX) {
-                assert(ri >= idx_map.row_idxs[ri]);
+                assert(idx_map.row_idxs[ri] <= ri);
                 lagr_mult[idx_map.row_idxs[ri]] = lagr_mult[ri];
             }
     }
