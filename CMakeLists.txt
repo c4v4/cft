@@ -28,18 +28,28 @@ if (UNIT_TESTS) # Build unit tests only.
 
 
     # Simplified from fmtlib's CMakeLists.txt
-    function(add_cft_test name)
-        set(sources test/${name}.cpp)
-        add_executable(${name} ${sources})
-        target_link_libraries(${name} PUBLIC ${LIBRARIES})
-        add_test(NAME ${name} COMMAND ${name})
-    endfunction()
+    #function(add_cft_test name)
+    #    set(sources test/${name}.cpp)
+    #    target_link_libraries(${name} PUBLIC ${LIBRARIES})
+    #    add_test(NAME ${name} COMMAND ${name})
+    #endfunction()
+#
+    #add_cft_test(parsing_unittests)
+    #add_cft_test(utility_unittests)
+    #add_cft_test(StringView_unittests)
+    #add_cft_test(coverage_unittests)
+    #add_cft_test(SortedArray_unittests)
 
-    add_cft_test(parsing_unittests)
-    add_cft_test(utility_unittests)
-    add_cft_test(StringView_unittests)
-    add_cft_test(coverage_unittests)
-    add_cft_test(SortedArray_unittests)
+    set(SOURCES test/tests.cpp
+                test/parsing_unittests.cpp
+                test/utility_unittests.cpp
+                test/StringView_unittests.cpp
+                test/coverage_unittests.cpp
+                test/SortedArray_unittests.cpp)
+
+    add_executable(tests ${SOURCES})
+    target_link_libraries(tests PUBLIC ${LIBRARIES})
+    add_test(NAME tests COMMAND tests)
     enable_testing()
 
 endif() # End -- Build the actual solver.
