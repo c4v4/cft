@@ -20,15 +20,19 @@
 #include "greedy/RedundancySet.hpp"
 #include "instance/Instance.hpp"
 
-#define ENUM_VARS 10
+#define CFT_ENUM_VARS 10
 
 namespace cft {
 
+/// @brief When the threshold is below a certain value, we can enumerate all possible non-redundant
+/// combinations. As the threshold is known at compile-time, the enumeration has a fixed maximum
+/// depth. Enumerator utilizes partial specialization (since `if constexpr` is a C++17 feature)
+/// to limit the number of enumeration steps and (technically) remove the recursion.
 template <size_t Cur>
 struct Enumerator;
 
 template <>
-struct Enumerator<ENUM_VARS> {
+struct Enumerator<CFT_ENUM_VARS> {
     static void invoke(Instance const& /*inst*/,
                        RedundancyData& state,
                        real_t          lb,
@@ -36,36 +40,36 @@ struct Enumerator<ENUM_VARS> {
                        bool*           sol) {
         if (lb < state.ub) {
             state.ub = lb;
-            for (cidx_t s = 0; s < ENUM_VARS; ++s)
+            for (cidx_t s = 0; s < CFT_ENUM_VARS; ++s)
                 sol[s] = vars[s];
         }
     }
 };
 
-template <size_t Cur>
+template <size_t Depth>
 struct Enumerator {
     static void invoke(Instance const& inst,
                        RedundancyData& red_data,
                        real_t          lb,
                        bool*           vars,
                        bool*           sol) {
-        if (Cur == red_data.redund_set.size()) {
-            Enumerator<ENUM_VARS>::invoke(inst, red_data, lb, vars, sol);
+        if (Depth == red_data.redund_set.size()) {
+            Enumerator<CFT_ENUM_VARS>::invoke(inst, red_data, lb, vars, sol);
             return;
         }
 
-        auto col_idx = red_data.redund_set[Cur].col;
-        auto new_lb  = lb + red_data.redund_set[Cur].cost;
-        if (new_lb < red_data.ub && !red_data.cover_bits.is_redundant_cover(inst.cols[col_idx])) {
-            vars[Cur] = true;
-            red_data.cover_bits.cover(inst.cols[col_idx]);
-            Enumerator<Cur + 1>::invoke(inst, red_data, new_lb, vars, sol);
-            vars[Cur] = false;
-            red_data.cover_bits.uncover(inst.cols[col_idx]);
+        auto col_idx = red_data.redund_set[Depth].col;
+        auto new_lb  = lb + red_data.redund_set[Depth].cost;
+        if (new_lb < red_data.ub && !red_data.curr_cover.is_redundant_cover(inst.cols[col_idx])) {
+            vars[Depth] = true;
+            red_data.curr_cover.cover(inst.cols[col_idx]);
+            Enumerator<Depth + 1>::invoke(inst, red_data, new_lb, vars, sol);
+            vars[Depth] = false;
+            red_data.curr_cover.uncover(inst.cols[col_idx]);
         }
 
-        if (red_data.cover_counts.is_redundant_uncover(inst.cols[col_idx]))
-            Enumerator<Cur + 1>::invoke(inst, red_data, lb, vars, sol);
+        if (red_data.total_cover.is_redundant_uncover(inst.cols[col_idx]))
+            Enumerator<Depth + 1>::invoke(inst, red_data, lb, vars, sol);
     }
 };
 
