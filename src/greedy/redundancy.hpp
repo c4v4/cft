@@ -51,7 +51,7 @@ inline real_t init_redund_set(RedundancyData&            red_data,
 }
 
 inline real_t heuristic_removal(RedundancyData& red_set, Instance const& inst, real_t lb) {
-    while (lb < red_set.ub && red_set.redund_set.size() > ENUM_VARS) {
+    while (lb < red_set.ub && red_set.redund_set.size() > CFT_ENUM_VARS) {
         cidx_t j = red_set.redund_set.back().col;
         red_set.redund_set.pop_back();
         red_set.total_cover.uncover(inst.cols[j]);
@@ -62,24 +62,24 @@ inline real_t heuristic_removal(RedundancyData& red_set, Instance const& inst, r
         // TODO(cava): test if it actually improve/degrade performace/quality
         remove_if(red_set.redund_set, [&](CidxAndCost x) {
             if (red_set.total_cover.is_redundant_uncover(inst.cols[x.col]))
-                return false;
+                return true;
             lb += inst.costs[x.col];
-            return true;
+            return false;
         });
     }
     return lb;
 }
 
 inline real_t enumeration_removal(RedundancyData& red_set, Instance const& inst, real_t lb) {
-    assert(red_set.redund_set.size() <= ENUM_VARS);
+    assert(red_set.redund_set.size() <= CFT_ENUM_VARS);
     real_t old_ub = red_set.ub;
     if (lb >= old_ub || red_set.redund_set.empty())
         return lb;
 
     // TODO(cava): Redundant set can be an instance like, with a subset of rows and columns
-    auto curr_cover                 = make_cover_bits(inst.rows.size());
-    bool curr_keep_state[ENUM_VARS] = {};
-    bool cols_to_keep[ENUM_VARS]    = {};
+    auto curr_cover                     = make_cover_bits(inst.rows.size());
+    bool curr_keep_state[CFT_ENUM_VARS] = {};
+    bool cols_to_keep[CFT_ENUM_VARS]    = {};
 
     Enumerator<0>::invoke(inst, red_set, lb, curr_keep_state, cols_to_keep);
 

@@ -20,7 +20,7 @@
 #include "greedy/RedundancySet.hpp"
 #include "instance/Instance.hpp"
 
-#define ENUM_VARS 10
+#define CFT_ENUM_VARS 10
 
 namespace cft {
 
@@ -32,7 +32,7 @@ template <size_t Cur>
 struct Enumerator;
 
 template <>
-struct Enumerator<ENUM_VARS> {
+struct Enumerator<CFT_ENUM_VARS> {
     static void invoke(Instance const& /*inst*/,
                        RedundancyData& state,
                        real_t          lb,
@@ -40,7 +40,7 @@ struct Enumerator<ENUM_VARS> {
                        bool*           sol) {
         if (lb < state.ub) {
             state.ub = lb;
-            for (cidx_t s = 0; s < ENUM_VARS; ++s)
+            for (cidx_t s = 0; s < CFT_ENUM_VARS; ++s)
                 sol[s] = vars[s];
         }
     }
@@ -54,7 +54,7 @@ struct Enumerator {
                        bool*           vars,
                        bool*           sol) {
         if (Depth == red_data.redund_set.size()) {
-            Enumerator<ENUM_VARS>::invoke(inst, red_data, lb, vars, sol);
+            Enumerator<CFT_ENUM_VARS>::invoke(inst, red_data, lb, vars, sol);
             return;
         }
 
