@@ -34,42 +34,62 @@ struct Enumerator;
 template <>
 struct Enumerator<CFT_ENUM_VARS> {
     static void invoke(Instance const& /*inst*/,
-                       RedundancyData& state,
-                       real_t          lb,
+                       RedundancyData& red_data,
                        bool const*     vars,
                        bool*           sol) {
-        if (lb < state.ub) {
-            state.ub = lb;
+        if (red_data.partial_cost < red_data.best_cost) {
+            red_data.best_cost = red_data.partial_cost;
             for (cidx_t s = 0; s < CFT_ENUM_VARS; ++s)
                 sol[s] = vars[s];
         }
+
+#ifndef NDEBUG
+        for (ridx_t i = 0; i < red_data.partial_cover.size(); ++i) {
+            assert(red_data.total_cover[i] > 0);
+            assert(red_data.partial_cover[i] == true);
+        }
+#endif
     }
 };
 
 template <size_t Depth>
 struct Enumerator {
-    static void invoke(Instance const& inst,
-                       RedundancyData& red_data,
-                       real_t          lb,
-                       bool*           vars,
-                       bool*           sol) {
+    static void invoke(Instance const& inst, RedundancyData& red_data, bool* vars, bool* sol) {
+
+#ifndef NDEBUG
+        for (ridx_t i = 0; i < red_data.partial_cover.size(); ++i)
+            assert(red_data.total_cover[i] > 0);
+#endif
+
         if (Depth == red_data.redund_set.size()) {
-            Enumerator<CFT_ENUM_VARS>::invoke(inst, red_data, lb, vars, sol);
+            Enumerator<CFT_ENUM_VARS>::invoke(inst, red_data, vars, sol);
             return;
         }
 
         auto col_idx = red_data.redund_set[Depth].col;
-        auto new_lb  = lb + red_data.redund_set[Depth].cost;
-        if (new_lb < red_data.ub && !red_data.curr_cover.is_redundant_cover(inst.cols[col_idx])) {
+
+        assert(!red_data.partial_cover.is_redundant_cover(inst.cols[col_idx]) ||
+               red_data.total_cover.is_redundant_uncover(inst.cols[col_idx]));
+
+        if (red_data.partial_cost + red_data.redund_set[Depth].cost < red_data.best_cost &&
+            !red_data.partial_cover.is_redundant_cover(inst.cols[col_idx])) {
+
             vars[Depth] = true;
-            red_data.curr_cover.cover(inst.cols[col_idx]);
-            Enumerator<Depth + 1>::invoke(inst, red_data, new_lb, vars, sol);
+            red_data.partial_cover.cover(inst.cols[col_idx]);
+            red_data.partial_cost += red_data.redund_set[Depth].cost;
+
+            Enumerator<Depth + 1>::invoke(inst, red_data, vars, sol);
+
             vars[Depth] = false;
-            red_data.curr_cover.uncover(inst.cols[col_idx]);
+            red_data.partial_cover.uncover(inst.cols[col_idx]);
+            red_data.partial_cost -= red_data.redund_set[Depth].cost;
         }
 
-        if (red_data.total_cover.is_redundant_uncover(inst.cols[col_idx]))
-            Enumerator<Depth + 1>::invoke(inst, red_data, lb, vars, sol);
+        if (red_data.total_cover.is_redundant_uncover(inst.cols[col_idx])) {
+            red_data.total_cover.uncover(inst.cols[col_idx]);
+            Enumerator<Depth + 1>::invoke(inst, red_data, vars, sol);
+            red_data.total_cover.cover(inst.cols[col_idx]);
+        }
     }
 };
 

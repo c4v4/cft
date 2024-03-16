@@ -21,7 +21,7 @@
 #include "core/coverage.hpp"
 #include "core/limits.hpp"
 #include "core/sort.hpp"
-#include "core/utility.hpp"
+#include "greedy/RedundancySet.hpp"
 #include "instance/Instance.hpp"
 #include "redundancy.hpp"
 
@@ -43,54 +43,75 @@ struct Greedy {
     /// 1. Initialize column scores (based on the current lagragian multipliers)
     /// 2. Add the column with the best score (until the solution is "complete")
     /// 3. If present, remove redundant columns from the solution
+    /// NOTE: a valid solution is returned only if its cost is below the cutoff_cost
     real_t operator()(Instance const&            inst,
                       std::vector<real_t> const& lagr_mult,
                       std::vector<cidx_t>&       sol,
-                      real_t                     upper_bound  = limits<real_t>::max(),
+                      real_t                     cutoff_cost  = limits<real_t>::max(),
                       cidx_t                     max_sol_size = limits<cidx_t>::max()) {
 
         ridx_t nrows_to_cover = inst.rows.size();
-        red_set.curr_cover.reset(inst.rows.size());
+
+        auto& total_cover = red_set.total_cover;
+        total_cover.reset(inst.rows.size());
 
         if (sol.empty())
             scores.init_scores(inst, lagr_mult, sorter);
         else {
             for (cidx_t j : sol)
-                nrows_to_cover -= red_set.curr_cover.cover(inst.cols[j]);
-            scores.init_scores(inst, lagr_mult, red_set.curr_cover, sorter);
+                nrows_to_cover -= total_cover.cover(inst.cols[j]);
+            scores.init_scores(inst, lagr_mult, total_cover, sorter);
         }
 
+        // Fill solution
         while (nrows_to_cover > 0 && sol.size() < max_sol_size) {
-            cidx_t jstar = scores.extract_minscore_col(inst, lagr_mult, red_set.curr_cover, sorter);
+            cidx_t jstar = scores.extract_minscore_col(inst, lagr_mult, total_cover, sorter);
             sol.push_back(jstar);
-            nrows_to_cover -= red_set.curr_cover.cover(inst.cols[jstar]);
+            nrows_to_cover -= total_cover.cover(inst.cols[jstar]);
         }
 
-        return _remove_redundant_cols(inst, sol, upper_bound);
-    }
+        // Redundancy removal
+        _complete_init_redund_set(red_set, inst, sol, cutoff_cost);
+        if (red_set.partial_cost >= cutoff_cost || red_set.redund_set.empty())
+            return red_set.partial_cost;
 
-private:
-    /// @brief Remove redundant columns from the solution. Over a certain threshold, columns are
-    /// removed heuristically, under that threshold, they are removed by enumeration.
-    real_t _remove_redundant_cols(Instance const& inst, std::vector<cidx_t>& sol, real_t ub) {
+        heuristic_removal(red_set, inst);
+        if (red_set.partial_cost >= cutoff_cost || red_set.redund_set.empty())
+            return red_set.partial_cost;
 
-        real_t curr_sol_cost = init_redund_set(red_set, inst, sol, ub, sorter);
-        if (curr_sol_cost >= ub || red_set.redund_set.empty())
-            return curr_sol_cost;
-
-        curr_sol_cost = heuristic_removal(red_set, inst, curr_sol_cost);
-        if (curr_sol_cost >= ub || red_set.redund_set.empty())
-            return curr_sol_cost;
-
-        curr_sol_cost = enumeration_removal(red_set, inst, curr_sol_cost);
-        if (curr_sol_cost >= ub)
-            return curr_sol_cost;
+        enumeration_removal(red_set, inst);
+        if (red_set.best_cost >= cutoff_cost)
+            return red_set.best_cost;
 
         remove_if(sol, [&](cidx_t j) {
             return any(red_set.cols_to_remove, [j](cidx_t r) { return r == j; });
         });
 
-        return curr_sol_cost;
+        return red_set.best_cost;
+    }
+
+private:
+    void _complete_init_redund_set(RedundancyData&            red_data,
+                                   Instance const&            inst,
+                                   std::vector<cidx_t> const& sol,
+                                   real_t                     upper_bound) {
+
+        red_data.redund_set.clear();
+        red_data.partial_cover.reset(inst.rows.size());
+        red_data.cols_to_remove.clear();
+        red_data.best_cost    = upper_bound;
+        red_data.partial_cost = 0.0;
+
+        for (cidx_t j : sol)
+            if (red_data.total_cover.is_redundant_uncover(inst.cols[j]))
+                red_data.redund_set.push_back({j, inst.costs[j]});
+            else {
+                red_data.partial_cover.cover(inst.cols[j]);
+                red_data.partial_cost += inst.costs[j];
+                if (red_data.partial_cost >= red_data.best_cost)
+                    return;
+            }
+        sorter.sort(red_data.redund_set, [&](CidxAndCost x) { return inst.costs[x.col]; });
     }
 };
 

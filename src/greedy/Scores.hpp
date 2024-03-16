@@ -39,13 +39,13 @@ private:
 
     void _update_changed_scores(Instance const&            inst,
                                 std::vector<real_t> const& lagr_mult,
-                                CoverBits const&           cover_bits,
+                                CoverCounters<> const&     cover_counts,
                                 cidx_t                     score_argmin) {
 
         cidx_t jstar    = scores[score_argmin].col_idx;
         auto   col_star = inst.cols[jstar];
         for (ridx_t i : col_star) {
-            if (cover_bits[i])
+            if (cover_counts[i] > 0)
                 continue;
             for (cidx_t j : inst.rows[i]) {
                 auto& score_data = scores[score_map[j]];
@@ -54,6 +54,8 @@ private:
 
                 // TODO(cava): in theory, scores can be updated once at the end
                 score_data.score = _compute_score(score_data.gamma, score_data.cover_count);
+                assert(std::isfinite(score_data.gamma) && "Gamma is not finite");
+                assert(std::isfinite(score_data.score) && "Score is not finite");
                 if (score_data.cover_count == 0)
                     --active_cols;
             }
@@ -81,11 +83,16 @@ public:
         active_cols = inst.cols.size();
         for (cidx_t j = 0; j < inst.cols.size(); ++j) {
             real_t gamma = inst.costs[j];
-            for (ridx_t i : inst.cols[j])
+            for (ridx_t i : inst.cols[j]) {
                 gamma -= lagr_mult[i];
+                assert(std::isfinite(lagr_mult[i]) && "Multiplier is not finite");
+            }
+
             cidx_t cover_num = inst.cols[j].size();
             real_t score     = _compute_score(gamma, cover_num);
             scores.push_back({gamma, score, j, cover_num});
+            assert(std::isfinite(gamma) && "Gamma is not finite");
+            assert(std::isfinite(score) && "Score is not finite");
         }
 
         good_size = min(nrows, active_cols);
@@ -96,7 +103,7 @@ public:
     /// solution)
     void init_scores(Instance const&            inst,
                      std::vector<real_t> const& lagr_mult,
-                     CoverBits const&           cover_bits,
+                     CoverCounters<> const&     cover_counts,
                      Sorter&                    sorter) {
 
         ridx_t nrows = inst.rows.size();
@@ -110,14 +117,17 @@ public:
             real_t gamma       = inst.costs[j];
 
             for (ridx_t i : inst.cols[j])
-                if (!cover_bits[i]) {
+                if (cover_counts[i] == 0) {
                     ++cover_count;
                     gamma -= lagr_mult[i];
+                    assert(std::isfinite(lagr_mult[i]) && "Multiplier is not finite");
                 }
             if (cover_count == 0)
                 --active_cols;
             real_t score = _compute_score(gamma, cover_count);
             scores.push_back({gamma, score, j, cover_count});
+            assert(std::isfinite(gamma) && "Gamma is not finite");
+            assert(std::isfinite(score) && "Score is not finite");
         }
 
         good_size = min(nrows, active_cols);
@@ -127,7 +137,7 @@ public:
     /// @brief Extract the column with the minimum score and update the scores
     cidx_t extract_minscore_col(Instance const&            inst,
                                 std::vector<real_t> const& lagr_mult,
-                                CoverBits&                 cover_bits,
+                                CoverCounters<>&           cover_counts,
                                 Sorter&                    sorter) {
 
         auto   good_scores  = make_span(scores.begin(), good_size);
@@ -139,7 +149,7 @@ public:
             score_argmin = argmin(good_scores, ScoreFtor{});
         }
 
-        _update_changed_scores(inst, lagr_mult, cover_bits, score_argmin);
+        _update_changed_scores(inst, lagr_mult, cover_counts, score_argmin);
         return scores[score_argmin].col_idx;
     }
 };
