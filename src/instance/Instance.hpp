@@ -108,8 +108,8 @@ private:
             cidx_t gj = orig_maps.col_idxs[lj];
             assert("Columns removed twice" && gj != CFT_REMOVED_IDX);
 
-            fixed_cost += costs[lj];                 // update fixed cost with new fixing
-            fixed_orig_idxs.emplace_back(gj);        // add new fixed indexes
+            fixed_cost += costs[lj];                   // update fixed cost with new fixing
+            fixed_orig_idxs.emplace_back(gj);          // add new fixed indexes
             orig_maps.col_idxs[lj] = CFT_REMOVED_IDX;  // mark column to be removed
             for (ridx_t li : cols[lj]) {
                 removed_rows += orig_maps.row_idxs[li] == CFT_REMOVED_IDX ? 0 : 1;
@@ -176,7 +176,7 @@ private:
 };
 
 namespace {
-    /// @brief Complete instance initialization by creating rows and orig_maps
+    /// @brief Completes instance initialization by creating rows and orig_maps
     inline void complete_init(Instance& partial_inst, ridx_t nrows) {
         partial_inst.rows            = std::vector<std::vector<cidx_t>>(nrows);
         partial_inst.orig_maps       = make_idx_maps(partial_inst.cols.size(), nrows);
@@ -211,6 +211,37 @@ inline Instance make_instance(InstanceData const& inst_data) {
     IF_DEBUG(inst.invariants_check());
 
     return inst;
+}
+
+inline Instance make_tentative_core_instance(Instance const& inst, int const min_row_coverage) {
+    Instance core_inst = {};
+
+    int const nrows        = inst.rows.size();
+    auto      row_coverage = std::vector<int>(nrows, 0);
+    int       covered      = 0;
+
+    // TODO: we may consider randomizing columns.
+    // TODO: consider iterating over row indices and taking the first `min_row_coverage` columns for every row.
+    for (cidx_t j = 0; j < inst.cols.size(); ++j) {
+        core_inst.cols.push_back(inst.cols[j]);
+        core_inst.solcosts.push_back(limits<real_t>::max());
+
+        // Update row coverage for early exit.
+        for (ridx_t i : inst.cols[j]) {
+            ++row_coverage[i];
+            if (row_coverage[i] == min_row_coverage) {
+                ++covered;
+                if (covered == nrows)
+                    goto done;
+            }
+        }
+    }
+
+done:
+
+    complete_init(core_inst, nrows);
+    IF_DEBUG(core_inst.invariants_check());
+    return core_inst;
 }
 
 }  // namespace cft

@@ -42,6 +42,7 @@ if (UNIT_TESTS) # Build unit tests only.
 
     set(SOURCES test/tests.cpp
                 test/parsing_unittests.cpp
+                test/instance_unittests.cpp
                 test/utility_unittests.cpp
                 test/StringView_unittests.cpp
                 test/coverage_unittests.cpp

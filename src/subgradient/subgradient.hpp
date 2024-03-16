@@ -208,9 +208,12 @@ inline std::vector<real_t> compute_perturbed_multipliers(std::vector<real_t> con
 }
 
 // TODO: Consider implementing it as a functor.
-inline OptimizeResult optimize(Instance const&            inst,
+inline OptimizeResult optimize(Instance const& orig_inst,
+                               Instance& /*unused*/,
                                real_t                     upper_bound,
                                std::vector<real_t> const& initial_lagr_mult) {
+
+    auto const& inst = orig_inst;
 
     auto next_step_size = make_step_size_manager(20, 0.1);
     auto should_exit    = make_exit_condition_manager(300);
