@@ -24,16 +24,16 @@ namespace {
     inline ridx_t mark_and_update_fixed_elements(Instance&                  inst,
                                                  std::vector<cidx_t> const& cols_to_fix) {
         size_t removed_rows = 0;
-        for (cidx_t lj : cols_to_fix) {
-            cidx_t gj = inst.orig_maps.col_idxs[lj];
-            assert("Columns removed twice" && gj != CFT_REMOVED_IDX);
+        for (cidx_t j : cols_to_fix) {
+            cidx_t& orig_j = inst.orig_maps.col_idxs[j];
+            assert("Columns removed twice" && orig_j != CFT_REMOVED_IDX);
 
-            inst.fixed_cost += inst.costs[lj];              // update fixed cost with new fixing
-            inst.fixed_orig_idxs.emplace_back(gj);          // add new fixed indexes
-            inst.orig_maps.col_idxs[lj] = CFT_REMOVED_IDX;  // mark column to be removed
-            for (ridx_t li : inst.cols[lj]) {
-                removed_rows += inst.orig_maps.row_idxs[li] == CFT_REMOVED_IDX ? 0 : 1;
-                inst.orig_maps.row_idxs[li] = CFT_REMOVED_IDX;  // mark row to be removed
+            inst.fixed_cost += inst.costs[j];        // update fixed cost with new fixing
+            inst.fixed_orig_idxs.push_back(orig_j);  // add new fixed indexes
+            orig_j = CFT_REMOVED_IDX;                // mark column to be removed
+            for (ridx_t i : inst.cols[j]) {
+                removed_rows += inst.orig_maps.row_idxs[i] != CFT_REMOVED_IDX ? 1 : 0;
+                inst.orig_maps.row_idxs[i] = CFT_REMOVED_IDX;  // mark row to be removed
             }
         }
         return removed_rows;
@@ -50,47 +50,71 @@ namespace {
     /// @brief Remove marked rows and make old->new row mapping
     inline void adjust_rows_pos_and_fill_map(Instance& inst, IdxMaps& idx_maps) {
         ridx_t old_nrows = inst.rows.size();
-        ridx_t new_li    = 0;
-        for (ridx_t old_li = 0; old_li < old_nrows; ++old_li) {
-            idx_maps.row_idxs.push_back(old_li);
-            if (inst.orig_maps.row_idxs[old_li] != CFT_REMOVED_IDX) {
-                inst.orig_maps.row_idxs[new_li] = inst.orig_maps.row_idxs[old_li];
-                inst.rows[new_li]               = std::move(inst.rows[old_li]);
-                ++new_li;
+        idx_maps.row_idxs.assign(old_nrows, CFT_REMOVED_IDX);
+        ridx_t new_i = 0;
+        for (ridx_t old_i = 0; old_i < old_nrows; ++old_i) {
+            ridx_t orig_i = inst.orig_maps.row_idxs[old_i];
+            if (orig_i != CFT_REMOVED_IDX) {
+                assert(!inst.rows[old_i].empty());
+                idx_maps.row_idxs[old_i] = new_i;
+                if (new_i != old_i) {
+                    inst.rows[new_i]               = std::move(inst.rows[old_i]);
+                    inst.orig_maps.row_idxs[new_i] = orig_i;
+                }
+                ++new_i;
             }
         }
-        inst.orig_maps.row_idxs.resize(new_li);
+        inst.orig_maps.row_idxs.resize(new_i);
+        inst.rows.resize(new_i);
     }
 
     /// @brief Remove marked columns adjusting row indexes and make old->new col mapping
     inline void adjust_cols_pos_and_idxs_and_fill_map(Instance& inst, IdxMaps& idx_maps) {
         cidx_t old_ncols = inst.cols.size();
-        idx_maps.col_idxs.resize(old_ncols);
-        cidx_t new_lj = 0;
-        for (ridx_t old_lj = 0; old_lj < old_ncols; ++old_lj) {
-            idx_maps.col_idxs[old_lj] = new_lj;
-            if (inst.orig_maps.col_idxs[old_lj] == CFT_REMOVED_IDX)
+        idx_maps.col_idxs.assign(old_ncols, CFT_REMOVED_IDX);
+        cidx_t new_j = 0;
+        size_t n     = 0;
+        for (ridx_t old_j = 0; old_j < old_ncols; ++old_j) {
+
+            cidx_t orig_j = inst.orig_maps.col_idxs[old_j];
+            if (orig_j == CFT_REMOVED_IDX)
                 continue;
 
-            if (new_lj != old_lj) {  // move col forward to new position
-                inst.cols.begs[new_lj + 1] = inst.cols.begs[new_lj] + inst.cols[old_lj].size();
-                size_t n = inst.cols.begs[new_lj], o = inst.cols.begs[old_lj];
-                while (o < inst.cols.begs[old_lj + 1])
-                    inst.cols.idxs[n++] = idx_maps.row_idxs[inst.cols.idxs[o++]];
+            size_t nbeg = n;  // save here to set cols.begs[new_j] later
+            for (size_t o = inst.cols.begs[old_j]; o < inst.cols.begs[old_j + 1]; ++o) {
+                ridx_t old_i = inst.cols.idxs[o];
+                ridx_t new_i = idx_maps.row_idxs[old_i];
+                if (new_i != CFT_REMOVED_IDX)
+                    inst.cols.idxs[n++] = new_i;
             }
-            inst.costs[new_lj]              = inst.costs[old_lj];
-            inst.solcosts[new_lj]           = inst.solcosts[old_lj];
-            inst.orig_maps.col_idxs[new_lj] = inst.orig_maps.col_idxs[old_lj];
-            ++new_lj;
+            if (n == nbeg)
+                continue;
+
+            inst.cols.begs[new_j]          = nbeg;  // here to not invalidate o begin
+            inst.costs[new_j]              = inst.costs[old_j];
+            inst.solcosts[new_j]           = inst.solcosts[old_j];
+            inst.orig_maps.col_idxs[new_j] = orig_j;
+            idx_maps.col_idxs[old_j]       = new_j;
+            ++new_j;
         }
-        inst.orig_maps.col_idxs.resize(new_lj);
+        inst.cols.begs[new_j] = n;
+        inst.cols.idxs.resize(n);
+        inst.cols.begs.resize(new_j + 1);
+        inst.orig_maps.col_idxs.resize(new_j);
     }
 
     /// @brief Adjust column indexes stored in eanch row
     inline void adjust_rows_idxs(Instance& inst, IdxMaps const& idx_maps) {
-        for (auto& row : inst.rows)
-            for (cidx_t& j : row)
-                j = idx_maps.col_idxs[j];
+        for (auto& row : inst.rows) {
+            cidx_t w = 0;
+            for (cidx_t r = 0; r < row.size(); ++r) {
+                cidx_t new_j = idx_maps.col_idxs[row[r]];
+                if (new_j != CFT_REMOVED_IDX)
+                    row[w++] = new_j;
+            }
+            assert(w > 0);
+            row.resize(w);
+        }
     }
 }  // namespace
 
@@ -103,18 +127,17 @@ inline void fix_columns(Instance& inst, std::vector<cidx_t> const& cols_to_fix, 
     if (cols_to_fix.empty())
         return;
 
-    ridx_t removed_rows = mark_and_update_fixed_elements(inst, cols_to_fix);
+    auto inst_copy = inst;
 
-    // If all rows were removed, clear everything
-    if (removed_rows == inst.rows.size()) {
-        set_inst_as_empty(inst);
-        return;
-    }
+    ridx_t removed_rows = mark_and_update_fixed_elements(inst, cols_to_fix);
+    if (removed_rows == inst.rows.size())  // If all rows were removed, clear everything
+        return set_inst_as_empty(inst);
 
     // Map old rows and columns to new ones based on whats has been marked
     adjust_rows_pos_and_fill_map(inst, idx_maps);
     adjust_cols_pos_and_idxs_and_fill_map(inst, idx_maps);
     adjust_rows_idxs(inst, idx_maps);
+    IF_DEBUG(inst.invariants_check());
 }
 
 inline IdxMaps fix_columns(Instance& inst, std::vector<cidx_t> const& cols_to_fix) {
