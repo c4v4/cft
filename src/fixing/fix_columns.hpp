@@ -16,10 +16,45 @@
 #ifndef CFT_SRC_FIXING_FIX_COLUMNS_HPP
 #define CFT_SRC_FIXING_FIX_COLUMNS_HPP
 
+#ifndef NDEBUG
+#include <algorithm>
+#endif
+
 #include "instance/Instance.hpp"
 
 namespace cft {
 namespace {
+#ifndef NDEBUG
+    void mappings_check(Instance const&            old_inst,
+                        Instance const&            inst,
+                        IdxMaps const&             idx_maps,
+                        std::vector<cidx_t> const& fixed_cols) {
+        for (cidx_t old_j = 0; old_j < old_inst.cols.size(); ++old_j) {
+
+            cidx_t new_j = idx_maps.col_idxs[old_j];
+            if (std::count(fixed_cols.begin(), fixed_cols.end(), old_j) == 1)
+                assert(new_j == CFT_REMOVED_IDX);
+            if (new_j == CFT_REMOVED_IDX)
+                continue;
+
+            assert(!inst.cols[new_j].empty());
+            assert(inst.cols[new_j].size() <= old_inst.cols[old_j].size());
+            for (ridx_t r = 0; r < inst.cols[new_j].size(); ++r) {
+                ridx_t old_i = old_inst.cols[old_j][r];
+                ridx_t new_i = idx_maps.row_idxs[old_i];
+                if (new_i == CFT_REMOVED_IDX) {
+                    any(old_inst.rows[old_i], [](cidx_t j) { return j == CFT_REMOVED_IDX; });
+                    continue;
+                }
+                assert(std::count(inst.cols[new_j].begin(), inst.cols[new_j].end(), new_i) == 1);
+                assert(std::count(inst.rows[new_i].begin(), inst.rows[new_i].end(), new_j) == 1);
+                assert(inst.rows[new_i].size() <= old_inst.rows[old_i].size());
+                assert(!inst.rows[new_i].empty());
+            }
+        }
+    }
+#endif
+
     /// @brief Mark columns and rows to be removed and update fixed cols and costs
     inline ridx_t mark_and_update_fixed_elements(Instance&                  inst,
                                                  std::vector<cidx_t> const& cols_to_fix) {
@@ -127,7 +162,9 @@ inline void fix_columns(Instance& inst, std::vector<cidx_t> const& cols_to_fix, 
     if (cols_to_fix.empty())
         return;
 
-    auto inst_copy = inst;
+#ifndef NDEBUG
+    auto old_inst = inst;
+#endif
 
     ridx_t removed_rows = mark_and_update_fixed_elements(inst, cols_to_fix);
     if (removed_rows == inst.rows.size())  // If all rows were removed, clear everything
@@ -137,7 +174,13 @@ inline void fix_columns(Instance& inst, std::vector<cidx_t> const& cols_to_fix, 
     adjust_rows_pos_and_fill_map(inst, idx_maps);
     adjust_cols_pos_and_idxs_and_fill_map(inst, idx_maps);
     adjust_rows_idxs(inst, idx_maps);
-    IF_DEBUG(inst.invariants_check());
+
+#ifndef NDEBUG
+    inst.invariants_check();  // coherent instance
+    mappings_check(old_inst, inst, idx_maps, cols_to_fix);
+#endif
+
+    // TODO(cava): reductions step (e.g., 1-col rows)
 }
 
 inline IdxMaps fix_columns(Instance& inst, std::vector<cidx_t> const& cols_to_fix) {

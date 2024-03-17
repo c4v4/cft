@@ -16,6 +16,7 @@ template <typename ItT>
 struct Span {
     using iterator        = ItT;
     using size_type       = std::size_t;
+    using ret_type        = decltype(std::declval<ItT>()[0]);  // does not discard constness
     using value_type      = typename std::iterator_traits<ItT>::value_type;
     using reference       = typename std::iterator_traits<ItT>::reference;
     using pointer         = typename std::iterator_traits<ItT>::pointer;
@@ -40,7 +41,7 @@ struct Span {
         return finish;
     }
 
-    CFT_NODISCARD value_type& operator[](size_type i) const {
+    CFT_NODISCARD ret_type operator[](size_type i) const {
         assert(finish > start);
         assert(i < static_cast<size_t>(finish - start));
         return start[i];
