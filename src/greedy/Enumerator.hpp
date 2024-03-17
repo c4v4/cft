@@ -20,7 +20,7 @@
 #include "greedy/RedundancySet.hpp"
 #include "instance/Instance.hpp"
 
-#define CFT_ENUM_VARS 10
+#define CFT_ENUM_VARS 16
 
 namespace cft {
 
@@ -46,7 +46,8 @@ struct Enumerator<CFT_ENUM_VARS> {
 #ifndef NDEBUG
         for (ridx_t i = 0; i < red_data.partial_cover.size(); ++i) {
             assert(red_data.total_cover[i] > 0);
-            assert(red_data.partial_cover[i] == true);
+            assert(red_data.partial_cover[i] > 0);
+            assert(red_data.partial_cover[i] <= red_data.total_cover[i]);
         }
 #endif
     }
@@ -56,39 +57,46 @@ template <size_t Depth>
 struct Enumerator {
     static void invoke(Instance const& inst, RedundancyData& red_data, bool* vars, bool* sol) {
 
+        auto& partial_cover = red_data.partial_cover;
+        auto& total_cover   = red_data.total_cover;
+
 #ifndef NDEBUG
-        for (ridx_t i = 0; i < red_data.partial_cover.size(); ++i)
-            assert(red_data.total_cover[i] > 0);
+        assert(red_data.partial_cov_count <= partial_cover.size());
+        for (ridx_t i = 0; i < partial_cover.size(); ++i) {
+            assert(total_cover[i] > 0);
+            assert(partial_cover[i] <= total_cover[i]);
+        }
 #endif
 
-        if (Depth == red_data.redund_set.size()) {
+        if (Depth == red_data.redund_set.size() ||
+            red_data.partial_cov_count == partial_cover.size()) {
             Enumerator<CFT_ENUM_VARS>::invoke(inst, red_data, vars, sol);
             return;
         }
 
-        auto col_idx = red_data.redund_set[Depth].col;
+        cidx_t col_idx = red_data.redund_set[Depth].col;
+        auto   col     = inst.cols[col_idx];
 
-        assert(!red_data.partial_cover.is_redundant_cover(inst.cols[col_idx]) ||
-               red_data.total_cover.is_redundant_uncover(inst.cols[col_idx]));
+        assert(!partial_cover.is_redundant_cover(col) || total_cover.is_redundant_uncover(col));
 
         if (red_data.partial_cost + red_data.redund_set[Depth].cost < red_data.best_cost &&
-            !red_data.partial_cover.is_redundant_cover(inst.cols[col_idx])) {
+            !partial_cover.is_redundant_cover(col)) {
 
             vars[Depth] = true;
-            red_data.partial_cover.cover(inst.cols[col_idx]);
+            red_data.partial_cov_count += partial_cover.cover(col);
             red_data.partial_cost += red_data.redund_set[Depth].cost;
 
             Enumerator<Depth + 1>::invoke(inst, red_data, vars, sol);
 
             vars[Depth] = false;
-            red_data.partial_cover.uncover(inst.cols[col_idx]);
+            red_data.partial_cov_count -= partial_cover.uncover(col);
             red_data.partial_cost -= red_data.redund_set[Depth].cost;
         }
 
-        if (red_data.total_cover.is_redundant_uncover(inst.cols[col_idx])) {
-            red_data.total_cover.uncover(inst.cols[col_idx]);
+        if (total_cover.is_redundant_uncover(col)) {
+            total_cover.uncover(col);
             Enumerator<Depth + 1>::invoke(inst, red_data, vars, sol);
-            red_data.total_cover.cover(inst.cols[col_idx]);
+            total_cover.cover(col);
         }
     }
 };

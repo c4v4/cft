@@ -31,14 +31,21 @@ struct CidxAndCost {  // TODO(cava): if used elsewhere, can be move in core/
 struct RedundancyData {
     std::vector<CidxAndCost> redund_set;      // redundant columns + their cost
     CoverCounters<>          total_cover;     // row-cov if all the remaining columns are selected
-    CoverBits                partial_cover;   // row-cov if we selected the current column
+    CoverCounters<>          partial_cover;   // row-cov if we selected the current column
     std::vector<cidx_t>      cols_to_remove;  // list of columns to remove
     real_t                   best_cost;       // current best upper bound
     real_t                   partial_cost;    // current solution cost
+    cidx_t                   partial_cov_count;
 };
 
 inline RedundancyData make_redundancy_data(ridx_t nrows = 0) {
-    return {{}, make_cover_counters(nrows), make_cover_bits(nrows), {}, limits<real_t>::max(), 0.0};
+    return {{},
+            make_cover_counters(nrows),
+            make_cover_counters(nrows),
+            {},
+            limits<real_t>::max(),
+            0.0,
+            0};
 }
 
 }  // namespace cft
