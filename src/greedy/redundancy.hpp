@@ -27,7 +27,8 @@ inline void heuristic_removal(RedundancyData& red_set, Instance const& inst) {
     while (red_set.partial_cost < red_set.best_cost && red_set.redund_set.size() > CFT_ENUM_VARS) {
         cidx_t j = red_set.redund_set.back().col;
         red_set.redund_set.pop_back();
-        red_set.total_cover.uncover(inst.cols[j]);
+        auto uncovered = red_set.total_cover.uncover(inst.cols[j]);
+        assert(uncovered == 0);
         red_set.cols_to_remove.push_back(j);
 
         // They say they update the redudant set after every removal, which has the only effect
@@ -37,7 +38,7 @@ inline void heuristic_removal(RedundancyData& red_set, Instance const& inst) {
             if (red_set.total_cover.is_redundant_uncover(inst.cols[x.col]))
                 return false;
             red_set.partial_cost += inst.costs[x.col];
-            red_set.partial_cover.cover(inst.cols[x.col]);
+            red_set.partial_cov_count += red_set.partial_cover.cover(inst.cols[x.col]);
             return true;
         });
     }

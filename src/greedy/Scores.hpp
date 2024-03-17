@@ -137,7 +137,7 @@ public:
     /// @brief Extract the column with the minimum score and update the scores
     cidx_t extract_minscore_col(Instance const&            inst,
                                 std::vector<real_t> const& lagr_mult,
-                                CoverCounters<>&           cover_counts,
+                                CoverCounters<> const&     cover_counts,
                                 Sorter&                    sorter) {
 
         auto   good_scores  = make_span(scores.begin(), good_size);
