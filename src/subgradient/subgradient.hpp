@@ -1,13 +1,16 @@
 #ifndef CFT_INCLUDE_SUBGRADIENT_HPP
 #define CFT_INCLUDE_SUBGRADIENT_HPP
 
+#include <cstddef>
 #include <random>
 #include <vector>
 
 #include "core/cft.hpp"
 #include "core/coverage.hpp"
+#include "core/limits.hpp"
 #include "core/utility.hpp"
 #include "instance/Instance.hpp"
+#include "subgradient/Pricer.hpp"
 
 namespace cft {
 
@@ -93,6 +96,49 @@ inline ExitConditionManager make_exit_condition_manager(size_t period) {
     return ExitConditionManager{period, period, limits<real_t>::min()};
 }
 
+// Functor managing the pricing frequency.
+struct PricingManager {
+    size_t period;
+    size_t next_update_iter;
+    size_t max_period_increment;
+    real_t lb_before_pricing;
+
+    CFT_NODISCARD bool operator()(size_t iter, real_t lower_bound, real_t upper_bound) {
+        if (iter == next_update_iter + 1)
+            _update(lower_bound, upper_bound);
+
+        assert(iter <= next_update_iter);
+
+        if (iter == next_update_iter) {
+            lb_before_pricing = lower_bound;
+            return true;
+        }
+        return false;
+    }
+
+private:
+    void _update(real_t lb_after_pricing, real_t ub) {
+        real_t const delta = (lb_after_pricing - lb_before_pricing) / ub;
+
+        size_t next_period = 0;
+        if (delta <= 1e-6)
+            next_period = std::min(max_period_increment, 10 * period);
+        else if (delta <= 0.02)
+            next_period = std::min(max_period_increment, 5 * period);
+        else if (delta <= 0.2)
+            next_period = std::min(max_period_increment, 2 * period);
+        else
+            next_period = 10;
+
+        next_update_iter += next_period;
+        period = next_period;
+    }
+};
+
+inline PricingManager make_pricing_manager(size_t period, size_t max_period_increment) {
+    return PricingManager{period, period, max_period_increment, limits<real_t>::min()};
+}
+
 // A solution, i.e., a set of columns and its associated lower bound.
 struct SubgradientSolution {
 
@@ -138,7 +184,7 @@ inline SubgradientSolution compute_subgradient_solution(Instance const&         
 // Computes the row coverage of the given solution.
 inline CoverCounters<uint16_t> compute_row_coverage(Instance const&            inst,
                                                     SubgradientSolution const& sol) {
-    // TODO: consider moving to member.
+    // TODO(acco): consider moving to member.
     auto row_coverage = make_cover_counters(inst.rows.size());
 
     for (auto const& c : sol.col_info)
@@ -150,7 +196,7 @@ inline CoverCounters<uint16_t> compute_row_coverage(Instance const&            i
 // Computes the row coverage of the given solution by including the best non-redundant columns.
 inline CoverCounters<uint16_t> compute_reduced_row_coverage(Instance const&      inst,
                                                             SubgradientSolution& sol) {
-    // TODO: consider moving to member.
+    // TODO(acco): consider moving to member.
     CoverCounters<uint16_t> row_coverage = make_cover_counters(inst.rows.size());
 
     std::sort(sol.col_info.begin(),
@@ -159,7 +205,7 @@ inline CoverCounters<uint16_t> compute_reduced_row_coverage(Instance const&     
                   return a.reduced_cost < b.reduced_cost;
               });
 
-    // TODO: consider the opposite approach in which we first add all columns, identify the
+    // TODO(acco): consider the opposite approach in which we first add all columns, identify the
     // redundant ones, sort them and remove the worst. This may allows us to sort less columns.
     for (auto const& c : sol.col_info) {
         auto const& col = inst.cols[c.idx];
@@ -207,20 +253,25 @@ inline std::vector<real_t> compute_perturbed_multipliers(std::vector<real_t> con
     return perturbed_lagr_mult;
 }
 
-// TODO: Consider implementing it as a functor.
+// TODO(acco): Consider implementing it as a functor.
 inline OptimizeResult optimize(Instance const&            orig_inst,
                                Instance&                  core_inst,
                                real_t                     upper_bound,
                                std::vector<real_t> const& initial_lagr_mult) {
 
-    auto const& inst = orig_inst;
+    size_t const nrows = orig_inst.rows.size();
+    assert(nrows == core_inst.rows.size());
+
+    auto& inst = core_inst;
 
     auto next_step_size = make_step_size_manager(20, 0.1);
     auto should_exit    = make_exit_condition_manager(300);
+    auto should_price   = make_pricing_manager(10, std::min(1000UL, nrows / 3));
 
-    // TODO: consider moving to members.
+    // TODO(acco): consider moving to members.
     auto lagr_mult = initial_lagr_mult;
     auto best      = make_optimize_result(initial_lagr_mult);
+    auto price     = make_pricer();
 
     size_t max_iters = 10 * inst.rows.size();
     for (size_t iter = 0; iter < max_iters; ++iter) {
@@ -230,6 +281,7 @@ inline OptimizeResult optimize(Instance const&            orig_inst,
 
         // No constraints violated. Optimal (sub) instance solution?
         if (norm == 0) {
+            // TODO(acco): consider updating the upper_bound and storing the solution.
         }
 
         if (sol.lower_bound > best.lower_bound) {
@@ -240,8 +292,6 @@ inline OptimizeResult optimize(Instance const&            orig_inst,
         if (should_exit(iter, best.lower_bound))
             break;
 
-        // TODO: add pricing.
-
         real_t step_size = next_step_size(iter, sol.lower_bound);
         for (size_t i = 0; i < inst.rows.size(); ++i) {
             real_t normalized_bound_diff = (upper_bound - sol.lower_bound) / norm;
@@ -250,12 +300,15 @@ inline OptimizeResult optimize(Instance const&            orig_inst,
             real_t delta_mult = step_size * normalized_bound_diff * violation;
             lagr_mult[i]      = cft::max(0.0, lagr_mult[i] + delta_mult);
         }
+
+        if (should_price(iter, sol.lower_bound, upper_bound))
+            price(inst, lagr_mult, core_inst);
     }
 
     return best;
 }
 
-// TODO: Consider implementing it as a functor.
+// TODO(acco): Consider implementing it as a functor.
 inline ExploreResult explore(Instance const&            inst,
                              real_t                     upper_bound,
                              std::vector<real_t> const& initial_lagr_mult) {
@@ -278,7 +331,7 @@ inline ExploreResult explore(Instance const&            inst,
 
         res.lagr_mult_list.push_back(lagr_mult);
 
-        real_t step_size = 0.1;  // TODO: should we vary this?
+        real_t step_size = 0.1;  // TODO(acco): should we vary this?
         for (size_t i = 0; i < inst.rows.size(); ++i) {
             real_t normalized_bound_diff = (upper_bound - sol.lower_bound) / norm;
             real_t violation             = 1 - row_coverage[i];
