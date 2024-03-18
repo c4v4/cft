@@ -71,16 +71,14 @@ struct Greedy {
 
         // Redundancy removal
         _complete_init_redund_set(red_set, inst, sol, cutoff_cost);
-        IF_DEBUG(check_redundancy_data(inst, sol, red_set));
-
-        if (_try_early_exit(red_set, inst, sol))
+        if (_try_early_exit(red_set, sol))
             return red_set.partial_cost;
+        IF_DEBUG(check_redundancy_data(inst, sol, red_set));
 
         heuristic_removal(red_set, inst);
-        IF_DEBUG(check_redundancy_data(inst, sol, red_set));
-
-        if (_try_early_exit(red_set, inst, sol))
+        if (_try_early_exit(red_set, sol))
             return red_set.partial_cost;
+        IF_DEBUG(check_redundancy_data(inst, sol, red_set));
 
         enumeration_removal(red_set, inst);
         if (red_set.best_cost >= cutoff_cost)
@@ -89,7 +87,6 @@ struct Greedy {
         remove_if(sol, [&](cidx_t j) {
             return any(red_set.cols_to_remove, [j](cidx_t r) { return r == j; });
         });
-
         return red_set.best_cost;
     }
 
@@ -118,9 +115,7 @@ private:
         sorter.sort(red_data.redund_set, [&](CidxAndCost x) { return inst.costs[x.col]; });
     }
 
-    static bool _try_early_exit(RedundancyData&      red_data,
-                                Instance const&      inst,
-                                std::vector<cidx_t>& sol) {
+    static bool _try_early_exit(RedundancyData& red_data, std::vector<cidx_t>& sol) {
 
         if (red_data.partial_cost >= red_data.best_cost || red_data.redund_set.empty())
             return true;  // Discard sol
@@ -129,13 +124,8 @@ private:
             return false;  // Continue with following step
 
         // Complete sol
-        for (CidxAndCost x : red_data.redund_set) {
+        for (CidxAndCost x : red_data.redund_set)
             red_data.cols_to_remove.push_back(x.col);
-
-            assert(red_data.total_cover.is_redundant_uncover(inst.cols[x.col]));
-            assert(red_data.partial_cover.is_redundant_cover(inst.cols[x.col]));
-            IF_DEBUG(red_data.total_cover.uncover(inst.cols[x.col]));
-        }
 
         // TODO(cava): profile and see if sort + bin-search is faster
         remove_if(sol, [&](cidx_t j) {

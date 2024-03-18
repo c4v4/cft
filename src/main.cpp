@@ -105,7 +105,7 @@ int main(int argc, char const** argv) {
         }
 
         // TODO(cava): Col fixing for inst considering core-inst?
-        col_fixing(inst, better_lagr_mult, best_sol, greedy);
+        col_fixing(inst, better_lagr_mult, better_sol, greedy);
         fmt::print("Remaining rows after column fixing: {}\n", inst.rows.size());
     }
 

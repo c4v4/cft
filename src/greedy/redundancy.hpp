@@ -42,7 +42,7 @@ struct RedundancyData {
     std::vector<cidx_t>      cols_to_remove;  // list of columns to remove
     real_t                   best_cost;       // current best upper bound
     real_t                   partial_cost;    // current solution cost
-    cidx_t                   partial_cov_count;
+    cidx_t                   partial_cov_count;  // number of covered rows
 };
 
 inline RedundancyData make_redundancy_data(ridx_t nrows = 0) {
@@ -195,7 +195,7 @@ inline void enumeration_removal(RedundancyData& red_set, Instance const& inst) {
                 red_set.cols_to_remove.push_back(red_set.redund_set[r].col);
 }
 
-/// @brief Remove redundant columns from the redundancy set using an heuristic greedy approach unti
+/// @brief Remove redundant columns from the redundancy set using an heuristic greedy approach until
 /// CFT_ENUM_VARS columns are left.
 inline void heuristic_removal(RedundancyData& red_set, Instance const& inst) {
     while (red_set.partial_cost < red_set.best_cost && red_set.redund_set.size() > CFT_ENUM_VARS) {
