@@ -21,9 +21,8 @@
 #include "core/coverage.hpp"
 #include "core/limits.hpp"
 #include "core/sort.hpp"
-#include "greedy/RedundancySet.hpp"
+#include "greedy/redundancy.hpp"
 #include "instance/Instance.hpp"
-#include "redundancy.hpp"
 
 namespace cft {
 
@@ -72,12 +71,14 @@ struct Greedy {
 
         // Redundancy removal
         _complete_init_redund_set(red_set, inst, sol, cutoff_cost);
-        if (red_set.partial_cost >= cutoff_cost || red_set.redund_set.empty())
+        if (_try_early_exit(red_set, sol))
             return red_set.partial_cost;
+        IF_DEBUG(check_redundancy_data(inst, sol, red_set));
 
         heuristic_removal(red_set, inst);
-        if (red_set.partial_cost >= cutoff_cost || red_set.redund_set.empty())
+        if (_try_early_exit(red_set, sol))
             return red_set.partial_cost;
+        IF_DEBUG(check_redundancy_data(inst, sol, red_set));
 
         enumeration_removal(red_set, inst);
         if (red_set.best_cost >= cutoff_cost)
@@ -86,7 +87,6 @@ struct Greedy {
         remove_if(sol, [&](cidx_t j) {
             return any(red_set.cols_to_remove, [j](cidx_t r) { return r == j; });
         });
-
         return red_set.best_cost;
     }
 
@@ -94,24 +94,45 @@ private:
     void _complete_init_redund_set(RedundancyData&            red_data,
                                    Instance const&            inst,
                                    std::vector<cidx_t> const& sol,
-                                   real_t                     upper_bound) {
+                                   real_t                     cutoff_cost) {
 
         red_data.redund_set.clear();
         red_data.partial_cover.reset(inst.rows.size());
+        red_data.partial_cov_count = 0;
         red_data.cols_to_remove.clear();
-        red_data.best_cost    = upper_bound;
+        red_data.best_cost    = cutoff_cost;
         red_data.partial_cost = 0.0;
 
         for (cidx_t j : sol)
             if (red_data.total_cover.is_redundant_uncover(inst.cols[j]))
                 red_data.redund_set.push_back({j, inst.costs[j]});
             else {
-                red_data.partial_cover.cover(inst.cols[j]);
+                red_data.partial_cov_count += red_data.partial_cover.cover(inst.cols[j]);
                 red_data.partial_cost += inst.costs[j];
-                if (red_data.partial_cost >= red_data.best_cost)
+                if (red_data.partial_cost >= cutoff_cost)
                     return;
             }
         sorter.sort(red_data.redund_set, [&](CidxAndCost x) { return inst.costs[x.col]; });
+    }
+
+    static bool _try_early_exit(RedundancyData& red_data, std::vector<cidx_t>& sol) {
+
+        if (red_data.partial_cost >= red_data.best_cost || red_data.redund_set.empty())
+            return true;  // Discard sol
+
+        if (red_data.partial_cov_count < red_data.partial_cover.size())
+            return false;  // Continue with following step
+
+        // Complete sol
+        for (CidxAndCost x : red_data.redund_set)
+            red_data.cols_to_remove.push_back(x.col);
+
+        // TODO(cava): profile and see if sort + bin-search is faster
+        remove_if(sol, [&](cidx_t j) {
+            return any(red_data.cols_to_remove, [j](cidx_t r) { return r == j; });
+        });
+
+        return true;
     }
 };
 
