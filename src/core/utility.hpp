@@ -32,14 +32,14 @@ CFT_NODISCARD T abs(T val) noexcept {
 
 //// Multi-arg max
 template <typename T>
-CFT_NODISCARD T&& max(T&& v) noexcept {
-    return static_cast<T&&>(v);
+CFT_NODISCARD T max(T v) noexcept {
+    return v;
 }
 
 template <typename T1, typename T2, typename... Ts>
-CFT_NODISCARD T1 max(T1 const& v1, T2 const& v2, Ts const&... tail) noexcept {
-    auto mtail = max(v2, tail...);
-    return (v1 >= mtail ? v1 : static_cast<T1>(mtail));
+CFT_NODISCARD T1 max(T1 v1, T2 v2, Ts... tail) noexcept {
+    T1 mtail = max<T1>(v2, tail...);
+    return (v1 >= mtail ? v1 : mtail);
 }
 
 template <typename... Ts>
@@ -49,14 +49,14 @@ CFT_NODISCARD bool max(bool b1, bool b2, Ts... tail) noexcept {
 
 //// Multi-arg min
 template <typename T>
-CFT_NODISCARD T&& min(T&& v) noexcept {
-    return static_cast<T&&>(v);
+CFT_NODISCARD T min(T v) noexcept {
+    return v;
 }
 
 template <typename T1, typename T2, typename... Ts>
-CFT_NODISCARD T1 min(T1 const& v1, T2 const& v2, Ts const&... tail) noexcept {
-    auto mtail = min(v2, tail...);
-    return v1 <= mtail ? v1 : static_cast<T1>(mtail);
+CFT_NODISCARD T1 min(T1 v1, T2 v2, Ts... tail) noexcept {
+    T1 mtail = min<T1>(v2, tail...);
+    return v1 <= mtail ? v1 : mtail;
 }
 
 template <typename... Ts>

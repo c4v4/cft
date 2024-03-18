@@ -17,41 +17,14 @@
 #define CFT_SRC_GREEDY_REDUNDANCY_HPP
 
 #include "core/cft.hpp"
-#include "core/sort.hpp"
 #include "greedy/Enumerator.hpp"
 #include "greedy/RedundancySet.hpp"
 #include "instance/Instance.hpp"
 
 namespace cft {
 
-inline real_t init_redund_set(RedundancyData&            red_data,
-                              Instance const&            inst,
-                              std::vector<cidx_t> const& sol,
-                              real_t                     ub,
-                              Sorter&                    sorter) {
-
-    red_data.cols_to_remove.clear();
-    red_data.total_cover.reset(inst.rows.size());
-    red_data.ub = ub;
-
-    real_t lb = 0.0;
-    for (cidx_t j : sol)
-        red_data.total_cover.cover(inst.cols[j]);
-    for (cidx_t j : sol)
-        if (red_data.total_cover.is_redundant_uncover(inst.cols[j]))
-            red_data.redund_set.push_back({j, inst.costs[j]});
-        else {
-            lb += inst.costs[j];
-            if (lb >= ub)
-                return lb;
-        }
-
-    sorter.sort(red_data.redund_set, [&](CidxAndCost x) { return inst.costs[x.col]; });
-    return lb;
-}
-
-inline real_t heuristic_removal(RedundancyData& red_set, Instance const& inst, real_t lb) {
-    while (lb < red_set.ub && red_set.redund_set.size() > CFT_ENUM_VARS) {
+inline void heuristic_removal(RedundancyData& red_set, Instance const& inst) {
+    while (red_set.partial_cost < red_set.best_cost && red_set.redund_set.size() > CFT_ENUM_VARS) {
         cidx_t j = red_set.redund_set.back().col;
         red_set.redund_set.pop_back();
         red_set.total_cover.uncover(inst.cols[j]);
@@ -62,33 +35,31 @@ inline real_t heuristic_removal(RedundancyData& red_set, Instance const& inst, r
         // TODO(cava): test if it actually improve/degrade performace/quality
         remove_if(red_set.redund_set, [&](CidxAndCost x) {
             if (red_set.total_cover.is_redundant_uncover(inst.cols[x.col]))
-                return true;
-            lb += inst.costs[x.col];
-            return false;
+                return false;
+            red_set.partial_cost += inst.costs[x.col];
+            red_set.partial_cover.cover(inst.cols[x.col]);
+            return true;
         });
     }
-    return lb;
 }
 
-inline real_t enumeration_removal(RedundancyData& red_set, Instance const& inst, real_t lb) {
+inline void enumeration_removal(RedundancyData& red_set, Instance const& inst) {
     assert(red_set.redund_set.size() <= CFT_ENUM_VARS);
-    real_t old_ub = red_set.ub;
-    if (lb >= old_ub || red_set.redund_set.empty())
-        return lb;
+    real_t old_ub = red_set.best_cost;
+    if (red_set.partial_cost >= old_ub || red_set.redund_set.empty())
+        return;
 
     // TODO(cava): Redundant set can be an instance like, with a subset of rows and columns
-    auto curr_cover                     = make_cover_bits(inst.rows.size());
     bool curr_keep_state[CFT_ENUM_VARS] = {};
     bool cols_to_keep[CFT_ENUM_VARS]    = {};
 
-    Enumerator<0>::invoke(inst, red_set, lb, curr_keep_state, cols_to_keep);
+    Enumerator<0>::invoke(inst, red_set, curr_keep_state, cols_to_keep);
 
-    if (red_set.ub < old_ub)  // cols_to_keep is updated only if the upper bound is improved
+    if (red_set.best_cost < old_ub)
+        // cols_to_keep is updated only if the upper bound is improved
         for (cidx_t r = 0; r < red_set.redund_set.size(); ++r)
             if (!cols_to_keep[r])
                 red_set.cols_to_remove.push_back(red_set.redund_set[r].col);
-
-    return red_set.ub;
 }
 
 }  // namespace cft
