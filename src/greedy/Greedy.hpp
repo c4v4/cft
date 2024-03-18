@@ -21,40 +21,10 @@
 #include "core/coverage.hpp"
 #include "core/limits.hpp"
 #include "core/sort.hpp"
-#include "greedy/RedundancySet.hpp"
+#include "greedy/redundancy.hpp"
 #include "instance/Instance.hpp"
-#include "redundancy.hpp"
 
 namespace cft {
-
-#ifndef NDEBUG
-inline void check_coverage(Instance const&            inst,
-                           std::vector<cidx_t> const& sol,
-                           RedundancyData const&      red_set) {
-
-    auto   total_check    = make_cover_counters(inst.rows.size());
-    auto   part_check     = make_cover_counters(inst.rows.size());
-    size_t part_cov_count = 0;
-    for (cidx_t j : sol) {
-        cidx_t part_covered = part_check.cover(inst.cols[j]);
-        cidx_t tot_covered  = total_check.cover(inst.cols[j]);
-        assert(tot_covered == part_covered);
-        part_cov_count += part_covered;
-    }
-    for (cidx_t j : red_set.cols_to_remove) {
-        part_cov_count -= part_check.uncover(inst.cols[j]);
-        total_check.uncover(inst.cols[j]);
-    }
-    for (CidxAndCost x : red_set.redund_set)
-        part_cov_count -= part_check.uncover(inst.cols[x.col]);
-
-    assert(part_cov_count == red_set.partial_cov_count);
-    for (ridx_t i = 0; i < inst.rows.size(); ++i) {
-        assert(red_set.total_cover[i] == total_check[i]);
-        assert(red_set.partial_cover[i] == part_check[i]);
-    }
-}
-#endif
 
 /// @brief This is the greedy step of the 3-phase of the CFT algorithm. It uses a set of Lagrangian
 /// multipliers to attempt to find an decent solution for the SCP problem (quantity over quality).
@@ -101,22 +71,20 @@ struct Greedy {
 
         // Redundancy removal
         _complete_init_redund_set(red_set, inst, sol, cutoff_cost);
-        if (red_set.partial_cost >= cutoff_cost || red_set.redund_set.empty())
-            return red_set.partial_cost;
+        IF_DEBUG(check_redundancy_data(inst, sol, red_set));
 
-        IF_DEBUG(check_coverage(inst, sol, red_set));
+        if (_try_early_exit(red_set, inst, sol))
+            return red_set.partial_cost;
 
         heuristic_removal(red_set, inst);
-        if (red_set.partial_cost >= cutoff_cost || red_set.redund_set.empty())
-            return red_set.partial_cost;
+        IF_DEBUG(check_redundancy_data(inst, sol, red_set));
 
-        IF_DEBUG(check_coverage(inst, sol, red_set));
+        if (_try_early_exit(red_set, inst, sol))
+            return red_set.partial_cost;
 
         enumeration_removal(red_set, inst);
         if (red_set.best_cost >= cutoff_cost)
             return red_set.best_cost;
-
-        /// IF_DEBUG(check_coverage(inst, sol, red_set));
 
         remove_if(sol, [&](cidx_t j) {
             return any(red_set.cols_to_remove, [j](cidx_t r) { return r == j; });
@@ -148,6 +116,33 @@ private:
                     return;
             }
         sorter.sort(red_data.redund_set, [&](CidxAndCost x) { return inst.costs[x.col]; });
+    }
+
+    static bool _try_early_exit(RedundancyData&      red_data,
+                                Instance const&      inst,
+                                std::vector<cidx_t>& sol) {
+
+        if (red_data.partial_cost >= red_data.best_cost || red_data.redund_set.empty())
+            return true;  // Discard sol
+
+        if (red_data.partial_cov_count < red_data.partial_cover.size())
+            return false;  // Continue with following step
+
+        // Complete sol
+        for (CidxAndCost x : red_data.redund_set) {
+            red_data.cols_to_remove.push_back(x.col);
+
+            assert(red_data.total_cover.is_redundant_uncover(inst.cols[x.col]));
+            assert(red_data.partial_cover.is_redundant_cover(inst.cols[x.col]));
+            IF_DEBUG(red_data.total_cover.uncover(inst.cols[x.col]));
+        }
+
+        // TODO(cava): profile and see if sort + bin-search is faster
+        remove_if(sol, [&](cidx_t j) {
+            return any(red_data.cols_to_remove, [j](cidx_t r) { return r == j; });
+        });
+
+        return true;
     }
 };
 
