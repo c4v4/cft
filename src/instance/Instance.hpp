@@ -118,10 +118,12 @@ inline Instance make_tentative_core_instance(Instance const& inst, int const min
     auto      row_coverage = std::vector<int>(nrows, 0);
     int       covered      = 0;
 
-    // TODO: we may consider randomizing columns.
-    // TODO: consider iterating over row indices and taking the first `min_row_coverage` columns for every row.
+    // TODO(any): we may consider randomizing columns.
+    // TODO(any): consider iterating over row indices and taking the first `min_row_coverage`
+    // columns for every row.
     for (cidx_t j = 0; j < inst.cols.size(); ++j) {
         core_inst.cols.push_back(inst.cols[j]);
+        core_inst.costs.push_back(inst.costs[j]);
         core_inst.solcosts.push_back(limits<real_t>::max());
 
         // Update row coverage for early exit.

@@ -65,15 +65,14 @@ int main(int argc, char const** argv) {
     auto col_fixing = cft::make_col_fixing();
     auto rnd        = cft::prng_t{0};
 
-    auto best_sol       = std::vector<cft::cidx_t>{};
-    auto best_lagr_mult = std::vector<cft::real_t>{};
-    auto best_cost      = cft::limits<cft::real_t>::max();
+    auto best_sol  = std::vector<cft::cidx_t>{};
+    auto best_cost = cft::limits<cft::real_t>::max();
 
     while (!inst.rows.empty()) {
-        cft::Instance core_inst        = cft::make_tentative_core_instance(inst, min_row_coverage);
-        auto          better_sol       = std::vector<cft::cidx_t>{};
-        auto          better_lagr_mult = cft::compute_greedy_multipliers(core_inst);
-        auto          better_cost      = greedy(core_inst, best_lagr_mult, better_sol);
+        auto core_inst        = cft::make_tentative_core_instance(inst, min_row_coverage);
+        auto better_sol       = std::vector<cft::cidx_t>{};
+        auto better_lagr_mult = cft::compute_greedy_multipliers(core_inst);
+        auto better_cost      = greedy(core_inst, better_lagr_mult, better_sol);
 
         auto opt_res = cft::optimize(inst,
                                      core_inst,
@@ -87,27 +86,26 @@ int main(int argc, char const** argv) {
             auto&       lagr_mult = exp_res.lagr_mult_list[l];
             auto        inout_sol = std::vector<cft::cidx_t>{};
             cft::real_t sol_cost  = greedy(inst, lagr_mult, inout_sol, best_cost);
+
             if (sol_cost < better_cost) {
                 better_cost      = sol_cost;
                 better_sol       = inout_sol;
                 better_lagr_mult = lagr_mult;
-
-                if (sol_cost < best_cost) {
-                    best_cost      = sol_cost;
-                    best_sol       = inout_sol;
-                    best_lagr_mult = lagr_mult;
-                }
-
-                fmt::print("Greedy solution cost: {}, better: {}, best: {}\n",
-                           sol_cost,
-                           better_cost,
-                           best_cost);
                 IF_DEBUG(check_solution(inst, best_sol, best_cost));
             }
+            if (better_cost < best_cost) {
+                best_cost = better_cost;
+                best_sol  = better_sol;
+            }
+
+            fmt::print("Greedy solution cost: {}, better: {}, best: {}\n",
+                       sol_cost,
+                       better_cost,
+                       best_cost);
         }
 
         // TODO(cava): Col fixing for inst considering core-inst?
-        col_fixing(inst, best_lagr_mult, best_sol, greedy);
+        col_fixing(inst, better_lagr_mult, best_sol, greedy);
         fmt::print("Remaining rows after column fixing: {}\n", inst.rows.size());
     }
 
