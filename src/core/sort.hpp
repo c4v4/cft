@@ -1,24 +1,16 @@
 // Copyright (c) 2024 Francesco Cavaliere
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program. If not, see <https://www.gnu.org/licenses/>.
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version. This program is distributed in the hope that it
+// will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should
+// have received a copy of the GNU General Public License along with this program. If not, see
+// <https://www.gnu.org/licenses/>.
 
 #ifndef CFT_INCLUDE_RADIX_STUFF_HPP
 #define CFT_INCLUDE_RADIX_STUFF_HPP
 
 #include <algorithm>
-#include <cstdint>
-#include <typeinfo>
 #include <utility>
 
 namespace cft {
@@ -42,7 +34,7 @@ struct IdentityFtor {
 struct Sorter {
     // Temporary implementation with fallback to std::nth_element
     template <typename C, typename K = IdentityFtor>
-    void nth_element(C& container, size_t nth_elem, K&& key = {}) {
+    void nth_element(C& container, size_t nth_elem, K key = {}) {
         using value_type = container_value_type_t<C>;
         std::nth_element(container.begin(),
                          container.begin() + nth_elem,
@@ -52,7 +44,7 @@ struct Sorter {
 
     // Temporary implementation with fallback to std::sort
     template <typename C, typename K = IdentityFtor>
-    void sort(C& container, K&& key = {}) {
+    void sort(C& container, K key = {}) {
         using value_type = container_value_type_t<C>;
         std::sort(container.begin(),
                   container.end(),

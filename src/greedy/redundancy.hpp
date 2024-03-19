@@ -1,17 +1,11 @@
 // Copyright (c) 2024 Francesco Cavaliere
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program. If not, see <https://www.gnu.org/licenses/>.
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version. This program is distributed in the hope that it
+// will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should
+// have received a copy of the GNU General Public License along with this program. If not, see
+// <https://www.gnu.org/licenses/>.
 
 #ifndef CFT_SRC_GREEDY_REDUNDANCY_HPP
 #define CFT_SRC_GREEDY_REDUNDANCY_HPP
@@ -31,10 +25,9 @@ struct CidxAndCost {  // TODO(cava): if used elsewhere, can be move in core/
     real_t cost;
 };
 
-/// @brief Data structure to store the redundancy set and related information
+// Data structure to store the redundancy set and related information
 struct RedundancyData {
-    // TODO(cava): shouldn't change much, but we could use a SparseBinMat to store columns
-    // locally
+    // TODO(cava): shouldn't change much, but we could use a SparseBinMat to store columns locally
 
     std::vector<CidxAndCost> redund_set;      // redundant columns + their cost
     CoverCounters<>          total_cover;     // row-cov if all the remaining columns are selected
@@ -85,11 +78,11 @@ inline void check_redundancy_data(Instance const&            inst,
 #endif
 
 namespace {
-    /// @brief When the threshold is below a certain value, we can enumerate all possible
-    /// non-redundant combinations. As the threshold is known at compile-time, the enumeration has a
-    /// fixed maximum depth. Enumerator utilizes partial specialization (since `if constexpr` is a
-    /// C++17 feature) to limit the number of enumeration steps and (technically) remove the
-    /// recursion.
+    // When the threshold is below a certain value, we can enumerate all possible
+    // non-redundant combinations. As the threshold is known at compile-time, the enumeration has a
+    // fixed maximum depth. Enumerator utilizes partial specialization (since `if constexpr` is a
+    // C++17 feature) to limit the number of enumeration steps and (technically) remove the
+    // recursion.
     template <size_t Cur>
     struct Enumerator;
 
@@ -172,8 +165,8 @@ namespace {
     };
 }  // namespace
 
-/// @brief Remove redundant columns from the redundancy set using an implicit enumeration.
-/// NOTE: assumes no more than CFT_ENUM_VARS columns are redundant.
+// Remove redundant columns from the redundancy set using an implicit enumeration. NOTE: assumes no
+// more than CFT_ENUM_VARS columns are redundant.
 inline void enumeration_removal(RedundancyData& red_set, Instance const& inst) {
     assert(red_set.redund_set.size() <= CFT_ENUM_VARS);
     real_t old_ub = red_set.best_cost;
@@ -195,8 +188,8 @@ inline void enumeration_removal(RedundancyData& red_set, Instance const& inst) {
                 red_set.cols_to_remove.push_back(red_set.redund_set[r].col);
 }
 
-/// @brief Remove redundant columns from the redundancy set using an heuristic greedy approach until
-/// CFT_ENUM_VARS columns are left.
+// Remove redundant columns from the redundancy set using an heuristic greedy approach until
+// CFT_ENUM_VARS columns are left.
 inline void heuristic_removal(RedundancyData& red_set, Instance const& inst) {
     while (red_set.partial_cost < red_set.best_cost && red_set.redund_set.size() > CFT_ENUM_VARS) {
 

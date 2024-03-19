@@ -11,7 +11,7 @@
 
 namespace cft {
 
-/// @brief A data structure representing an instance using sparse binary matrix representation.
+// A data structure representing an instance using sparse binary matrix representation.
 struct Instance {
     // Current instance data
     SparseBinMat<ridx_t>             cols;
@@ -39,7 +39,7 @@ struct Instance {
 };
 
 namespace {
-    /// @brief Completes instance initialization by creating rows and orig_maps
+    // Completes instance initialization by creating rows and orig_maps
     inline void complete_init(Instance& partial_inst, ridx_t nrows) {
         partial_inst.rows = std::vector<std::vector<cidx_t>>(nrows);
 
@@ -72,12 +72,12 @@ namespace {
         return inst;
     }
 
-    inline Instance make_tentative_core_instance(Instance const& inst, int const min_row_coverage) {
+    inline Instance make_tentative_core_instance(Instance const& inst, ridx_t min_row_coverage) {
         Instance core_inst = {};
 
-        ridx_t const nrows        = inst.rows.size();
-        auto         row_coverage = std::vector<int>(nrows, 0);
-        ridx_t       covered      = 0;
+        ridx_t nrows        = inst.rows.size();
+        auto   row_coverage = std::vector<ridx_t>(nrows);
+        ridx_t covered      = 0;
 
         // TODO(any): we may consider randomizing columns.
         // TODO(any): consider iterating over row indices and taking the first `min_row_coverage`

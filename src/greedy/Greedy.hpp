@@ -1,17 +1,11 @@
 // Copyright (c) 2024 Francesco Cavaliere
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program. If not, see <https://www.gnu.org/licenses/>.
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version. This program is distributed in the hope that it
+// will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should
+// have received a copy of the GNU General Public License along with this program. If not, see
+// <https://www.gnu.org/licenses/>.
 
 #ifndef CFT_INCLUDE_GREEDY_HPP
 #define CFT_INCLUDE_GREEDY_HPP
@@ -26,23 +20,23 @@
 
 namespace cft {
 
-/// @brief This is the greedy step of the 3-phase of the CFT algorithm. It uses a set of Lagrangian
-/// multipliers to attempt to find an decent solution for the SCP problem (quantity over quality).
-/// For efficiency, we use a function object instead of a simple function. This allows us to cache
-/// data structures used in the Greedy step, preventing repeated reallocations. It also keeps
-/// internal details hidden, unlike using an external struct for cache storage.
-/// At the end of the day though, it can be mentally thought of as a function.
+// This is the greedy step of the 3-phase of the CFT algorithm. It uses a set of Lagrangian
+// multipliers to attempt to find an decent solution for the SCP problem (quantity over quality).
+// For efficiency, we use a function object instead of a simple function. This allows us to cache
+// data structures used in the Greedy step, preventing repeated reallocations. It also keeps
+// internal details hidden, unlike using an external struct for cache storage. At the end of the day
+// though, it can be mentally thought of as a function.
 struct Greedy {
     // Caches
     Sorter         sorter;
     Scores         scores;
     RedundancyData red_set;
 
-    /// @brief The greedy algorithm:
-    /// 1. Initialize column scores (based on the current lagragian multipliers)
-    /// 2. Add the column with the best score (until the solution is "complete")
-    /// 3. If present, remove redundant columns from the solution
-    /// NOTE: a valid solution is returned only if its cost is below the cutoff_cost
+    // The greedy algorithm:
+    // 1. Initialize column scores (based on the current lagragian multipliers)
+    // 2. Add the column with the best score (until the solution is "complete")
+    // 3. If present, remove redundant columns from the solution
+    // NOTE: a valid solution is returned only if its cost is below the cutoff_cost
     real_t operator()(Instance const&            inst,
                       std::vector<real_t> const& lagr_mult,
                       std::vector<cidx_t>&       sol,
