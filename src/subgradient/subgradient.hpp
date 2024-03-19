@@ -259,10 +259,11 @@ inline OptimizeResult optimize(Instance const&            orig_inst,
                                real_t                     upper_bound,
                                std::vector<real_t> const& initial_lagr_mult) {
 
+    assert(!orig_inst.cols.empty());
+    assert(!core_inst.cols.empty());
+
     size_t const nrows = orig_inst.rows.size();
     assert(nrows == core_inst.rows.size());
-
-    auto& inst = core_inst;
 
     auto next_step_size = make_step_size_manager(20, 0.1);
     auto should_exit    = make_exit_condition_manager(300);
@@ -273,11 +274,11 @@ inline OptimizeResult optimize(Instance const&            orig_inst,
     auto best      = make_optimize_result(initial_lagr_mult);
     auto price     = make_pricer();
 
-    size_t max_iters = 10 * inst.rows.size();
+    size_t max_iters = 10 * nrows;
     for (size_t iter = 0; iter < max_iters; ++iter) {
-        auto   sol          = compute_subgradient_solution(inst, lagr_mult);
-        auto   row_coverage = compute_row_coverage(inst, sol);
-        real_t norm         = compute_subgradient_norm(inst, row_coverage);
+        auto   sol          = compute_subgradient_solution(core_inst, lagr_mult);
+        auto   row_coverage = compute_row_coverage(core_inst, sol);
+        real_t norm         = compute_subgradient_norm(core_inst, row_coverage);
 
         // No constraints violated. Optimal (sub) instance solution?
         if (norm == 0) {
@@ -293,16 +294,17 @@ inline OptimizeResult optimize(Instance const&            orig_inst,
             break;
 
         real_t step_size = next_step_size(iter, sol.lower_bound);
-        for (size_t i = 0; i < inst.rows.size(); ++i) {
+        for (size_t i = 0; i < nrows; ++i) {
             real_t normalized_bound_diff = (upper_bound - sol.lower_bound) / norm;
             real_t violation             = 1 - row_coverage[i];
 
             real_t delta_mult = step_size * normalized_bound_diff * violation;
             lagr_mult[i]      = cft::max(0.0, lagr_mult[i] + delta_mult);
+            assert(std::isfinite(lagr_mult[i]) && "Multiplier is not finite");
         }
 
         if (should_price(iter, sol.lower_bound, upper_bound))
-            price(inst, lagr_mult, core_inst);
+            price(orig_inst, lagr_mult, core_inst);
     }
 
     return best;
@@ -338,6 +340,7 @@ inline ExploreResult explore(Instance const&            inst,
 
             real_t delta_mult = step_size * normalized_bound_diff * violation;
             lagr_mult[i]      = cft::max(0.0, lagr_mult[i] + delta_mult);
+            assert(std::isfinite(lagr_mult[i]) && "Multiplier is not finite");
         }
     }
     return res;

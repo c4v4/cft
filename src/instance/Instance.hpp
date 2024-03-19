@@ -2,6 +2,8 @@
 #define CFT_INCLUDE_INSTANCE_HPP
 
 
+#include <cassert>
+
 #include "core/SparseBinMat.hpp"
 #include "core/cft.hpp"
 #include "core/utility.hpp"
@@ -34,6 +36,8 @@ struct Instance {
             for (cidx_t j : rows[i])
                 assert("Row not in col" && any(cols[j], [i](cidx_t ci) { return ci == i; }));
         }
+
+        assert(cols.size() == costs.size() && costs.size() == solcosts.size());
     }
 #endif
 };

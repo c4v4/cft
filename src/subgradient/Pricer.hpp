@@ -97,6 +97,9 @@ struct Pricer {
                     std::vector<real_t> const& lagr_mult,
                     Instance&                  core_inst) {
 
+        assert(!inst.cols.empty());
+        assert(!core_inst.cols.empty());
+
         ridx_t const nrows = inst.rows.size();
         cidx_t const ncols = inst.cols.size();
 
