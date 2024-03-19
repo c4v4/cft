@@ -77,9 +77,9 @@ struct ExitConditionManager {
     size_t next_update_iter;
     real_t prev_lower_bound;
 
-    /// @brief Evaluates the exit condition by comparing the current best lower-bound with the
-    /// previous period's best lower-bound. Returns the original CFT exit condition based on the
-    /// absolute and relative improvement in the lower-bound.
+    // Evaluates the exit condition by comparing the current best lower-bound with the
+    // previous period's best lower-bound. Returns the original CFT exit condition based on the
+    // absolute and relative improvement in the lower-bound.
     CFT_NODISCARD bool operator()(size_t iter, real_t lower_bound) {
         if (iter == next_update_iter) {
             next_update_iter += period;

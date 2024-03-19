@@ -5,12 +5,11 @@
 #include <vector>
 
 #include "core/cft.hpp"
-#include "core/utility.hpp"
 
 namespace cft {
 
-/// @brief Data structure to keep track of the number of times an element is covered by a set of
-/// sets of elements.
+// Data structure to keep track of the number of times an element is covered by a set of sets of
+// elements.
 template <typename CounterT = uint16_t>
 struct CoverCounters {
     using counter_t = CounterT;
@@ -44,7 +43,7 @@ struct CoverCounters {
         return uncovered;
     }
 
-    /// @brief Check if all the elements of a subset are already covered.
+    // Check if all the elements of a subset are already covered.
     template <typename IterableT>
     CFT_NODISCARD bool is_redundant_cover(IterableT const& subset) {
         for (auto i : subset)
@@ -53,7 +52,7 @@ struct CoverCounters {
         return true;
     }
 
-    /// @brief Check if all the elements would still be covered if the subset was removed.
+    // Check if all the elements would still be covered if the subset was removed.
     template <typename IterableT>
     CFT_NODISCARD bool is_redundant_uncover(IterableT const& subset) {
         for (auto i : subset)
@@ -77,7 +76,7 @@ CFT_NODISCARD inline CoverCounters<CounterT> make_cover_counters(size_t nelems =
     return {std::vector<CounterT>(nelems)};
 }
 
-/// @brief Data structure to keep track of what elements are covered by a set of sets of elements.
+// Data structure to keep track of what elements are covered by a set of sets of elements.
 struct CoverBits {
     std::vector<bool> cov_flags;
 
@@ -109,7 +108,7 @@ struct CoverBits {
         return uncovered;
     }
 
-    /// @brief Check if all the elements of a subset are already covered.
+    // Check if all the elements of a subset are already covered.
     template <typename IterableT>
     CFT_NODISCARD bool is_redundant_cover(IterableT const& subset) {
         for (auto i : subset)

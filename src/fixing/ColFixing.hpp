@@ -1,17 +1,11 @@
 // Copyright (c) 2024 Francesco Cavaliere
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program. If not, see <https://www.gnu.org/licenses/>.
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version. This program is distributed in the hope that it
+// will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should
+// have received a copy of the GNU General Public License along with this program. If not, see
+// <https://www.gnu.org/licenses/>.
 
 #ifndef CFT_SRC_FIXING_COLFIXING_HPP
 #define CFT_SRC_FIXING_COLFIXING_HPP
@@ -26,13 +20,12 @@
 
 namespace cft {
 
-/// @brief 3phase column fixing step of the CFT algorithm.
-/// The original column fixing does not consider the current best_solution to further restrict the
-/// columns to fix. However, after extensive trials, we found that considering the best solution is
-/// crucial to achieve comparable results with the original.
-/// In other words, we were unable to implement the original column fixing technique (as it is
-/// described in the paper). By considering the current best solution the whole procedure becomes
-/// quite simpler since we get the redundancy removal for free.
+// 3phase column fixing step of the CFT algorithm. The original column fixing does not consider the
+// current best_solution to further restrict the columns to fix. However, after extensive trials, we
+// found that considering the best solution is crucial to achieve comparable results with the
+// original. In other words, we were unable to implement the original column fixing technique (as it
+// is described in the paper). By considering the current best solution the whole procedure becomes
+// quite simpler since we get the redundancy removal for free.
 struct ColFixing {
     static constexpr double col_fix_thresh = -0.001;
 

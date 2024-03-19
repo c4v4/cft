@@ -1,17 +1,11 @@
 // Copyright (c) 2024 Francesco Cavaliere
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program. If not, see <https://www.gnu.org/licenses/>.
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version. This program is distributed in the hope that it
+// will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should
+// have received a copy of the GNU General Public License along with this program. If not, see
+// <https://www.gnu.org/licenses/>.
 
 #ifndef CAV_INCLUDE_STRING_VIEW_HPP
 #define CAV_INCLUDE_STRING_VIEW_HPP
@@ -20,7 +14,6 @@
 #include <cstddef>
 #include <cstring>
 
-#include "core/Span.hpp"
 #include "core/cft.hpp"
 
 namespace cft {
@@ -79,7 +72,7 @@ struct StringView {
     }
 
     template <typename T>
-    CFT_NODISCARD size_t find_first_if(T&& cond) const noexcept {
+    CFT_NODISCARD size_t find_first_if(T cond) const noexcept {
         for (size_t i = 0; i < size(); ++i)
             if (cond((*this)[i]))
                 return i;
@@ -87,7 +80,7 @@ struct StringView {
     }
 
     template <typename T>
-    CFT_NODISCARD size_t find_last_if(T&& cond) const noexcept {
+    CFT_NODISCARD size_t find_last_if(T cond) const noexcept {
         for (size_t i = size() - 1; i > 0; --i)
             if (cond((*this)[i]))
                 return i;

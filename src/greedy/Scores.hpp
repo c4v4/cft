@@ -72,7 +72,7 @@ private:
     }
 
 public:
-    /// @brief Initialize the scores for the greedy algorithm (starting from an empty solution)
+    // Initialize the scores for the greedy algorithm (starting from an empty solution)
     void init_scores(Instance const& inst, std::vector<real_t> const& lagr_mult, Sorter& sorter) {
 
         ridx_t nrows = inst.rows.size();
@@ -99,8 +99,8 @@ public:
         _update_good_scores(sorter);
     }
 
-    /// @brief Initialize the scores for the greedy algorithm (starting from an partially filled
-    /// solution)
+    // Initialize the scores for the greedy algorithm (starting from an partially filled
+    // solution)
     void init_scores(Instance const&            inst,
                      std::vector<real_t> const& lagr_mult,
                      CoverCounters<> const&     cover_counts,
@@ -134,7 +134,7 @@ public:
         _update_good_scores(sorter);
     }
 
-    /// @brief Extract the column with the minimum score and update the scores
+    // Extract the column with the minimum score and update the scores
     cidx_t extract_minscore_col(Instance const&            inst,
                                 std::vector<real_t> const& lagr_mult,
                                 CoverCounters<> const&     cover_counts,

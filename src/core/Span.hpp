@@ -11,7 +11,7 @@
 
 namespace cft {
 
-/// @brief A simple non-owning span
+// A simple non-owning span
 template <typename ItT>
 struct Span {
     using iterator        = ItT;

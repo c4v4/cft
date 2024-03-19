@@ -1,17 +1,11 @@
 // Copyright (c) 2023 Francesco Cavaliere
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program. If not, see <https://www.gnu.org/licenses/>.
+// This program is free software: you can redistribute it and/or modify it under the terms of the
+// GNU General Public License as published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version. This program is distributed in the hope that it
+// will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should
+// have received a copy of the GNU General Public License along with this program. If not, see
+// <https://www.gnu.org/licenses/>.
 
 #ifndef CAV_INCLUDE_UTIL_FUNCTIONS_HPP
 #define CAV_INCLUDE_UTIL_FUNCTIONS_HPP
@@ -30,7 +24,7 @@ CFT_NODISCARD T abs(T val) noexcept {
     return val < T{} ? -val : val;
 }
 
-//// Multi-arg max
+/// Multi-arg max
 template <typename T>
 CFT_NODISCARD T max(T v) noexcept {
     return v;
@@ -47,7 +41,7 @@ CFT_NODISCARD bool max(bool b1, bool b2, Ts... tail) noexcept {
     return b1 || max(b2, tail...);
 }
 
-//// Multi-arg min
+/// Multi-arg min
 template <typename T>
 CFT_NODISCARD T min(T v) noexcept {
     return v;
@@ -66,7 +60,7 @@ CFT_NODISCARD bool min(bool b1, bool b2, Ts... tail) noexcept {
 
 // Condition test operations
 template <typename T, typename O>
-bool any(T const& container, O&& op) {
+bool any(T const& container, O op) {
     for (auto const& e : container)
         if (op(e))
             return true;
@@ -74,7 +68,7 @@ bool any(T const& container, O&& op) {
 }
 
 template <typename T, typename O>
-bool all(T const& container, O&& op) {
+bool all(T const& container, O op) {
     for (auto const& e : container)
         if (!op(e))
             return false;

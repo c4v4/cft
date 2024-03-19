@@ -8,9 +8,8 @@
 
 namespace cft {
 
-/// @brief A simple sparse binary matrix.
-/// Operator[] returns a span to the i-th element (row or column).
-/// For finer control, idxs and begs are public.
+// A simple sparse binary matrix. Operator[] returns a span to the i-th element (row or column).
+// For finer control, idxs and begs are public.
 template <typename IdxT>
 struct SparseBinMat {
 
