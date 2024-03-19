@@ -73,19 +73,19 @@ struct Instance {
 #endif
 };
 
-namespace {
-    /// @brief Completes instance initialization by creating rows and orig_maps
-    inline void complete_init(Instance& partial_inst, ridx_t nrows) {
-        partial_inst.rows            = std::vector<std::vector<cidx_t>>(nrows);
-        partial_inst.orig_maps       = make_idx_maps(partial_inst.cols.size(), nrows);
-        partial_inst.fixed_orig_idxs = {};
-        partial_inst.fixed_cost      = {};
+/// @brief Completes instance initialization by creating rows and orig_maps
+inline void finalize_partial_instance(Instance& partial_inst, ridx_t nrows) {
+    partial_inst.rows            = std::vector<std::vector<cidx_t>>(nrows);
+    partial_inst.orig_maps       = make_idx_maps(partial_inst.cols.size(), nrows);
+    partial_inst.fixed_orig_idxs = {};
+    partial_inst.fixed_cost      = {};
 
-        for (cidx_t j = 0; j < partial_inst.cols.size(); ++j)
-            for (ridx_t i : partial_inst.cols[j])
-                partial_inst.rows[i].push_back(j);
-    }
-}  // namespace
+    for (cidx_t j = 0; j < partial_inst.cols.size(); ++j)
+        for (ridx_t i : partial_inst.cols[j])
+            partial_inst.rows[i].push_back(j);
+
+    IF_DEBUG(partial_inst.invariants_check());
+}
 
 inline Instance make_instance(InstanceData&& inst_data) {
     Instance inst = {};
@@ -93,8 +93,7 @@ inline Instance make_instance(InstanceData&& inst_data) {
     inst.costs    = std::move(inst_data.costs);
     inst.solcosts = std::move(inst_data.solcosts);
 
-    complete_init(inst, inst_data.nrows);
-    IF_DEBUG(inst.invariants_check());
+    finalize_partial_instance(inst, inst_data.nrows);
 
     return inst;
 }
@@ -105,8 +104,7 @@ inline Instance make_instance(InstanceData const& inst_data) {
     inst.costs    = inst_data.costs;
     inst.solcosts = inst_data.solcosts;
 
-    complete_init(inst, inst_data.nrows);
-    IF_DEBUG(inst.invariants_check());
+    finalize_partial_instance(inst, inst_data.nrows);
 
     return inst;
 }
@@ -114,9 +112,9 @@ inline Instance make_instance(InstanceData const& inst_data) {
 inline Instance make_tentative_core_instance(Instance const& inst, int const min_row_coverage) {
     Instance core_inst = {};
 
-    int const nrows        = inst.rows.size();
-    auto      row_coverage = std::vector<int>(nrows, 0);
-    int       covered      = 0;
+    ridx_t const nrows        = inst.rows.size();
+    auto         row_coverage = std::vector<int>(nrows, 0);
+    ridx_t       covered      = 0;
 
     // TODO(any): we may consider randomizing columns.
     // TODO(any): consider iterating over row indices and taking the first `min_row_coverage`
@@ -125,6 +123,7 @@ inline Instance make_tentative_core_instance(Instance const& inst, int const min
         core_inst.cols.push_back(inst.cols[j]);
         core_inst.costs.push_back(inst.costs[j]);
         core_inst.solcosts.push_back(limits<real_t>::max());
+        core_inst.costs.push_back(inst.costs[j]);
 
         // Update row coverage for early exit.
         for (ridx_t i : inst.cols[j]) {
@@ -139,8 +138,8 @@ inline Instance make_tentative_core_instance(Instance const& inst, int const min
 
 done:
 
-    complete_init(core_inst, nrows);
-    IF_DEBUG(core_inst.invariants_check());
+    finalize_partial_instance(core_inst, nrows);
+
     return core_inst;
 }
 
