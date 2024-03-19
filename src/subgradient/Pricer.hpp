@@ -107,7 +107,7 @@ struct Pricer {
         select_c2_col_idxs(inst, reduced_costs, idxs, taken_idxs);
 
         init_partial_instance(inst, idxs, core_inst);
-        finalize_partial_instance(core_inst, nrows);
+        complete_init(core_inst, nrows);
     }
 
 private:
