@@ -39,7 +39,7 @@ struct ColFixing {
     // Caches
     std::vector<cidx_t> cols_to_fix;
     CoverCounters<>     cover_counts;
-    IdxMaps             idx_map;
+    Fixing              fixing;
 
     void operator()(Instance&            inst,
                     std::vector<real_t>& lagr_mult,
@@ -61,30 +61,21 @@ struct ColFixing {
             }
         }
 
-        auto fix_more = max<cidx_t>(nrows / 200, 1);
-        if (fix_more > cols_to_fix.size())
-            greedy(inst, lagr_mult, cols_to_fix, limits<real_t>::max(), fix_more);
+        auto fix_at_least = max<cidx_t>(nrows / 200, 1);
+        if (fix_at_least > cols_to_fix.size())
+            greedy(inst, lagr_mult, cols_to_fix, limits<real_t>::max(), fix_at_least);
 
-        fix_columns(inst, cols_to_fix, idx_map);
+        fix_columns(inst, cols_to_fix, fixing);
         // TODO(cava): atm column not in best_sol could be fixed by greedy, can we avoid this?
-        // for (cidx_t rs = 0, ws = 0; rs < best_sol.size(); ++rs) {
-        //    cidx_t old_j = best_sol[rs];
-        //    cidx_t new_j = idx_map.col_idxs[old_j];
-        //    if (new_j != CFT_REMOVED_IDX) {
-        //        assert(old_j >= new_j);
-        //        best_sol[ws++] = new_j;
-        //    }
-        //}
-        for (ridx_t ri = 0; ri < lagr_mult.size(); ++ri)
-            if (idx_map.row_idxs[ri] != CFT_REMOVED_IDX) {
-                assert(idx_map.row_idxs[ri] <= ri);
-                lagr_mult[idx_map.row_idxs[ri]] = lagr_mult[ri];
-            }
+        for (ridx_t ri = 0; ri < fixing.new2old_row_map.size(); ++ri) {
+            assert(ri <= fixing.new2old_row_map[ri]);
+            lagr_mult[ri] = lagr_mult[fixing.new2old_row_map[ri]];
+        }
     }
 };
 
 inline ColFixing make_col_fixing() {
-    return {{}, make_cover_counters(), make_idx_maps()};
+    return {{}, make_cover_counters(), make_fixing()};
 }
 
 }  // namespace cft

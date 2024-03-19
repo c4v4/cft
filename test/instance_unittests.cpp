@@ -9,8 +9,6 @@ namespace cft {
 
 // void Instance::invariants_check();
 
-// IdxMaps fix_columns(std::vector<cidx_t> const& cols_to_fix);
-
 // void fix_columns(std::vector<cidx_t> const& cols_to_fix, IdxMaps& idx_maps);
 
 // inline void complete_init(Instance& partial_inst, ridx_t nrows);
@@ -34,7 +32,6 @@ TEST_CASE("test_make_tentative_core_instance") {
 
     for (ridx_t i = 0; i < nrows; ++i)
         REQUIRE(cov[i] >= min_row_coverage);
-
 }
 
 }  // namespace cft
