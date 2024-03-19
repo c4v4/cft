@@ -67,10 +67,13 @@ struct ColFixing {
 
         fix_columns(inst, cols_to_fix, fixing);
         // TODO(cava): atm column not in best_sol could be fixed by greedy, can we avoid this?
-        for (ridx_t ri = 0; ri < fixing.new2old_row_map.size(); ++ri) {
-            assert(ri <= fixing.new2old_row_map[ri]);
-            lagr_mult[ri] = lagr_mult[fixing.new2old_row_map[ri]];
+        ridx_t new_nrows = fixing.new2old_row_map.size();
+        for (ridx_t i = 0; i < new_nrows; ++i) {
+            assert(i <= fixing.new2old_row_map[i]);
+            assert(fixing.new2old_row_map[i] < lagr_mult.size());
+            lagr_mult[i] = lagr_mult[fixing.new2old_row_map[i]];
         }
+        lagr_mult.resize(new_nrows);
     }
 };
 
