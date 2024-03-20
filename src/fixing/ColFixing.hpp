@@ -34,7 +34,7 @@ struct ColFixing {
     CoverCounters<>     cover_counts;
 
     void operator()(Instance&            inst,
-                    FixingData&              fixing,
+                    FixingData&          fixing,
                     std::vector<real_t>& lagr_mult,
                     std::vector<cidx_t>& best_sol,
                     Greedy&              greedy) {
@@ -60,13 +60,15 @@ struct ColFixing {
 
         fix_columns(inst, cols_to_fix, fixing);
         // TODO(cava): atm column not in best_sol could be fixed by greedy, can we avoid this?
-        ridx_t new_nrows = fixing.new2old_row_map.size();
-        for (ridx_t i = 0; i < new_nrows; ++i) {
-            assert(i <= fixing.new2old_row_map[i]);
-            assert(fixing.new2old_row_map[i] < lagr_mult.size());
-            lagr_mult[i] = lagr_mult[fixing.new2old_row_map[i]];
+        ridx_t prev_nrows = fixing.prev2curr_row_map.size();
+        for (ridx_t prev_i = 0; prev_i < prev_nrows; ++prev_i) {
+            ridx_t curr_i = fixing.prev2curr_row_map[prev_i];
+            if (curr_i != CFT_REMOVED_IDX) {
+                assert(curr_i <= prev_i);
+                lagr_mult[curr_i] = lagr_mult[prev_i];
+            }
         }
-        lagr_mult.resize(new_nrows);
+        lagr_mult.resize(prev_nrows);
     }
 };
 

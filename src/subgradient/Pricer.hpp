@@ -78,7 +78,7 @@ namespace {
 
         for (cidx_t j : idxs) {
             core_inst.cols.push_back(inst.cols[j]);
-            core_inst.solcosts.push_back(limits<real_t>::max());
+            core_inst.solcosts.push_back(inst.solcosts[j]);
             core_inst.costs.push_back(inst.costs[j]);
         }
     }
@@ -110,7 +110,7 @@ struct Pricer {
         select_c2_col_idxs(inst, reduced_costs, idxs, taken_idxs);
 
         init_partial_instance(inst, idxs, core_inst);
-        core_inst.rows = build_rows_from_cols(core_inst.cols, nrows);
+        fill_rows_from_cols(core_inst.cols, nrows, core_inst.rows);
     }
 
 private:

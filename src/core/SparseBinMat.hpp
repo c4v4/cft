@@ -2,6 +2,7 @@
 #define CFT_INCLUDE_SPARSEBINMAT_HPP
 
 #include <cassert>
+#include <vector>
 
 #include "core/Span.hpp"
 #include "core/cft.hpp"
