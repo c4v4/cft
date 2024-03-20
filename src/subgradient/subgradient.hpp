@@ -1,6 +1,7 @@
 #ifndef CFT_INCLUDE_SUBGRADIENT_HPP
 #define CFT_INCLUDE_SUBGRADIENT_HPP
 
+#include <cassert>
 #include <cmath>
 #include <cstddef>
 #include <vector>
@@ -10,6 +11,7 @@
 #include "core/limits.hpp"
 #include "core/random.hpp"
 #include "core/utility.hpp"
+#include "fmt/base.h"
 #include "instance/Instance.hpp"
 #include "subgradient/Pricer.hpp"
 
@@ -237,9 +239,10 @@ inline std::vector<real_t> compute_perturbed_multipliers(std::vector<real_t> con
                                                          cft::prng_t&               rnd) {
     auto perturbed_lagr_mult = std::vector<real_t>(multipliers.size());
 
-    for (size_t i = 0; i < multipliers.size(); ++i)
+    for (size_t i = 0; i < multipliers.size(); ++i) {
         perturbed_lagr_mult[i] = rnd_real(rnd, 0.9F, 1.1F) * multipliers[i];
-
+        assert(std::isfinite(perturbed_lagr_mult[i]) && "Multiplier is not finite");
+    }
     return perturbed_lagr_mult;
 }
 
@@ -247,6 +250,7 @@ inline std::vector<real_t> compute_perturbed_multipliers(std::vector<real_t> con
 inline OptimizeResult optimize(Instance const&            orig_inst,
                                Instance&                  core_inst,
                                real_t                     upper_bound,
+                               real_t                     cutoff,
                                std::vector<real_t> const& initial_lagr_mult) {
 
     assert(!orig_inst.cols.empty());
@@ -270,14 +274,23 @@ inline OptimizeResult optimize(Instance const&            orig_inst,
         auto   row_coverage = compute_row_coverage(core_inst, sol);
         real_t norm         = compute_subgradient_norm(core_inst, row_coverage);
 
-        // No constraints violated. Optimal (sub) instance solution?
         if (norm == 0) {
             // TODO(acco): consider updating the upper_bound and storing the solution.
+            fmt::print("Found optimal solution.\n");
+            break;
+        }
+
+        assert(sol.lower_bound <= upper_bound);
+        if (sol.lower_bound >= cutoff) {
+            fmt::print("Unpromising set of columns.\n");
+            // TODO(any): we should signal this to the caller, e.g., by setting the LB to +inf?
+            break;
         }
 
         if (sol.lower_bound > best.lower_bound) {
             best.lower_bound = sol.lower_bound;
             best.lagr_mult   = lagr_mult;
+            fmt::print("{:4} Subgradient OPT lower bound: {}\n", iter, best.lower_bound);
         }
 
         if (should_exit(iter, best.lower_bound))
@@ -303,6 +316,7 @@ inline OptimizeResult optimize(Instance const&            orig_inst,
 // TODO(acco): Consider implementing it as a functor.
 inline ExploreResult explore(Instance const&            inst,
                              real_t                     upper_bound,
+                             real_t                     cutoff,
                              std::vector<real_t> const& initial_lagr_mult) {
 
     auto lagr_mult = initial_lagr_mult;
@@ -314,8 +328,17 @@ inline ExploreResult explore(Instance const&            inst,
         auto   row_coverage = compute_reduced_row_coverage(inst, sol);
         real_t norm         = compute_subgradient_norm(inst, row_coverage);
 
-        // No constraints violated. Optimal (sub) instance solution?
         if (norm == 0) {
+            // TODO(acco): consider updating the upper_bound and storing the solution.
+            fmt::print("Found optimal solution.\n");
+            break;
+        }
+
+        assert(sol.lower_bound <= upper_bound);
+        if (sol.lower_bound >= cutoff) {
+            fmt::print("Unpromising set of columns.\n");
+            // TODO(any): we should signal this to the caller, e.g., by setting the LB to +inf?
+            break;
         }
 
         if (sol.lower_bound > res.lower_bound)
