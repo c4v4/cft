@@ -31,11 +31,4 @@ using real_t = float;
 #define CFT_NODISCARD _Check_return_
 #endif
 
-#include <random>
-
-namespace cft {
-using prng_t = std::mt19937_64;
-
-}  // namespace cft
-
 #endif /* CFT_INCLUDE_CFT_HPP */

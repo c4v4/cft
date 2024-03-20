@@ -2,12 +2,12 @@
 #define CFT_INCLUDE_SUBGRADIENT_HPP
 
 #include <cstddef>
-#include <random>
 #include <vector>
 
 #include "core/cft.hpp"
 #include "core/coverage.hpp"
 #include "core/limits.hpp"
+#include "core/random.hpp"
 #include "core/utility.hpp"
 #include "instance/Instance.hpp"
 #include "subgradient/Pricer.hpp"
@@ -248,10 +248,9 @@ inline std::vector<real_t> compute_greedy_multipliers(Instance const& inst) {
 inline std::vector<real_t> compute_perturbed_multipliers(std::vector<real_t> const& multipliers,
                                                          cft::prng_t&               rnd) {
     auto perturbed_lagr_mult = std::vector<real_t>(multipliers.size());
-    auto urd                 = std::uniform_real_distribution<real_t>(0.9, 1.1);
 
     for (size_t i = 0; i < multipliers.size(); ++i)
-        perturbed_lagr_mult[i] = urd(rnd) * multipliers[i];
+        perturbed_lagr_mult[i] = rnd_real(rnd, 0.9F, 1.1F) * multipliers[i];
 
     return perturbed_lagr_mult;
 }
