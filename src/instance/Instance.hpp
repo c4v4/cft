@@ -68,7 +68,6 @@ inline Instance build_tentative_core_instance(Instance const& inst, ridx_t min_r
         core_inst.cols.push_back(inst.cols[j]);
         core_inst.costs.push_back(inst.costs[j]);
         core_inst.solcosts.push_back(limits<real_t>::max());
-        core_inst.costs.push_back(inst.costs[j]);
 
         // Update row coverage for early exit.
         for (ridx_t i : inst.cols[j]) {
