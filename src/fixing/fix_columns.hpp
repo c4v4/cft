@@ -145,6 +145,8 @@ namespace {
         inst.cols.begs[new_j] = n;
         inst.cols.idxs.resize(n);
         inst.cols.begs.resize(new_j + 1);
+        inst.costs.resize(new_j);
+        inst.solcosts.resize(new_j);
         fixing.new2old_col_map.resize(new_j);
     }
 
