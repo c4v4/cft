@@ -10,6 +10,8 @@
 #ifndef CFT_SRC_FIXING_FIX_COLUMNS_HPP
 #define CFT_SRC_FIXING_FIX_COLUMNS_HPP
 
+#include <vector>
+
 #include "core/cft.hpp"
 #ifndef NDEBUG
 #include <algorithm>
@@ -27,6 +29,26 @@ struct FixingData {
     std::vector<cidx_t> fixed_cols;
     real_t              fixed_cost;
 };
+
+inline FixingData make_identity_fixing_data(cidx_t ncols, ridx_t nrows) {
+    auto fixing            = FixingData();
+    fixing.old2new_col_map = std::vector<cidx_t>(ncols);
+    fixing.old2new_row_map = std::vector<ridx_t>(nrows);
+    fixing.new2old_col_map = std::vector<cidx_t>(ncols);
+    fixing.new2old_row_map = std::vector<ridx_t>(nrows);
+    fixing.fixed_cols      = std::vector<cidx_t>();
+    fixing.fixed_cost      = 0.0;
+
+    for (cidx_t j = 0; j < ncols; ++j) {
+        fixing.old2new_col_map[j] = j;
+        fixing.new2old_col_map[j] = j;
+    }
+    for (ridx_t i = 0; i < nrows; ++i) {
+        fixing.old2new_row_map[i] = i;
+        fixing.new2old_row_map[i] = i;
+    }
+    return fixing;
+}
 
 namespace {
 #ifndef NDEBUG

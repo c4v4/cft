@@ -78,7 +78,7 @@ namespace {
 
         for (cidx_t j : idxs) {
             core_inst.cols.push_back(inst.cols[j]);
-            core_inst.solcosts.push_back(limits<real_t>::max());
+            core_inst.solcosts.push_back(inst.solcosts[j]);
             core_inst.costs.push_back(inst.costs[j]);
         }
     }

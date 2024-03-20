@@ -62,7 +62,7 @@ int main(int argc, char const** argv) {
     auto args       = cft::make_span(argv, argc);
     auto inst       = cft::parse_rail_instance(args[1]);
     auto greedy     = cft::Greedy();
-    auto fixing     = cft::FixingData();
+    auto fixing     = cft::make_identity_fixing_data(inst.cols.size(), inst.rows.size());
     auto col_fixing = cft::ColFixing();
     auto rnd        = cft::prng_t{0};
 
