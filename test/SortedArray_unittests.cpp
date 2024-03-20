@@ -81,7 +81,8 @@ TEST_CASE("test_ovefull_sequence") {
 
 TEST_CASE("test_custom_compare") {
     int  idx_array[] = {4, 3, 2, 1, 0};
-    auto arr = SortedArray<int, 5>([&](int a, int b) { return idx_array[a] < idx_array[b]; });
+    auto arr         = make_custom_compare_sorted_array<int, 5>(
+        [&](int a, int b) { return idx_array[a] < idx_array[b]; });
     arr.insert(4);
     arr.insert(0);
     arr.insert(2);

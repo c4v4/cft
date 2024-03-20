@@ -44,6 +44,9 @@ inline void col_and_rows_check(SparseBinMat<ridx_t> const&             cols,
 inline std::vector<std::vector<cidx_t>> build_rows_from_cols(SparseBinMat<ridx_t> const& cols,
                                                              ridx_t                      nrows) {
     auto rows = std::vector<std::vector<cidx_t>>(nrows);
+    for (auto& row : rows)
+        row.reserve(cols.idxs.size() / nrows);
+
     for (cidx_t j = 0; j < cols.size(); ++j)
         for (ridx_t i : cols[j])
             rows[i].push_back(j);

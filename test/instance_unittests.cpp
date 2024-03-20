@@ -18,8 +18,7 @@ TEST_CASE("test_build_tentative_core_instance") {
 
     int min_row_coverage = 2;
 
-    auto  file_data = parse_scp_instance("../instances/scp/scp41.txt");
-    auto& inst      = file_data.inst;
+    auto  inst = parse_scp_instance("../instances/scp/scp41.txt");
     auto  core_inst = build_tentative_core_instance(inst, min_row_coverage);
 
     ridx_t nrows = inst.rows.size();
