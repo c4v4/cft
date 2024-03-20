@@ -113,19 +113,19 @@ struct FileLineIterator {
     std::ifstream in;
     std::string   line;
 
+    FileLineIterator(std::string const& path)
+        : in(path) {
+    }
+
+    FileLineIterator(char const* path)
+        : in(path) {
+    }
+
     CFT_NODISCARD StringView next() {
         std::getline(in, line);
-        return trim(make_string_view(line));
+        return trim(StringView(line));
     }
 };
-
-inline FileLineIterator make_file_line_iterator(std::string const& path) {
-    return {std::ifstream(path), std::string()};
-}
-
-inline FileLineIterator make_file_line_iterator(char const* path) {
-    return {std::ifstream(path), std::string()};
-}
 
 }  // namespace cft
 

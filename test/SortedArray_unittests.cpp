@@ -5,7 +5,7 @@
 namespace cft {
 
 TEST_CASE("test_sorted_sequence") {
-    auto arr = make_sorted_array<int, 5>();
+    auto arr = SortedArray<int, 5>();
     arr.insert(1);
     arr.insert(2);
     arr.insert(3);
@@ -26,7 +26,7 @@ TEST_CASE("test_sorted_sequence") {
 }
 
 TEST_CASE("test_unsorted_sequence") {
-    auto arr = make_sorted_array<int, 5>();
+    auto arr = SortedArray<int, 5>();
     arr.insert(3);
     arr.insert(1);
     arr.insert(5);
@@ -47,14 +47,14 @@ TEST_CASE("test_unsorted_sequence") {
 }
 
 TEST_CASE("test_empty_sequence") {
-    auto arr = make_sorted_array<int, 5>();
+    auto arr = SortedArray<int, 5>();
 
     REQUIRE(arr.size() == 0);
     REQUIRE(arr.begin() == arr.end());
 }
 
 TEST_CASE("test_ovefull_sequence") {
-    auto arr = make_sorted_array<int, 5>();
+    auto arr = SortedArray<int, 5>();
     arr.insert(3);
     arr.insert(6);
     arr.insert(1);
@@ -81,7 +81,8 @@ TEST_CASE("test_ovefull_sequence") {
 
 TEST_CASE("test_custom_compare") {
     int  idx_array[] = {4, 3, 2, 1, 0};
-    auto arr = make_sorted_array<int, 5>([&](int a, int b) { return idx_array[a] < idx_array[b]; });
+    auto arr         = make_custom_compare_sorted_array<int, 5>(
+        [&](int a, int b) { return idx_array[a] < idx_array[b]; });
     arr.insert(4);
     arr.insert(0);
     arr.insert(2);

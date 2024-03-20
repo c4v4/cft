@@ -29,6 +29,28 @@ struct StringView {
     iterator start;
     iterator finish;
 
+    StringView() = default;
+
+    StringView(char const* beg, char const* end)
+        : start(beg)
+        , finish(end) {
+    }
+
+    StringView(char const* beg, size_t sz)
+        : start(beg)
+        , finish(beg + sz) {
+    }
+
+    StringView(std::string const& str)
+        : start(str.data())
+        , finish(str.data() + str.size()) {
+    }
+
+    StringView(char const* str)
+        : start(str)
+        , finish(str + std::strlen(str)) {
+    }
+
     CFT_NODISCARD size_type size() const noexcept {
         return finish - start;
     }
@@ -132,26 +154,6 @@ private:
         return 0;
     }
 };
-
-CFT_NODISCARD inline StringView make_string_view() {
-    return {{}, {}};
-}
-
-CFT_NODISCARD inline StringView make_string_view(char const* beg, char const* end) {
-    return {beg, end};
-}
-
-CFT_NODISCARD inline StringView make_string_view(char const* beg, size_t sz) {
-    return {beg, beg + sz};
-}
-
-CFT_NODISCARD inline StringView make_string_view(std::string const& str) {
-    return {str.data(), str.data() + str.size()};
-}
-
-CFT_NODISCARD inline StringView make_string_view(char const* str) {
-    return {str, str + std::strlen(str)};
-}
 
 }  // namespace cft
 

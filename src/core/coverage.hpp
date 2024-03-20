@@ -2,6 +2,7 @@
 #define CFT_INCLUDE_COUNTSET_HPP
 
 #include <cassert>
+#include <type_traits>
 #include <vector>
 
 #include "core/cft.hpp"
@@ -15,6 +16,10 @@ struct CoverCounters {
     using counter_t = CounterT;
 
     std::vector<counter_t> cov_counters;
+
+    CoverCounters(size_t nelems = 0)
+        : cov_counters(nelems, 0) {
+    }
 
     void reset(size_t nelems) {
         cov_counters.assign(nelems, 0);
@@ -71,14 +76,13 @@ struct CoverCounters {
     }
 };
 
-template <typename CounterT = uint16_t>
-CFT_NODISCARD inline CoverCounters<CounterT> make_cover_counters(size_t nelems = 0) {
-    return {std::vector<CounterT>(nelems)};
-}
-
 // Data structure to keep track of what elements are covered by a set of sets of elements.
 struct CoverBits {
     std::vector<bool> cov_flags;
+
+    CoverBits(size_t nelems)
+        : cov_flags(nelems, false) {
+    }
 
     void reset(size_t nelems) {
         cov_flags.assign(nelems, false);
@@ -126,10 +130,6 @@ struct CoverBits {
         return cov_flags.size();
     }
 };
-
-CFT_NODISCARD inline CoverBits make_cover_bits(size_t nelems = 0) {
-    return {std::vector<bool>(nelems)};
-}
 
 }  // namespace cft
 

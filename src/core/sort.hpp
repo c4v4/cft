@@ -52,10 +52,6 @@ struct Sorter {
     }
 };
 
-inline Sorter make_sorter() {
-    return Sorter{};
-}
-
 }  // namespace cft
 
 #endif /* CFT_INCLUDE_RADIX_STUFF_HPP */

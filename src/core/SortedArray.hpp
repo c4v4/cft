@@ -28,12 +28,10 @@ struct SortedArray : Comp /*EBO*/ {
     using pointer         = T*;
     using difference_type = std::ptrdiff_t;
 
-    SortedArray() = default;
-
     // NOTE: this is a workaround for the fact that in general we cannot have EBO while keeping
     // SortedArray an aggregate
-    SortedArray(Comp&& comp)
-        : Comp(std::forward<Comp>(comp)) {
+    SortedArray(Comp comp = {})
+        : Comp(comp) {
     }
 
     T        data[Nm];
@@ -96,18 +94,13 @@ struct SortedArray : Comp /*EBO*/ {
     }
 };
 
-template <typename T, std::size_t Nm, typename Comp = std::less<T>>
-inline SortedArray<T, Nm, Comp> make_sorted_array() {
-    return SortedArray<T, Nm, Comp>{};
-}
-
 // NOTE: here for now, might be useful in other places, move to a more general header in case
 template <typename T>
 using no_cvr = typename std::remove_reference<typename std::remove_cv<T>::type>::type;
 
 template <typename T, std::size_t Nm, typename Comp>
-inline SortedArray<T, Nm, no_cvr<Comp>> make_sorted_array(Comp&& comparator) {
-    return SortedArray<T, Nm, no_cvr<Comp>>{std::forward<Comp>(comparator)};
+inline SortedArray<T, Nm, no_cvr<Comp>> make_custom_compare_sorted_array(Comp comparator) {
+    return SortedArray<T, Nm, no_cvr<Comp>>{comparator};
 }
 
 }  // namespace cft

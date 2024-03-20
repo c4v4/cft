@@ -154,9 +154,6 @@ public:
     }
 };
 
-inline Scores make_greedy_scores() {
-    return Scores{};
-}
 }  // namespace cft
 
 #endif /* CFT_SRC_CORE_GREEDYSCORES_HPP */

@@ -32,9 +32,9 @@ struct ColFixing {
     // Caches
     std::vector<cidx_t> cols_to_fix;
     CoverCounters<>     cover_counts;
-    Fixing              fixing;
 
     void operator()(Instance&            inst,
+                    FixingData&              fixing,
                     std::vector<real_t>& lagr_mult,
                     std::vector<cidx_t>& best_sol,
                     Greedy&              greedy) {
@@ -69,10 +69,6 @@ struct ColFixing {
         lagr_mult.resize(new_nrows);
     }
 };
-
-inline ColFixing make_col_fixing() {
-    return {{}, make_cover_counters(), make_fixing()};
-}
 
 }  // namespace cft
 

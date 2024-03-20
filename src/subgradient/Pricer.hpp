@@ -50,8 +50,8 @@ namespace {
 
         ridx_t const nrows = inst.rows.size();
 
-        auto heap = make_sorted_array<cidx_t, mincov>(
-            [&reduced_costs](cidx_t i, cidx_t j) { return reduced_costs[i] < reduced_costs[j]; });
+        auto heap = make_custom_compare_sorted_array<cidx_t, mincov>(
+            [&](cidx_t i, cidx_t j) { return reduced_costs[i] < reduced_costs[j]; });
 
         for (ridx_t i = 0; i < nrows; ++i) {
             heap.clear();
@@ -110,7 +110,7 @@ struct Pricer {
         select_c2_col_idxs(inst, reduced_costs, idxs, taken_idxs);
 
         init_partial_instance(inst, idxs, core_inst);
-        complete_init(core_inst, nrows);
+        core_inst.rows = build_rows_from_cols(core_inst.cols, nrows);
     }
 
 private:
@@ -121,9 +121,6 @@ private:
     }
 };
 
-inline Pricer make_pricer() {
-    return Pricer{make_sorter(), {}, {}, {}};
-}
 
 }  // namespace cft
 

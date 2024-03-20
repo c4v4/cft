@@ -130,10 +130,6 @@ private:
     }
 };
 
-inline Greedy make_greedy() {
-    return Greedy{make_sorter(), make_greedy_scores(), make_redundancy_data()};
-}
-
 }  // namespace cft
 
 #endif /* CFT_INCLUDE_GREEDY_HPP */

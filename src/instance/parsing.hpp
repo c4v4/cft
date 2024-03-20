@@ -17,39 +17,24 @@
 #include "core/StringView.hpp"
 #include "core/cft.hpp"
 #include "core/limits.hpp"
+#include "instance/Instance.hpp"
 #include "instance/parse_utils.hpp"
 
 namespace cft {
 
-struct InstanceData {
-    ridx_t               nrows;
-    std::vector<real_t>  costs;
-    std::vector<real_t>  solcosts;
-    SparseBinMat<cidx_t> cols;
-    std::vector<cidx_t>  warmstart;
+struct FileData {
+    Instance            inst;
+    std::vector<cidx_t> warmstart;
 };
 
-inline InstanceData make_instance_data() {
-    return {0, {}, {}, make_sparse_bin_mat<ridx_t>(), {}};
-}
-
-inline InstanceData make_instance_data(cidx_t ncols, ridx_t nrows) {
-    auto inst  = InstanceData{0, {}, {}, make_sparse_bin_mat<ridx_t>(), {}};
-    inst.nrows = nrows;
-    inst.costs.reserve(ncols);
-    inst.solcosts.reserve(ncols);
-    inst.cols.begs.reserve(ncols + 1);
-    return inst;
-}
-
-inline InstanceData parse_scp_instance(std::string const& path) {
-    auto file_iter = make_file_line_iterator(path);
+inline Instance parse_scp_instance(std::string const& path) {
+    auto file_iter = FileLineIterator(path);
     auto line_view = file_iter.next();
+    auto inst      = Instance();
 
     // Read nrows & ncols
     ridx_t nrows = string_to<ridx_t>::consume(line_view);
     cidx_t ncols = string_to<cidx_t>::consume(line_view);
-    auto   inst  = make_instance_data(ncols, nrows);
     assert(line_view.empty());
 
     for (cidx_t j = 0; j < ncols; ++j) {
@@ -82,21 +67,22 @@ inline InstanceData parse_scp_instance(std::string const& path) {
     }
 
     inst.solcosts = std::vector<real_t>(ncols, limits<real_t>::max());
-    inst.cols     = make_sparse_bin_mat<ridx_t>();
+    inst.cols     = SparseBinMat<ridx_t>();
     for (auto& col : cols)
         inst.cols.push_back(col);
 
+    inst.rows = build_rows_from_cols(inst.cols, nrows);
     return inst;
 }
 
-inline InstanceData parse_rail_instance(std::string const& path) {
-    auto file_iter = make_file_line_iterator(path);
+inline Instance parse_rail_instance(std::string const& path) {
+    auto file_iter = FileLineIterator(path);
     auto line_view = file_iter.next();
+    auto inst      = Instance();
 
     // Read nrows & ncols
     ridx_t nrows = string_to<ridx_t>::consume(line_view);
     cidx_t ncols = string_to<cidx_t>::consume(line_view);
-    auto   inst  = make_instance_data(ncols, nrows);
     assert(line_view.empty());
 
     for (cidx_t j = 0; j < ncols; j++) {
@@ -110,26 +96,27 @@ inline InstanceData parse_rail_instance(std::string const& path) {
     }
     inst.solcosts = std::vector<real_t>(ncols, limits<real_t>::max());
 
+    inst.rows = build_rows_from_cols(inst.cols, nrows);
     return inst;
 }
 
-inline InstanceData parse_cvrp_instance(std::string const& path) {
-    auto file_iter = make_file_line_iterator(path);
+inline FileData parse_cvrp_instance(std::string const& path) {
+    auto file_iter = FileLineIterator(path);
     auto line_view = file_iter.next();
+    auto fdata     = FileData();
 
     // Read nrows & ncols
     ridx_t nrows = string_to<ridx_t>::consume(line_view);
     cidx_t ncols = string_to<cidx_t>::consume(line_view);
-    auto   inst  = make_instance_data(ncols, nrows);
     assert(line_view.empty());
 
     for (cidx_t j = 0; j < ncols; j++) {
         line_view = file_iter.next();
-        inst.costs.push_back(string_to<real_t>::consume(line_view));
-        inst.solcosts.push_back(string_to<real_t>::consume(line_view));
+        fdata.inst.costs.push_back(string_to<real_t>::consume(line_view));
+        fdata.inst.solcosts.push_back(string_to<real_t>::consume(line_view));
         while (!line_view.empty())
-            inst.cols.idxs.push_back(string_to<ridx_t>::consume(line_view));
-        inst.cols.begs.push_back(inst.cols.idxs.size());
+            fdata.inst.cols.idxs.push_back(string_to<ridx_t>::consume(line_view));
+        fdata.inst.cols.begs.push_back(fdata.inst.cols.idxs.size());
     }
 
     auto warmstart = std::vector<cidx_t>();
@@ -137,7 +124,8 @@ inline InstanceData parse_cvrp_instance(std::string const& path) {
     while (!line_view.empty())
         warmstart.push_back(string_to<cidx_t>::consume(line_view));
 
-    return inst;
+    fdata.inst.rows = build_rows_from_cols(fdata.inst.cols, nrows);
+    return fdata;
 }
 
 }  // namespace cft
