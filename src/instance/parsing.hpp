@@ -71,7 +71,7 @@ inline Instance parse_scp_instance(std::string const& path) {
     for (auto& col : cols)
         inst.cols.push_back(col);
 
-    inst.rows = build_rows_from_cols(inst.cols, nrows);
+    fill_rows_from_cols(inst.cols, nrows, inst.rows);
     return inst;
 }
 
@@ -96,7 +96,7 @@ inline Instance parse_rail_instance(std::string const& path) {
     }
     inst.solcosts = std::vector<real_t>(ncols, limits<real_t>::max());
 
-    inst.rows = build_rows_from_cols(inst.cols, nrows);
+    fill_rows_from_cols(inst.cols, nrows, inst.rows);
     return inst;
 }
 
@@ -124,7 +124,7 @@ inline FileData parse_cvrp_instance(std::string const& path) {
     while (!line_view.empty())
         warmstart.push_back(string_to<cidx_t>::consume(line_view));
 
-    fdata.inst.rows = build_rows_from_cols(fdata.inst.cols, nrows);
+    fill_rows_from_cols(fdata.inst.cols, nrows, fdata.inst.rows);
     return fdata;
 }
 

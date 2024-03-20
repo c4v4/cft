@@ -7,7 +7,6 @@
 
 #include "core/SparseBinMat.hpp"
 #include "core/cft.hpp"
-#include "core/limits.hpp"
 #include "core/utility.hpp"
 
 #define CFT_REMOVED_IDX (cft::limits<cidx_t>::max())
@@ -42,18 +41,19 @@ inline void col_and_rows_check(SparseBinMat<ridx_t> const&             cols,
 #endif
 
 // Completes instance initialization by creating rows
-// TODO(cava): convert it to use inout-rows
-inline std::vector<std::vector<cidx_t>> build_rows_from_cols(SparseBinMat<ridx_t> const& cols,
-                                                             ridx_t                      nrows) {
-    auto rows = std::vector<std::vector<cidx_t>>(nrows);
-    for (auto& row : rows)
+inline void fill_rows_from_cols(SparseBinMat<ridx_t> const&       cols,
+                                ridx_t                            nrows,
+                                std::vector<std::vector<cidx_t>>& rows) {
+    rows.resize(nrows);
+    for (auto& row : rows) {
+        row.clear();
         row.reserve(cols.idxs.size() / nrows);
+    }
 
     for (cidx_t j = 0; j < cols.size(); ++j)
         for (ridx_t i : cols[j])
             rows[i].push_back(j);
     IF_DEBUG(col_and_rows_check(cols, rows));
-    return rows;
 }
 
 inline Instance build_tentative_core_instance(Instance const& inst, ridx_t min_row_coverage) {
@@ -84,7 +84,7 @@ inline Instance build_tentative_core_instance(Instance const& inst, ridx_t min_r
 
 done:
 
-    core_inst.rows = build_rows_from_cols(core_inst.cols, nrows);
+    fill_rows_from_cols(core_inst.cols, nrows, core_inst.rows);
     return core_inst;
 }
 }  // namespace cft
