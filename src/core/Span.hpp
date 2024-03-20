@@ -49,11 +49,6 @@ struct Span {
 };
 
 template <typename ItT>
-CFT_NODISCARD inline Span<ItT> make_span() {
-    return {{}, {}};
-}
-
-template <typename ItT>
 CFT_NODISCARD inline Span<ItT> make_span(ItT beg, ItT end) {
     return {beg, end};
 }

@@ -33,28 +33,18 @@ struct RedundancyData {
     CoverCounters<>          total_cover;     // row-cov if all the remaining columns are selected
     CoverCounters<>          partial_cover;   // row-cov if we selected the current column
     std::vector<cidx_t>      cols_to_remove;  // list of columns to remove
-    real_t                   best_cost;       // current best upper bound
-    real_t                   partial_cost;    // current solution cost
-    cidx_t                   partial_cov_count;  // number of covered rows
+    real_t                   best_cost         = limits<real_t>::max();  // current best upper bound
+    real_t                   partial_cost      = 0.0;                    // current solution cost
+    cidx_t                   partial_cov_count = 0;                      // number of covered rows
 };
-
-inline RedundancyData make_redundancy_data(ridx_t nrows = 0) {
-    return {{},
-            make_cover_counters(nrows),
-            make_cover_counters(nrows),
-            {},
-            limits<real_t>::max(),
-            0.0,
-            0};
-}
 
 #ifndef NDEBUG
 inline void check_redundancy_data(Instance const&            inst,
                                   std::vector<cidx_t> const& sol,
                                   RedundancyData const&      red_set) {
 
-    auto   total_check    = make_cover_counters(inst.rows.size());
-    auto   part_check     = make_cover_counters(inst.rows.size());
+    auto   total_check    = CoverCounters<>(inst.rows.size());
+    auto   part_check     = CoverCounters<>(inst.rows.size());
     size_t part_cov_count = 0;
     for (cidx_t j : sol) {
         cidx_t part_covered = part_check.cover(inst.cols[j]);

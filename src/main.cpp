@@ -2,36 +2,38 @@
 #include <fmt/ranges.h>
 
 #include "core/cft.hpp"
+#include "core/coverage.hpp"
 #include "fixing/ColFixing.hpp"
+#include "fixing/fix_columns.hpp"
 #include "greedy/Greedy.hpp"
 #include "instance/Instance.hpp"
 #include "instance/parsing.hpp"
 #include "subgradient/subgradient.hpp"
 
-void print_inst_summary(cft::InstanceData const& inst) {
+void print_inst_summary(cft::FileData const& fdata) {
     fmt::print("Instance summary:\n");
-    fmt::print("  nrows:     {}\n", inst.nrows);
-    fmt::print("  ncols:     {}\n", inst.cols.size());
+    fmt::print("  nrows:     {}\n", fdata.inst.rows.size());
+    fmt::print("  ncols:     {}\n", fdata.inst.cols.size());
     fmt::print("  costs:     {} {} {} {} ...\n",
-               inst.costs[0],
-               inst.costs[1],
-               inst.costs[2],
-               inst.costs[3]);
+               fdata.inst.costs[0],
+               fdata.inst.costs[1],
+               fdata.inst.costs[2],
+               fdata.inst.costs[3]);
     fmt::print("  solcosts:  {} {} {} {} ...\n",
-               inst.solcosts[0],
-               inst.solcosts[1],
-               inst.solcosts[2],
-               inst.solcosts[3]);
-    if (!inst.warmstart.empty())
+               fdata.inst.solcosts[0],
+               fdata.inst.solcosts[1],
+               fdata.inst.solcosts[2],
+               fdata.inst.solcosts[3]);
+    if (!fdata.warmstart.empty())
         fmt::print("  warmstart: {} {} {} {} ...\n",
-                   inst.warmstart[0],
-                   inst.warmstart[1],
-                   inst.warmstart[2],
-                   inst.warmstart[3]);
+                   fdata.warmstart[0],
+                   fdata.warmstart[1],
+                   fdata.warmstart[2],
+                   fdata.warmstart[3]);
 
     // print first 10 columns
     for (size_t i = 0; i < 4; ++i)
-        fmt::print("  col[{}]: {}\n", i, fmt::join(inst.cols[i], ", "));
+        fmt::print("  col[{}]: {}\n", i, fmt::join(fdata.inst.cols[i], ", "));
 }
 
 #ifndef NDEBUG
@@ -42,7 +44,7 @@ void check_solution(cft::Instance const&            inst,
 
     // check coverage
     cft::ridx_t covered_rows = 0;
-    auto        cover_bits   = cft::make_cover_bits(nrows);
+    auto        cover_bits   = cft::CoverBits(nrows);
     for (auto j : sol)
         covered_rows += cover_bits.cover(inst.cols[j]);
     assert(covered_rows == nrows);
@@ -56,20 +58,21 @@ void check_solution(cft::Instance const&            inst,
 #endif
 
 int main(int argc, char const** argv) {
-    auto args = cft::make_span(argv, argc);
 
-    constexpr int min_row_coverage = 5;
-    cft::Instance inst             = cft::make_instance(cft::parse_rail_instance(args[1]));
-
-    auto greedy     = cft::make_greedy();
-    auto col_fixing = cft::make_col_fixing();
+    auto args       = cft::make_span(argv, argc);
+    auto inst       = cft::parse_rail_instance(args[1]);
+    auto greedy     = cft::Greedy();
+    auto fixing     = cft::FixingData();
+    auto col_fixing = cft::ColFixing();
     auto rnd        = cft::prng_t{0};
 
     auto best_sol  = std::vector<cft::cidx_t>{};
     auto best_cost = cft::limits<cft::real_t>::max();
 
     while (!inst.rows.empty()) {
-        auto core_inst        = cft::make_tentative_core_instance(inst, min_row_coverage);
+        constexpr cft::ridx_t min_row_coverage = 5;
+
+        auto core_inst        = cft::build_tentative_core_instance(inst, min_row_coverage);
         auto better_sol       = std::vector<cft::cidx_t>{};
         auto better_lagr_mult = cft::compute_greedy_multipliers(core_inst);
         auto better_cost      = greedy(core_inst, better_lagr_mult, better_sol);
@@ -91,21 +94,22 @@ int main(int argc, char const** argv) {
                 better_cost      = sol_cost;
                 better_sol       = inout_sol;
                 better_lagr_mult = lagr_mult;
-                IF_DEBUG(check_solution(inst, best_sol, best_cost));
+                IF_DEBUG(check_solution(inst, better_sol, better_cost));
             }
             if (better_cost < best_cost) {
                 best_cost = better_cost;
                 best_sol  = better_sol;
             }
 
-            fmt::print("Greedy solution cost: {}, better: {}, best: {}\n",
-                       sol_cost,
-                       better_cost,
+            fmt::print("{:4} Greedy solution cost: {}, better: {}, best: {}\n",
+                       l,
+                       sol_cost + fixing.fixed_cost,
+                       better_cost + fixing.fixed_cost,
                        best_cost);
         }
 
         // TODO(cava): Col fixing for inst considering core-inst?
-        col_fixing(inst, better_lagr_mult, better_sol, greedy);
+        col_fixing(inst, fixing, better_lagr_mult, better_sol, greedy);
         fmt::print("Remaining rows after column fixing: {}\n", inst.rows.size());
     }
 

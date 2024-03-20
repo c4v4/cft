@@ -19,7 +19,7 @@
 
 namespace cft {
 
-struct Fixing {
+struct FixingData {
     std::vector<cidx_t> old2new_col_map;
     std::vector<ridx_t> old2new_row_map;
     std::vector<cidx_t> new2old_col_map;
@@ -28,13 +28,9 @@ struct Fixing {
     real_t              fixed_cost;
 };
 
-inline Fixing make_fixing() {
-    return {};
-}
-
 namespace {
 #ifndef NDEBUG
-    void mappings_check(Instance const& old_inst, Instance const& inst, Fixing& fixing) {
+    void mappings_check(Instance const& old_inst, Instance const& inst, FixingData& fixing) {
         for (cidx_t old_j = 0; old_j < old_inst.cols.size(); ++old_j) {
 
             cidx_t new_j = fixing.old2new_col_map[old_j];
@@ -64,7 +60,7 @@ namespace {
     // Mark columns and rows to be removed and update fixed cols and costs
     ridx_t mark_and_update_fixed_elements(Instance&                  inst,
                                           std::vector<cidx_t> const& cols_to_fix,
-                                          Fixing&                    fixing) {
+                                          FixingData&                fixing) {
         size_t removed_rows = 0;
         for (cidx_t j : cols_to_fix) {
             cidx_t& orig_j = fixing.old2new_col_map[j];
@@ -81,7 +77,7 @@ namespace {
         return removed_rows;
     }
 
-    void set_inst_as_empty(Instance& inst, Fixing& fixing) {
+    void set_inst_as_empty(Instance& inst, FixingData& fixing) {
         inst.cols.clear();
         inst.rows.clear();
         inst.costs.clear();
@@ -94,7 +90,7 @@ namespace {
     }
 
     // Remove marked rows and make old->new row mapping
-    void adjust_rows_pos_and_fill_map(Instance& inst, Fixing& fixing) {
+    void adjust_rows_pos_and_fill_map(Instance& inst, FixingData& fixing) {
         ridx_t old_nrows = inst.rows.size();
         fixing.old2new_row_map.assign(old_nrows, CFT_REMOVED_IDX);
         ridx_t new_i = 0;
@@ -114,7 +110,7 @@ namespace {
     }
 
     // Remove marked columns adjusting row indexes and make old->new col mapping
-    void adjust_cols_pos_and_idxs_and_fill_map(Instance& inst, Fixing& fixing) {
+    void adjust_cols_pos_and_idxs_and_fill_map(Instance& inst, FixingData& fixing) {
         cidx_t old_ncols = inst.cols.size();
         fixing.old2new_col_map.assign(old_ncols, CFT_REMOVED_IDX);
         cidx_t new_j = 0;
@@ -151,7 +147,7 @@ namespace {
     }
 
     // Adjust column indexes stored in eanch row
-    void adjust_rows_idxs(Instance& inst, Fixing& fixing) {
+    void adjust_rows_idxs(Instance& inst, FixingData& fixing) {
         for (auto& row : inst.rows) {
             cidx_t w = 0;
             for (cidx_t r = 0; r < row.size(); ++r) {
@@ -168,7 +164,9 @@ namespace {
 // Modifies instance by fixing columns in-place. New indexes are always <= old ones, allowing
 // in-place external data structure updates. Note: Column fixing is irreversible, i.e., you cannot
 // get the original instance from the subinstance.
-inline void fix_columns(Instance& inst, std::vector<cidx_t> const& cols_to_fix, Fixing& fixing) {
+inline void fix_columns(Instance&                  inst,
+                        std::vector<cidx_t> const& cols_to_fix,
+                        FixingData&                fixing) {
 
     fixing.old2new_col_map.clear();
     fixing.old2new_row_map.clear();
@@ -186,7 +184,7 @@ inline void fix_columns(Instance& inst, std::vector<cidx_t> const& cols_to_fix, 
     adjust_cols_pos_and_idxs_and_fill_map(inst, fixing);
     adjust_rows_idxs(inst, fixing);
 
-    IF_DEBUG(inst.invariants_check());  // coherent instance
+    IF_DEBUG(col_and_rows_check(inst.cols, inst.rows));  // coherent instance
     IF_DEBUG(mappings_check(old_inst, inst, fixing));
 
     // TODO(cava): reductions step (e.g., 1-col rows)

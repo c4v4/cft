@@ -17,26 +17,25 @@ namespace cft {
 // Result of the subgradient optimize procedure.
 struct OptimizeResult {
     // Best lower bound found during the procedure.
-    real_t lower_bound;
+    real_t lower_bound = limits<real_t>::min();
     // Lagrangian multipliers associated with the best found lower bound.
     std::vector<real_t> lagr_mult;
 };
 
-inline OptimizeResult make_optimize_result(std::vector<real_t> const& lagr_mult) {
-    return OptimizeResult{limits<real_t>::min(), lagr_mult};
+inline OptimizeResult compute_initial_result(std::vector<real_t> const& lagr_mult) {
+    auto res        = OptimizeResult();
+    res.lagr_mult   = lagr_mult;
+    res.lower_bound = limits<real_t>::min();  // TODO(any): compute the correct LB
+    return res;
 }
 
 // Result of the subgradient explore procedure.
 struct ExploreResult {
     // Best lower bound found during the procedure.
-    real_t lower_bound;
+    real_t lower_bound = limits<real_t>::min();
     // List of lagrangian multipliers found during the procedure.
     std::vector<std::vector<real_t>> lagr_mult_list;
 };
-
-inline ExploreResult make_explore_result() {
-    return ExploreResult{limits<real_t>::min(), {}};
-}
 
 // Step size manager functor.
 struct StepSizeManager {
@@ -45,6 +44,14 @@ struct StepSizeManager {
     real_t curr_step_size;
     real_t min_lower_bound;
     real_t max_lower_bound;
+
+    StepSizeManager(size_t c_period, real_t c_init_step_size)
+        : period(c_period)
+        , next_update_iter(c_period)
+        , curr_step_size(c_init_step_size)
+        , min_lower_bound(limits<real_t>::max())
+        , max_lower_bound(limits<real_t>::min()) {
+    }
 
     // Computes the next step size.
     CFT_NODISCARD real_t operator()(size_t iter, real_t lower_bound) {
@@ -64,18 +71,16 @@ struct StepSizeManager {
     }
 };
 
-inline StepSizeManager make_step_size_manager(size_t period, real_t init_step_size) {
-    return StepSizeManager{period,
-                           period,
-                           init_step_size,
-                           limits<real_t>::max(),
-                           limits<real_t>::min()};
-}
-
 struct ExitConditionManager {
     size_t period;
     size_t next_update_iter;
     real_t prev_lower_bound;
+
+    ExitConditionManager(size_t c_period)
+        : period(c_period)
+        , next_update_iter(c_period)
+        , prev_lower_bound(limits<real_t>::min()) {
+    }
 
     // Evaluates the exit condition by comparing the current best lower-bound with the
     // previous period's best lower-bound. Returns the original CFT exit condition based on the
@@ -92,16 +97,19 @@ struct ExitConditionManager {
     }
 };
 
-inline ExitConditionManager make_exit_condition_manager(size_t period) {
-    return ExitConditionManager{period, period, limits<real_t>::min()};
-}
-
 // Functor managing the pricing frequency.
 struct PricingManager {
     size_t period;
     size_t next_update_iter;
     size_t max_period_increment;
     real_t lb_before_pricing;
+
+    PricingManager(size_t c_period, size_t c_max_period_increment)
+        : period(c_period)
+        , next_update_iter(c_period)
+        , max_period_increment(c_max_period_increment)
+        , lb_before_pricing(limits<real_t>::min()) {
+    }
 
     CFT_NODISCARD bool operator()(size_t iter, real_t lower_bound, real_t upper_bound) {
         if (iter == next_update_iter + 1)
@@ -134,10 +142,6 @@ private:
         period = next_period;
     }
 };
-
-inline PricingManager make_pricing_manager(size_t period, size_t max_period_increment) {
-    return PricingManager{period, period, max_period_increment, limits<real_t>::min()};
-}
 
 // A solution, i.e., a set of columns and its associated lower bound.
 struct SubgradientSolution {
@@ -185,7 +189,7 @@ inline SubgradientSolution compute_subgradient_solution(Instance const&         
 inline CoverCounters<uint16_t> compute_row_coverage(Instance const&            inst,
                                                     SubgradientSolution const& sol) {
     // TODO(acco): consider moving to member.
-    auto row_coverage = make_cover_counters(inst.rows.size());
+    auto row_coverage = CoverCounters<>(inst.rows.size());
 
     for (auto const& c : sol.col_info)
         row_coverage.cover(inst.cols[c.idx]);
@@ -197,7 +201,7 @@ inline CoverCounters<uint16_t> compute_row_coverage(Instance const&            i
 inline CoverCounters<uint16_t> compute_reduced_row_coverage(Instance const&      inst,
                                                             SubgradientSolution& sol) {
     // TODO(acco): consider moving to member.
-    CoverCounters<uint16_t> row_coverage = make_cover_counters(inst.rows.size());
+    CoverCounters<uint16_t> row_coverage = CoverCounters<>(inst.rows.size());
 
     std::sort(sol.col_info.begin(),
               sol.col_info.end(),
@@ -231,12 +235,11 @@ inline real_t compute_subgradient_norm(Instance const&                inst,
 inline std::vector<real_t> compute_greedy_multipliers(Instance const& inst) {
     auto lagr_mult = std::vector<real_t>(inst.rows.size(), limits<real_t>::max());
 
-    for (size_t i = 0; i < inst.rows.size(); ++i) {
+    for (size_t i = 0; i < inst.rows.size(); ++i)
         for (cidx_t const j : inst.rows[i]) {
             real_t const candidate = inst.costs[j] / inst.cols[j].size();
             lagr_mult[i]           = cft::min(lagr_mult[i], candidate);
         }
-    }
 
     return lagr_mult;
 }
@@ -265,14 +268,14 @@ inline OptimizeResult optimize(Instance const&            orig_inst,
     size_t const nrows = orig_inst.rows.size();
     assert(nrows == core_inst.rows.size());
 
-    auto next_step_size = make_step_size_manager(20, 0.1);
-    auto should_exit    = make_exit_condition_manager(300);
-    auto should_price   = make_pricing_manager(10, std::min(1000UL, nrows / 3));
+    auto next_step_size = StepSizeManager(20, 0.1);
+    auto should_exit    = ExitConditionManager(300);
+    auto should_price   = PricingManager(10, std::min(1000UL, nrows / 3));
 
     // TODO(acco): consider moving to members.
     auto lagr_mult = initial_lagr_mult;
-    auto best      = make_optimize_result(initial_lagr_mult);
-    auto price     = make_pricer();
+    auto best      = compute_initial_result(initial_lagr_mult);
+    auto price     = Pricer();
 
     size_t max_iters = 10 * nrows;
     for (size_t iter = 0; iter < max_iters; ++iter) {
@@ -316,7 +319,7 @@ inline ExploreResult explore(Instance const&            inst,
                              std::vector<real_t> const& initial_lagr_mult) {
 
     auto lagr_mult = initial_lagr_mult;
-    auto res       = make_explore_result();
+    auto res       = ExploreResult();
 
     size_t max_iters = 250;
     for (size_t iter = 0; iter < max_iters; ++iter) {
