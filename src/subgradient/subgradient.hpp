@@ -1,6 +1,7 @@
 #ifndef CFT_INCLUDE_SUBGRADIENT_HPP
 #define CFT_INCLUDE_SUBGRADIENT_HPP
 
+#include <cmath>
 #include <cstddef>
 #include <vector>
 
@@ -145,18 +146,8 @@ private:
 
 // A solution, i.e., a set of columns and its associated lower bound.
 struct SubgradientSolution {
-
-    // Info describing a column in solution.
-    struct ColInfo {
-        // Column index.
-        cidx_t idx;
-        // Column reduced cost.
-        real_t reduced_cost;
-    };
-
     // The index and reduced cost of columns defining the solution.
-    std::vector<ColInfo> col_info;
-
+    std::vector<CidxAndCost> col_info;
     // The lower bound associated with the solution.
     real_t lower_bound;
 };
@@ -177,7 +168,7 @@ inline SubgradientSolution compute_subgradient_solution(Instance const&         
             reduced_cost -= lagr_mult[i];
 
         if (reduced_cost < 0.0) {
-            sol.col_info.push_back(SubgradientSolution::ColInfo{j, reduced_cost});
+            sol.col_info.push_back({j, reduced_cost});
             sol.lower_bound += reduced_cost;
         }
     }
@@ -186,33 +177,30 @@ inline SubgradientSolution compute_subgradient_solution(Instance const&         
 }
 
 // Computes the row coverage of the given solution.
-inline CoverCounters<uint16_t> compute_row_coverage(Instance const&            inst,
-                                                    SubgradientSolution const& sol) {
+inline CoverCounters<> compute_row_coverage(Instance const& inst, SubgradientSolution const& sol) {
     // TODO(acco): consider moving to member.
     auto row_coverage = CoverCounters<>(inst.rows.size());
 
     for (auto const& c : sol.col_info)
-        row_coverage.cover(inst.cols[c.idx]);
+        row_coverage.cover(inst.cols[c.col]);
 
     return row_coverage;
 }
 
 // Computes the row coverage of the given solution by including the best non-redundant columns.
-inline CoverCounters<uint16_t> compute_reduced_row_coverage(Instance const&      inst,
-                                                            SubgradientSolution& sol) {
+inline CoverCounters<> compute_reduced_row_coverage(Instance const&      inst,
+                                                    SubgradientSolution& sol) {
     // TODO(acco): consider moving to member.
-    CoverCounters<uint16_t> row_coverage = CoverCounters<>(inst.rows.size());
+    auto row_coverage = CoverCounters<>(inst.rows.size());
 
-    std::sort(sol.col_info.begin(),
-              sol.col_info.end(),
-              [](SubgradientSolution::ColInfo a, SubgradientSolution::ColInfo b) {
-                  return a.reduced_cost < b.reduced_cost;
-              });
+    std::sort(sol.col_info.begin(), sol.col_info.end(), [](CidxAndCost a, CidxAndCost b) {
+        return a.cost < b.cost;
+    });
 
     // TODO(acco): consider the opposite approach in which we first add all columns, identify the
     // redundant ones, sort them and remove the worst. This may allows us to sort less columns.
     for (auto const& c : sol.col_info) {
-        auto const& col = inst.cols[c.idx];
+        auto const& col = inst.cols[c.col];
         if (!row_coverage.is_redundant_cover(col))
             row_coverage.cover(col);
     }
@@ -223,12 +211,12 @@ inline CoverCounters<uint16_t> compute_reduced_row_coverage(Instance const&     
 // Computes the subgradient squared norm according to the given row coverage.
 inline real_t compute_subgradient_norm(Instance const&                inst,
                                        CoverCounters<uint16_t> const& row_coverage) {
-    uint32_t norm = 0;
+    int32_t norm = 0;
     for (size_t i = 0; i < inst.rows.size(); ++i) {
-        uint32_t violation = 1 - row_coverage[i];
+        int32_t violation = 1 - row_coverage[i];
         norm += violation * violation;
     }
-    return norm;
+    return static_cast<real_t>(norm);
 }
 
 // Greedily creates lagrangian multipliers for the given instance.
@@ -237,7 +225,7 @@ inline std::vector<real_t> compute_greedy_multipliers(Instance const& inst) {
 
     for (size_t i = 0; i < inst.rows.size(); ++i)
         for (cidx_t const j : inst.rows[i]) {
-            real_t const candidate = inst.costs[j] / inst.cols[j].size();
+            real_t const candidate = inst.costs[j] / static_cast<real_t>(inst.cols[j].size());
             lagr_mult[i]           = cft::min(lagr_mult[i], candidate);
         }
 
@@ -298,10 +286,10 @@ inline OptimizeResult optimize(Instance const&            orig_inst,
         real_t step_size = next_step_size(iter, sol.lower_bound);
         for (size_t i = 0; i < nrows; ++i) {
             real_t normalized_bound_diff = (upper_bound - sol.lower_bound) / norm;
-            real_t violation             = 1 - row_coverage[i];
+            auto   violation             = static_cast<real_t>(1 - row_coverage[i]);
 
             real_t delta_mult = step_size * normalized_bound_diff * violation;
-            lagr_mult[i]      = cft::max(0.0, lagr_mult[i] + delta_mult);
+            lagr_mult[i]      = cft::max(0.0F, lagr_mult[i] + delta_mult);
             assert(std::isfinite(lagr_mult[i]) && "Multiplier is not finite");
         }
 
@@ -338,10 +326,10 @@ inline ExploreResult explore(Instance const&            inst,
         real_t step_size = 0.1;  // TODO(acco): should we vary this?
         for (size_t i = 0; i < inst.rows.size(); ++i) {
             real_t normalized_bound_diff = (upper_bound - sol.lower_bound) / norm;
-            real_t violation             = 1 - row_coverage[i];
+            auto   violation             = static_cast<real_t>(1 - row_coverage[i]);
 
             real_t delta_mult = step_size * normalized_bound_diff * violation;
-            lagr_mult[i]      = cft::max(0.0, lagr_mult[i] + delta_mult);
+            lagr_mult[i]      = cft::max(0.0F, lagr_mult[i] + delta_mult);
             assert(std::isfinite(lagr_mult[i]) && "Multiplier is not finite");
         }
     }

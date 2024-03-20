@@ -23,6 +23,11 @@ using cidx_t = uint32_t;
 using ridx_t = uint32_t;
 using real_t = float;
 
+struct CidxAndCost {
+    cidx_t col;
+    real_t cost;
+};
+
 }  // namespace cft
 
 #ifdef __GNUC__
@@ -30,5 +35,6 @@ using real_t = float;
 #elif defined(_MSC_VER) && _MSC_VER >= 1700
 #define CFT_NODISCARD _Check_return_
 #endif
+
 
 #endif /* CFT_INCLUDE_CFT_HPP */

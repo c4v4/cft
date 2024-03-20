@@ -20,11 +20,6 @@
 
 namespace cft {
 
-struct CidxAndCost {  // TODO(cava): if used elsewhere, can be move in core/
-    cidx_t col;
-    real_t cost;
-};
-
 // Data structure to store the redundancy set and related information
 struct RedundancyData {
     // TODO(cava): shouldn't change much, but we could use a SparseBinMat to store columns locally
