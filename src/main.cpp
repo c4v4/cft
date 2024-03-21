@@ -3,6 +3,7 @@
 
 #include "core/cft.hpp"
 #include "core/coverage.hpp"
+#include "core/limits.hpp"
 #include "fixing/ColFixing.hpp"
 #include "fixing/fix_columns.hpp"
 #include "greedy/Greedy.hpp"
@@ -77,12 +78,16 @@ int main(int argc, char const** argv) {
         auto better_lagr_mult = cft::compute_greedy_multipliers(core_inst);
         auto better_cost      = greedy(core_inst, better_lagr_mult, better_sol);
 
+        cft::real_t cutoff = std::min(better_cost, best_cost - fixing.fixed_cost);
+
         auto opt_res = cft::optimize(inst,
                                      core_inst,
-                                     better_cost,  // TODO(any): best_cost - fixed_cost?
+                                     better_cost,
+                                     cutoff,
                                      cft::compute_greedy_multipliers(core_inst));
         auto exp_res = cft::explore(core_inst,
-                                    better_cost,  // TODO(any): best_cost - fixed_cost?
+                                    better_cost,
+                                    cutoff,
                                     cft::compute_perturbed_multipliers(opt_res.lagr_mult, rnd));
 
         for (size_t l = 0; l < exp_res.lagr_mult_list.size(); ++l) {
@@ -96,9 +101,10 @@ int main(int argc, char const** argv) {
                 better_lagr_mult = lagr_mult;
                 IF_DEBUG(check_solution(inst, better_sol, better_cost));
             }
-            if (better_cost < best_cost) {
-                best_cost = better_cost;
-                best_sol  = better_sol;
+            if (better_cost + fixing.fixed_cost < best_cost) {
+                best_cost = better_cost + fixing.fixed_cost;
+                best_sol  = better_sol;  // TODO(any): this ignores already fixed columns, we should
+                                         // have a procedure to that does: fixed cols + better_sol.
             }
 
             fmt::print("{:4} Greedy solution cost: {}, better: {}, best: {}\n",
@@ -112,6 +118,8 @@ int main(int argc, char const** argv) {
         col_fixing(inst, fixing, better_lagr_mult, better_sol, greedy);
         fmt::print("Remaining rows after column fixing: {}\n", inst.rows.size());
     }
+
+    fmt::print("\nBest solution cost: {}\n", best_cost);
 
     return EXIT_SUCCESS;
 }
