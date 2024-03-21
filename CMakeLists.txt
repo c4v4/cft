@@ -80,9 +80,14 @@ else()
     message("--- Verbose output DISABLED")
 endif()
 
-
 include_directories(src)
 
 add_executable(accft ${SOURCE})
 
 target_link_libraries(accft PUBLIC ${LIBRARIES})
+
+if (BUILD_OLD_CODE)
+    set(CMAKE_CXX_STANDARD 20)
+    add_executable(accft-old old/main.cpp)
+    target_link_libraries(accft-old PUBLIC ${LIBRARIES})
+endif()
