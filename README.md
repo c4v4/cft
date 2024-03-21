@@ -58,7 +58,7 @@ C++ is a hefty language. As we just said, one of the main perks we see in this l
 - `user-code`: which is pretty much C code extended with a fairly small set of C++ features that we think really add value.
 - `library-code`: which, as the STL, provide a carefully chosen set of abstractions we find useful.
 
-We do not report here classic rules like upper/lower-case naming conventions, trailing return type or not, etc., just open the code and you'll see what we like, in the end, these things are mostly a matter of taste, so we avoid spending time justifying these kinds of choices.
+We do not report here classic rules like upper/lower-case naming conventions, trailing return type or not, etc., just open the code and you'll see what we like, at the end, these things are mostly a matter of taste, so we avoid spending time justifying these kinds of choices.
 
 ### User Code
 
@@ -69,12 +69,19 @@ Along with the classic entities proper of the C programming language, we **defin
 
 Other rules:
 
-- No references or pointers within either _structs_ or _functors_, clearly they can be stored by other abstractions defined in _library code_, like `std::vector`.
-- _structs_ have only public member variables.
-- _structs_ can be initialized by factories (or manually), no constructors or other user-defined member functions.
-- _functors_ cannot have public member variables, they can only be accessed as a function abstraction.
-- _functors_ can have non-default constructors.
+- No storage of references or pointers within either _structs_ or _functors_, clearly they can be stored by other abstractions defined in _library code_.
+- No direct storage of resources that require special handling (e.g., pointers to allocated memory or file handles).
+- No `const` member variables.
+- No explicit memory management in general, everything is wrapped within a proper abstraction.
 - No (user-defined) copy/move constructors/assignment operators, no destructors.
+- Entities must always be default-constructible.
+- _structs_ have only public member variables.
+- _structs_ state validity is user's responsibility.
+- _structs_ can be initialized by factories (or manually), no constructors or other user-defined member functions.
+- _functors_ can have non-default constructors.
+- _functors_ must always be in a valid state.
+- _functors_ cannot have public member variables, they can only be accessed as a function abstraction.
+
 
 ### Library Code
 
