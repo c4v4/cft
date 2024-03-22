@@ -9,8 +9,6 @@
 #include "core/cft.hpp"
 #include "core/utility.hpp"
 
-#define CFT_REMOVED_IDX (cft::limits<cidx_t>::max())
-
 namespace cft {
 
 // A data structure representing an instance using sparse binary matrix representation.

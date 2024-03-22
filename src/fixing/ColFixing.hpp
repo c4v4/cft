@@ -30,35 +30,37 @@ struct ColFixing {
     static constexpr double col_fix_thresh = -0.001;
 
     // Caches
-    std::vector<cidx_t> cols_to_fix;
-    CoverCounters<>     cover_counts;
+    Solution        cols_to_fix;
+    CoverCounters<> cover_counts;
 
     void operator()(Instance&            inst,
+                    Instance const&      core_inst,
                     FixingData&          fixing,
                     std::vector<real_t>& lagr_mult,
-                    std::vector<cidx_t>& best_sol,
+                    Solution&            best_sol,
                     Greedy&              greedy) {
 
         ridx_t nrows = inst.rows.size();
         cover_counts.reset(nrows);
-        cols_to_fix.clear();
+        cols_to_fix.idxs.clear();
 
-        for (cidx_t j : best_sol) {
-            real_t lagr_cost = inst.costs[j];
-            for (ridx_t i : inst.cols[j])
+        for (cidx_t j : best_sol.idxs) {
+            real_t lagr_cost = core_inst.costs[j];
+            for (ridx_t i : core_inst.cols[j])
                 lagr_cost -= lagr_mult[i];
 
             if (lagr_cost < col_fix_thresh) {
-                cols_to_fix.emplace_back(j);
-                cover_counts.cover(inst.cols[j]);
+                cols_to_fix.idxs.emplace_back(j);
+                cover_counts.cover(core_inst.cols[j]);
             }
+            fmt::print("{}: {}\n", j, lagr_cost);
         }
 
         auto fix_at_least = max<cidx_t>(nrows / 200, 1);
-        if (fix_at_least > cols_to_fix.size())
-            greedy(inst, lagr_mult, cols_to_fix, limits<real_t>::max(), fix_at_least);
+        if (fix_at_least > cols_to_fix.idxs.size())
+            greedy(core_inst, lagr_mult, cols_to_fix, limits<real_t>::max(), fix_at_least);
 
-        fix_columns(inst, cols_to_fix, fixing);
+        fix_columns(inst, cols_to_fix.idxs, fixing);
         // TODO(cava): atm column not in best_sol could be fixed by greedy, can we avoid this?
         ridx_t prev_nrows = fixing.prev2curr_row_map.size();
         for (ridx_t prev_i = 0; prev_i < prev_nrows; ++prev_i) {

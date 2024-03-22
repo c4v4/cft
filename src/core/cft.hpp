@@ -2,6 +2,9 @@
 #define CFT_INCLUDE_CFT_HPP
 
 #include <cstdint>
+#include <vector>
+
+#include "core/limits.hpp"
 
 #define NO_INLINE  //__attribute__((noinline))
 
@@ -17,6 +20,8 @@
 #define IF_DEBUG(...) __VA_ARGS__
 #endif
 
+#define CFT_REMOVED_IDX (cft::limits<cidx_t>::max())
+
 namespace cft {
 
 using cidx_t = uint32_t;
@@ -26,6 +31,11 @@ using real_t = float;
 struct CidxAndCost {
     cidx_t col;
     real_t cost;
+};
+
+struct Solution {
+    std::vector<cft::cidx_t> idxs = {};
+    cft::real_t              cost = cft::limits<cft::real_t>::max();
 };
 
 }  // namespace cft
