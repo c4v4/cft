@@ -263,6 +263,7 @@ inline real_t optimize(Instance const&      orig_inst,
     auto best_lower_bound = limits<real_t>::min();
     auto price            = Pricer();
 
+    fmt::print("iter   curr lb   best lb   best ub   step size\n");
     size_t max_iters = 10 * nrows;
     for (size_t iter = 0; iter < max_iters; ++iter) {
         auto   sol          = compute_subgradient_solution(core.inst, lagr_mult);
@@ -301,6 +302,14 @@ inline real_t optimize(Instance const&      orig_inst,
             assert(std::isfinite(lagr_mult[i]) && "Multiplier is not finite");
         }
 
+        if (sol.lower_bound == best_lower_bound)
+            fmt::print("{:4}    {:6.2f}    {:6.2f}    {:6.2f}    {:6.2f}\n",
+                       iter,
+                       sol.lower_bound,
+                       best_lower_bound,
+                       upper_bound,
+                       step_size);
+
         if (should_price(iter, sol.lower_bound, upper_bound))
             price(orig_inst, lagr_mult, core);
     }
@@ -318,11 +327,10 @@ inline real_t explore(Instance const&      inst,
                       Solution&            best_sol,
                       std::vector<real_t>& best_greedy_lagr_mult) {
 
-    auto lagr_mult        = best_greedy_lagr_mult;
-    auto greedy_sol       = Solution();
-    auto best_lower_bound = limits<real_t>::min();
-
-    size_t max_iters = 250;  // TODO(all): consider making it a parameter.
+    auto   lagr_mult        = best_greedy_lagr_mult;
+    auto   greedy_sol       = Solution();
+    auto   best_lower_bound = limits<real_t>::min();
+    size_t max_iters        = 250;  // TODO(all): consider making it a parameter.
     for (size_t iter = 0; iter < max_iters; ++iter) {
         auto   sol          = compute_subgradient_solution(inst, lagr_mult);
         auto   row_coverage = compute_reduced_row_coverage(inst, sol);
@@ -366,6 +374,15 @@ inline real_t explore(Instance const&      inst,
             lagr_mult[i]      = cft::max(0.0F, lagr_mult[i] + delta_mult);
             assert(std::isfinite(lagr_mult[i]) && "Multiplier is not finite");
         }
+
+        if (greedy_sol.cost == cutoff)
+            fmt::print("{:4}    {:6.2f}    {:6.2f}    {:6.2f}    {:6.2f}      {:6.2f}\n",
+                       iter,
+                       sol.lower_bound,
+                       best_lower_bound,
+                       greedy_sol.cost,
+                       best_sol.cost,
+                       step_size);
     }
     return best_lower_bound;
 }
