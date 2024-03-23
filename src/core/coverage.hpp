@@ -2,6 +2,7 @@
 #define CFT_INCLUDE_COUNTSET_HPP
 
 #include <cassert>
+#include <cstddef>
 #include <type_traits>
 #include <vector>
 

@@ -13,6 +13,7 @@
 #include "core/cft.hpp"
 #include "core/coverage.hpp"
 #include "core/limits.hpp"
+#include "fmt/base.h"
 #include "instance/Instance.hpp"
 
 

@@ -9,8 +9,6 @@
 #include "core/cft.hpp"
 #include "core/utility.hpp"
 
-#define CFT_REMOVED_IDX (cft::limits<cidx_t>::max())
-
 namespace cft {
 
 // A data structure representing an instance using sparse binary matrix representation.
@@ -56,8 +54,14 @@ inline void fill_rows_from_cols(SparseBinMat<ridx_t> const&       cols,
     IF_DEBUG(col_and_rows_check(cols, rows));
 }
 
-inline Instance build_tentative_core_instance(Instance const& inst, ridx_t min_row_coverage) {
-    auto core_inst = Instance{};
+struct InstAndMap {
+    Instance            inst;
+    std::vector<cidx_t> col_map;
+};
+
+inline InstAndMap build_tentative_core_instance(Instance const& inst, ridx_t min_row_coverage) {
+    auto core_inst    = Instance{};
+    auto core_col_map = std::vector<cidx_t>();
 
     ridx_t nrows        = inst.rows.size();
     auto   row_coverage = std::vector<ridx_t>(nrows);
@@ -67,6 +71,7 @@ inline Instance build_tentative_core_instance(Instance const& inst, ridx_t min_r
     // TODO(any): consider iterating over row indices and taking the first `min_row_coverage`
     // columns for every row.
     for (cidx_t j = 0; j < inst.cols.size(); ++j) {
+        core_col_map.push_back(j);
         core_inst.cols.push_back(inst.cols[j]);
         core_inst.costs.push_back(inst.costs[j]);
         core_inst.solcosts.push_back(inst.solcosts[j]);
@@ -85,7 +90,7 @@ inline Instance build_tentative_core_instance(Instance const& inst, ridx_t min_r
 done:
 
     fill_rows_from_cols(core_inst.cols, nrows, core_inst.rows);
-    return core_inst;
+    return {std::move(core_inst), std::move(core_col_map)};
 }
 }  // namespace cft
 

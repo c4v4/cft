@@ -90,34 +90,31 @@ struct Pricer {
     // Caches.
     Sorter              sorter;
     std::vector<real_t> reduced_costs;
-    std::vector<cidx_t> idxs;
     std::vector<bool>   taken_idxs;
 
-    void operator()(Instance const&            inst,
-                    std::vector<real_t> const& lagr_mult,
-                    Instance&                  core_inst) {
+    void operator()(Instance const& inst, std::vector<real_t> const& lagr_mult, InstAndMap& core) {
 
         assert(!inst.cols.empty());
-        assert(!core_inst.cols.empty());
+        assert(!core.inst.cols.empty());
 
-        ridx_t const nrows = inst.rows.size();
-        cidx_t const ncols = inst.cols.size();
+        ridx_t nrows = inst.rows.size();
+        cidx_t ncols = inst.cols.size();
 
+        core.col_map.clear();
         _prepare_caches(ncols);
 
         compute_col_reduced_costs(inst, lagr_mult, reduced_costs);
-        select_c1_col_idxs(inst, sorter, reduced_costs, 5 * nrows, idxs, taken_idxs);
-        select_c2_col_idxs(inst, reduced_costs, idxs, taken_idxs);
+        select_c1_col_idxs(inst, sorter, reduced_costs, 5 * nrows, core.col_map, taken_idxs);
+        select_c2_col_idxs(inst, reduced_costs, core.col_map, taken_idxs);
 
-        init_partial_instance(inst, idxs, core_inst);
-        fill_rows_from_cols(core_inst.cols, nrows, core_inst.rows);
+        init_partial_instance(inst, core.col_map, core.inst);
+        fill_rows_from_cols(core.inst.cols, nrows, core.inst.rows);
     }
 
 private:
     void _prepare_caches(ridx_t ncols) {
         reduced_costs.resize(ncols);
         taken_idxs.assign(ncols, false);
-        idxs.clear();
     }
 };
 
