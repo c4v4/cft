@@ -80,7 +80,7 @@ int main(int argc, char const** argv) {
         }
 
         // TODO(cava): Col fixing for inst considering core-inst?
-        col_fixing(inst, core_inst, fixing, lagr_mult, sol, greedy);
+        col_fixing(inst, core.inst, fixing, lagr_mult, sol, greedy);
         cft::perturb_lagr_multipliers(lagr_mult, rnd);
         fmt::print("Fixing: rows left: {}, fixed cost: {}\n", inst.rows.size(), fixing.fixed_cost);
         cft::perturb_lagr_multipliers(lagr_mult, rnd);
