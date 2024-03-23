@@ -12,14 +12,22 @@ constexpr int mincov = 5;
 
 namespace cft {
 namespace {
-    inline void compute_col_reduced_costs(Instance const&            inst,
-                                          std::vector<real_t> const& lagr_mult,
-                                          std::vector<real_t>&       reduced_costs) {
+    inline real_t compute_col_reduced_costs(Instance const&            inst,
+                                            std::vector<real_t> const& lagr_mult,
+                                            std::vector<real_t>&       reduced_costs) {
+        real_t real_lower_bound = 0.0;
+        for (real_t u : lagr_mult)
+            real_lower_bound += u;
+
         for (cidx_t j = 0; j < inst.cols.size(); ++j) {
             reduced_costs[j] = inst.costs[j];
             for (ridx_t i : inst.cols[j])
                 reduced_costs[j] -= lagr_mult[i];
+
+            if (reduced_costs[j] < 0.0)
+                real_lower_bound += reduced_costs[j];
         }
+        return real_lower_bound;
     }
 
     inline void select_c1_col_idxs(Instance const&            inst,
@@ -92,7 +100,9 @@ struct Pricer {
     std::vector<real_t> reduced_costs;
     std::vector<bool>   taken_idxs;
 
-    void operator()(Instance const& inst, std::vector<real_t> const& lagr_mult, InstAndMap& core) {
+    real_t operator()(Instance const&            inst,
+                      std::vector<real_t> const& lagr_mult,
+                      InstAndMap&                core) {
 
         assert(!inst.cols.empty());
         assert(!core.inst.cols.empty());
@@ -103,12 +113,14 @@ struct Pricer {
         core.col_map.clear();
         _prepare_caches(ncols);
 
-        compute_col_reduced_costs(inst, lagr_mult, reduced_costs);
+        auto real_lower_bound = compute_col_reduced_costs(inst, lagr_mult, reduced_costs);
         select_c1_col_idxs(inst, sorter, reduced_costs, 5 * nrows, core.col_map, taken_idxs);
         select_c2_col_idxs(inst, reduced_costs, core.col_map, taken_idxs);
 
         init_partial_instance(inst, core.col_map, core.inst);
         fill_rows_from_cols(core.inst.cols, nrows, core.inst.rows);
+
+        return real_lower_bound;
     }
 
 private:
