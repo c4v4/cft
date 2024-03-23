@@ -7,6 +7,7 @@
 
 #include "core/SparseBinMat.hpp"
 #include "core/cft.hpp"
+#include "core/sort.hpp"
 #include "core/utility.hpp"
 
 namespace cft {
@@ -59,35 +60,31 @@ struct InstAndMap {
     std::vector<cidx_t> col_map;
 };
 
-inline InstAndMap build_tentative_core_instance(Instance const& inst, ridx_t min_row_coverage) {
-    auto core_inst    = Instance{};
-    auto core_col_map = std::vector<cidx_t>();
-
+inline InstAndMap build_tentative_core_instance(Instance const& inst,
+                                                Sorter&         sorter,
+                                                size_t          min_row_coverage) {
     ridx_t nrows        = inst.rows.size();
-    auto   row_coverage = std::vector<ridx_t>(nrows);
-    ridx_t covered      = 0;
+    auto   core_inst    = Instance{};
+    auto   core_col_map = std::vector<cidx_t>();
 
-    // TODO(any): we may consider randomizing columns.
-    // TODO(any): consider iterating over row indices and taking the first `min_row_coverage`
-    // columns for every row.
-    for (cidx_t j = 0; j < inst.cols.size(); ++j) {
-        core_col_map.push_back(j);
+    core_col_map.reserve(nrows * min_row_coverage);
+    for (auto const& row : inst.rows)
+        for (size_t n = 0; n < min(row.size(), min_row_coverage); ++n)
+            core_col_map.push_back(row[n]);
+
+    sorter.sort(core_col_map);
+    cidx_t w      = 0;
+    cidx_t prev_j = CFT_REMOVED_IDX;
+    for (cidx_t j : core_col_map) {
+        if (j == prev_j)
+            continue;
+        prev_j            = j;
+        core_col_map[w++] = j;
         core_inst.cols.push_back(inst.cols[j]);
         core_inst.costs.push_back(inst.costs[j]);
         core_inst.solcosts.push_back(inst.solcosts[j]);
-
-        // Update row coverage for early exit.
-        for (ridx_t i : inst.cols[j]) {
-            ++row_coverage[i];
-            if (row_coverage[i] == min_row_coverage) {
-                ++covered;
-                if (covered == nrows)
-                    goto done;
-            }
-        }
     }
-
-done:
+    core_col_map.resize(w);
 
     fill_rows_from_cols(core_inst.cols, nrows, core_inst.rows);
     return {std::move(core_inst), std::move(core_col_map)};

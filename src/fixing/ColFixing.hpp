@@ -62,7 +62,7 @@ struct ColFixing {
                 j = CFT_REMOVED_IDX;
             }
         remove_if(cols_to_fix.idxs, [](cidx_t j) { return j == CFT_REMOVED_IDX; });
-        fmt::print("Fixing {} non-overlapping columns \n", cols_to_fix.idxs.size());
+        fmt::print("CFIX > Fixing {} non-overlapping columns \n", cols_to_fix.idxs.size());
 
         _complete_fixing(inst, fixing, lagr_mult, greedy);
     }

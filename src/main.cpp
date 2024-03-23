@@ -12,21 +12,21 @@
 #include "subgradient/subgradient.hpp"
 
 void print_inst_summary(cft::FileData const& fdata) {
-    fmt::print("Instance summary:\n");
-    fmt::print("  nrows:     {}\n", fdata.inst.rows.size());
-    fmt::print("  ncols:     {}\n", fdata.inst.cols.size());
-    fmt::print("  costs:     {} {} {} {} ...\n",
+    fmt::print("3PHS > Instance summary:\n");
+    fmt::print("3PHS >   nrows:     {}\n", fdata.inst.rows.size());
+    fmt::print("3PHS >   ncols:     {}\n", fdata.inst.cols.size());
+    fmt::print("3PHS >   costs:     {} {} {} {} ...\n",
                fdata.inst.costs[0],
                fdata.inst.costs[1],
                fdata.inst.costs[2],
                fdata.inst.costs[3]);
-    fmt::print("  solcosts:  {} {} {} {} ...\n",
+    fmt::print("3PHS >   solcosts:  {} {} {} {} ...\n",
                fdata.inst.solcosts[0],
                fdata.inst.solcosts[1],
                fdata.inst.solcosts[2],
                fdata.inst.solcosts[3]);
     if (!fdata.warmstart.empty())
-        fmt::print("  warmstart: {} {} {} {} ...\n",
+        fmt::print("3PHS >   warmstart: {} {} {} {} ...\n",
                    fdata.warmstart[0],
                    fdata.warmstart[1],
                    fdata.warmstart[2],
@@ -34,7 +34,7 @@ void print_inst_summary(cft::FileData const& fdata) {
 
     // print first 10 columns
     for (size_t i = 0; i < 4; ++i)
-        fmt::print("  col[{}]: {}\n", i, fmt::join(fdata.inst.cols[i], ", "));
+        fmt::print("3PHS >   col[{}]: {}\n", i, fmt::join(fdata.inst.cols[i], ", "));
 }
 
 int main(int argc, char const** argv) {
@@ -46,28 +46,29 @@ int main(int argc, char const** argv) {
     auto col_fixing = cft::ColFixing();
     auto rnd        = cft::prng_t{0};
     auto best_sol   = cft::Solution();
+    auto sorter     = cft::Sorter();
 
     while (!inst.rows.empty()) {
         constexpr cft::ridx_t min_row_coverage = 5;
 
-        auto core      = cft::build_tentative_core_instance(inst, min_row_coverage);
+        auto core      = cft::build_tentative_core_instance(inst, sorter, min_row_coverage);
         auto lagr_mult = cft::compute_greedy_multipliers(core.inst);
         auto sol       = cft::Solution();
         greedy(core.inst, lagr_mult, sol);
 
         cft::real_t step_size = 0.1;
         auto        cutoff    = std::min(sol.cost, best_sol.cost - fixing.fixed_cost);
-        auto        opt_lb    = cft::optimize(inst, core, cutoff, sol.cost, step_size, lagr_mult);
-        auto        exp_lb    = cft::explore(core.inst, greedy, cutoff, step_size, sol, lagr_mult);
 
-        auto best_lb = std::max(opt_lb, exp_lb);
-        if (best_lb >= cutoff - CFT_EPSILON) {
-            fmt::print("Early exit: best_lb: {} >= cutoff: {}\n", best_lb, cutoff - CFT_EPSILON);
+        auto opt_lb = cft::optimize(inst, core, sorter, cutoff, sol.cost, step_size, lagr_mult);
+        if (opt_lb >= cutoff - CFT_EPSILON)
             break;
-        }
 
-        fmt::print("Best lower bound: {}, best solution cost: {}\n",
-                   best_lb + fixing.fixed_cost,
+        auto exp_lb = cft::explore(core.inst, greedy, cutoff, step_size, sol, lagr_mult);
+        if (exp_lb >= cutoff - CFT_EPSILON)
+            break;
+
+        fmt::print("3PHS > Best lower bound: {}, best solution cost: {}\n",
+                   cft::max(opt_lb, exp_lb) + fixing.fixed_cost,
                    sol.cost + fixing.fixed_cost);
 
         if (sol.cost + fixing.fixed_cost < best_sol.cost) {
@@ -80,11 +81,13 @@ int main(int argc, char const** argv) {
         }
 
         col_fixing(inst, core, fixing, lagr_mult, greedy);
-        fmt::print("Fixing: rows left: {}, fixed cost: {}\n", inst.rows.size(), fixing.fixed_cost);
+        fmt::print("3PHS > Fixing: rows left: {}, fixed cost: {}\n",
+                   inst.rows.size(),
+                   fixing.fixed_cost);
         cft::perturb_lagr_multipliers(lagr_mult, rnd);
     }
 
-    fmt::print("\nBest solution cost: {}\n", best_sol.cost);
+    fmt::print("\n3PHS > Best solution cost: {}\n", best_sol.cost);
 
     return EXIT_SUCCESS;
 }

@@ -103,44 +103,29 @@ struct PricingManager {
     size_t period;
     size_t next_update_iter;
     size_t max_period_increment;
-    real_t lb_before_pricing;
 
     PricingManager(size_t c_period, size_t c_max_period_increment)
         : period(c_period)
         , next_update_iter(c_period)
-        , max_period_increment(c_max_period_increment)
-        , lb_before_pricing(limits<real_t>::min()) {
+        , max_period_increment(c_max_period_increment) {
     }
 
-    CFT_NODISCARD bool operator()(size_t iter, real_t lower_bound, real_t upper_bound) {
-        if (iter == next_update_iter + 1)
-            _update(lower_bound, upper_bound);
-
-        assert(iter <= next_update_iter);
-
-        if (iter == next_update_iter) {
-            lb_before_pricing = lower_bound;
-            return true;
-        }
-        return false;
+    bool operator()(size_t iter) const {
+        return iter == next_update_iter;
     }
 
-private:
-    void _update(real_t lb_after_pricing, real_t ub) {
-        real_t const delta = (lb_after_pricing - lb_before_pricing) / ub;
-
-        size_t next_period = 0;
+    void update(real_t core_lb, real_t real_lb, real_t ub) {
+        real_t const delta = (core_lb - real_lb) / ub;
         if (delta <= 1e-6)
-            next_period = std::min(max_period_increment, 10 * period);
+            period = std::min(max_period_increment, 10 * period);
         else if (delta <= 0.02)
-            next_period = std::min(max_period_increment, 5 * period);
+            period = std::min(max_period_increment, 5 * period);
         else if (delta <= 0.2)
-            next_period = std::min(max_period_increment, 2 * period);
+            period = std::min(max_period_increment, 2 * period);
         else
-            next_period = 10;
+            period = 10;
 
-        next_update_iter += next_period;
-        period = next_period;
+        next_update_iter += period;
     }
 };
 
@@ -189,13 +174,11 @@ inline CoverCounters<> compute_row_coverage(Instance const& inst, SubgradientSol
 
 // Computes the row coverage of the given solution by including the best non-redundant columns.
 inline CoverCounters<> compute_reduced_row_coverage(Instance const&      inst,
+                                                    Sorter&              sorter,
                                                     SubgradientSolution& sol) {
     // TODO(acco): consider moving to member.
     auto row_coverage = CoverCounters<>(inst.rows.size());
-
-    std::sort(sol.col_info.begin(), sol.col_info.end(), [](CidxAndCost a, CidxAndCost b) {
-        return a.cost < b.cost;
-    });
+    sorter.sort(sol.col_info, [](CidxAndCost a) { return a.cost; });
 
     // TODO(acco): consider the opposite approach in which we first add all columns, identify the
     // redundant ones, sort them and remove the worst. This may allows us to sort less columns.
@@ -243,57 +226,53 @@ inline void perturb_lagr_multipliers(std::vector<real_t>& lagr_mult, cft::prng_t
 // TODO(acco): Consider implementing it as a functor.
 inline real_t optimize(Instance const&      orig_inst,
                        InstAndMap&          core,
+                       Sorter&              sorter,
                        real_t               cutoff,
-                       real_t               upper_bound,
+                       real_t               best_ub,
                        real_t&              step_size,
                        std::vector<real_t>& best_lagr_mult) {
 
-    assert(!orig_inst.cols.empty());
-    assert(!core.inst.cols.empty());
-
     size_t const nrows = orig_inst.rows.size();
-    assert(nrows == core.inst.rows.size());
+
+    assert(!orig_inst.cols.empty() && "Empty instance");
+    assert(!core.inst.cols.empty() && "Empty core instance");
+    assert(nrows == core.inst.rows.size() && "Incompatible instances");
 
     auto next_step_size = StepSizeManager(20, step_size);
     auto should_exit    = ExitConditionManager(300);
     auto should_price   = PricingManager(10, std::min(1000UL, nrows / 3));
+    auto price          = Pricer();
 
     // TODO(acco): consider moving to members.
-    auto lagr_mult        = best_lagr_mult;
-    auto best_lower_bound = limits<real_t>::min();
-    auto price            = Pricer();
+    auto lagr_mult    = best_lagr_mult;
+    auto best_core_lb = limits<real_t>::min();
 
     size_t max_iters = 10 * nrows;
     for (size_t iter = 0; iter < max_iters; ++iter) {
         auto   sol          = compute_subgradient_solution(core.inst, lagr_mult);
-        auto   row_coverage = compute_row_coverage(core.inst, sol);
+        auto   row_coverage = compute_reduced_row_coverage(core.inst, sorter, sol);
         real_t norm         = compute_subgradient_norm(core.inst, row_coverage);
 
-        if (sol.lower_bound > best_lower_bound) {
-            best_lower_bound = sol.lower_bound;
-            best_lagr_mult   = lagr_mult;
-        }
-
-        assert(sol.lower_bound <= upper_bound);
-        if (sol.lower_bound >= cutoff - CFT_EPSILON) {
-            fmt::print("Unpromising set of columns.\n");
-            return best_lower_bound;
+        if (sol.lower_bound > best_core_lb) {
+            IF_DEBUG(fmt::print("SUBG > New best lower bound: {}\n", sol.lower_bound));
+            best_core_lb   = sol.lower_bound;
+            best_lagr_mult = lagr_mult;
         }
 
         if (norm == 0.0) {
-            assert(best_lower_bound < cutoff);
-            assert(best_lower_bound == sol.lower_bound);
-            fmt::print("Found optimal solution.\n");
+            assert(best_core_lb < cutoff && "Optimum is above cutoff");
+            assert(best_core_lb == sol.lower_bound && "Inconsistent lower bound");
+            fmt::print("SUBG > Found optimal solution.\n");
             best_lagr_mult = lagr_mult;
-            return best_lower_bound;
+            return best_core_lb;
         }
 
-        if (should_exit(iter, best_lower_bound))
-            return best_lower_bound;
+        if (should_exit(iter, best_core_lb))
+            return best_core_lb;
 
         step_size = next_step_size(iter, sol.lower_bound);
         for (size_t i = 0; i < nrows; ++i) {
-            real_t normalized_bound_diff = (upper_bound - sol.lower_bound) / norm;
+            real_t normalized_bound_diff = (best_ub - sol.lower_bound) / norm;
             auto   violation             = static_cast<real_t>(1 - row_coverage[i]);
 
             real_t delta_mult = step_size * normalized_bound_diff * violation;
@@ -301,10 +280,22 @@ inline real_t optimize(Instance const&      orig_inst,
             assert(std::isfinite(lagr_mult[i]) && "Multiplier is not finite");
         }
 
-        if (should_price(iter, sol.lower_bound, upper_bound))
-            price(orig_inst, lagr_mult, core);
+        if (should_price(iter) && iter < max_iters - 1) {
+            real_t real_lb = price(orig_inst, lagr_mult, core);
+            should_price.update(best_core_lb, real_lb, best_ub);
+            fmt::print("SUBG > {:4}: Pricing: core LB: {}, real LB: {}\n",
+                       iter,
+                       best_core_lb,
+                       real_lb);
+
+            if (real_lb >= cutoff - CFT_EPSILON) {
+                fmt::print("SUBG > Unpromising set of columns.\n");
+                return real_lb;
+            }
+            best_core_lb = limits<real_t>::min();  // TODO(cava): avoid pricing during last iter
+        }
     }
-    return best_lower_bound;
+    return best_core_lb;
 }
 
 // NOTE: It seems that in the original they store the lagrangian multipliers associated to the best
@@ -324,22 +315,22 @@ inline real_t explore(Instance const&      inst,
     size_t max_iters        = 250;  // TODO(all): consider making it a parameter.
     for (size_t iter = 0; iter < max_iters; ++iter) {
         auto   sol          = compute_subgradient_solution(inst, lagr_mult);
-        auto   row_coverage = compute_reduced_row_coverage(inst, sol);
+        auto   row_coverage = compute_row_coverage(inst, sol);
         real_t norm         = compute_subgradient_norm(inst, row_coverage);
 
         if (sol.lower_bound > best_lower_bound)
             best_lower_bound = sol.lower_bound;
 
-        assert(best_lower_bound <= best_sol.cost);
+        assert(best_lower_bound <= best_sol.cost && "Inconsistent lower bound");
         if (best_lower_bound >= cutoff - CFT_EPSILON) {
-            fmt::print("Unpromising set of columns.\n");
+            fmt::print("SUBG > Unpromising set of columns.\n");
             return best_lower_bound;
         }
 
         if (norm == 0.0) {  // Return optimum
-            assert(best_lower_bound < cutoff);
-            assert(best_lower_bound == sol.lower_bound);
-            fmt::print("Found optimal solution.\n");
+            assert(best_lower_bound < cutoff && "Optimum is above cutoff");
+            assert(best_lower_bound == sol.lower_bound && "Inconsistent lower bound");
+            fmt::print("SUBG > Found optimal solution.\n");
             best_greedy_lagr_mult = lagr_mult;
             best_sol.cost         = sol.lower_bound;
             best_sol.idxs.clear();
