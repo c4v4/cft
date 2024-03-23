@@ -21,6 +21,7 @@
 #endif
 
 #define CFT_REMOVED_IDX (cft::limits<cidx_t>::max())
+#define CFT_EPSILON     cft::real_t(1 - 1e-6)  // 1-1e-6 for integer costs, 1e-6 for float costs
 
 namespace cft {
 

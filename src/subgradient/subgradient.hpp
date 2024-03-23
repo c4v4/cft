@@ -242,18 +242,19 @@ inline void perturb_lagr_multipliers(std::vector<real_t>& lagr_mult, cft::prng_t
 
 // TODO(acco): Consider implementing it as a functor.
 inline real_t optimize(Instance const&      orig_inst,
-                       Instance&            core_inst,
+                       InstAndMap&          core,
                        real_t               cutoff,
                        real_t               upper_bound,
+                       real_t&              step_size,
                        std::vector<real_t>& best_lagr_mult) {
 
     assert(!orig_inst.cols.empty());
-    assert(!core_inst.cols.empty());
+    assert(!core.inst.cols.empty());
 
     size_t const nrows = orig_inst.rows.size();
-    assert(nrows == core_inst.rows.size());
+    assert(nrows == core.inst.rows.size());
 
-    auto next_step_size = StepSizeManager(20, 0.1);
+    auto next_step_size = StepSizeManager(20, step_size);
     auto should_exit    = ExitConditionManager(300);
     auto should_price   = PricingManager(10, std::min(1000UL, nrows / 3));
 
@@ -262,12 +263,11 @@ inline real_t optimize(Instance const&      orig_inst,
     auto best_lower_bound = limits<real_t>::min();
     auto price            = Pricer();
 
-    fmt::print("iter   curr lb   best lb   best ub   step size\n");
     size_t max_iters = 10 * nrows;
     for (size_t iter = 0; iter < max_iters; ++iter) {
-        auto   sol          = compute_subgradient_solution(core_inst, lagr_mult);
-        auto   row_coverage = compute_row_coverage(core_inst, sol);
-        real_t norm         = compute_subgradient_norm(core_inst, row_coverage);
+        auto   sol          = compute_subgradient_solution(core.inst, lagr_mult);
+        auto   row_coverage = compute_row_coverage(core.inst, sol);
+        real_t norm         = compute_subgradient_norm(core.inst, row_coverage);
 
         if (sol.lower_bound > best_lower_bound) {
             best_lower_bound = sol.lower_bound;
@@ -275,7 +275,7 @@ inline real_t optimize(Instance const&      orig_inst,
         }
 
         assert(sol.lower_bound <= upper_bound);
-        if (sol.lower_bound >= cutoff) {
+        if (sol.lower_bound >= cutoff - CFT_EPSILON) {
             fmt::print("Unpromising set of columns.\n");
             return best_lower_bound;
         }
@@ -291,7 +291,7 @@ inline real_t optimize(Instance const&      orig_inst,
         if (should_exit(iter, best_lower_bound))
             return best_lower_bound;
 
-        real_t step_size = next_step_size(iter, sol.lower_bound);
+        step_size = next_step_size(iter, sol.lower_bound);
         for (size_t i = 0; i < nrows; ++i) {
             real_t normalized_bound_diff = (upper_bound - sol.lower_bound) / norm;
             auto   violation             = static_cast<real_t>(1 - row_coverage[i]);
@@ -301,33 +301,27 @@ inline real_t optimize(Instance const&      orig_inst,
             assert(std::isfinite(lagr_mult[i]) && "Multiplier is not finite");
         }
 
-        if (sol.lower_bound == best_lower_bound)
-            fmt::print("{:4}    {:6.2f}    {:6.2f}    {:6.2f}    {:6.2f}\n",
-                       iter,
-                       sol.lower_bound,
-                       best_lower_bound,
-                       upper_bound,
-                       step_size);
-
         if (should_price(iter, sol.lower_bound, upper_bound))
-            price(orig_inst, lagr_mult, core_inst);
+            price(orig_inst, lagr_mult, core);
     }
     return best_lower_bound;
 }
 
+// NOTE: It seems that in the original they store the lagrangian multipliers associated to the best
+// lower bound, however, it seems to work better if we store the lagrangian multipliers associated
+// to the best greedy solution. (But this might be due to the different column fixing we are using).
 // TODO(acco): Consider implementing it as a functor.
 inline real_t explore(Instance const&      inst,
                       Greedy&              greedy,
                       real_t               cutoff,
+                      real_t               step_size,
                       Solution&            best_sol,
                       std::vector<real_t>& best_greedy_lagr_mult) {
 
     auto lagr_mult        = best_greedy_lagr_mult;
     auto greedy_sol       = Solution();
     auto best_lower_bound = limits<real_t>::min();
-    auto best_greedy_cost = limits<real_t>::max();
 
-    fmt::print("iter   curr lb   best lb   curr ub   best ub   step size\n");
     size_t max_iters = 250;  // TODO(all): consider making it a parameter.
     for (size_t iter = 0; iter < max_iters; ++iter) {
         auto   sol          = compute_subgradient_solution(inst, lagr_mult);
@@ -338,7 +332,7 @@ inline real_t explore(Instance const&      inst,
             best_lower_bound = sol.lower_bound;
 
         assert(best_lower_bound <= best_sol.cost);
-        if (best_lower_bound >= cutoff) {
+        if (best_lower_bound >= cutoff - CFT_EPSILON) {
             fmt::print("Unpromising set of columns.\n");
             return best_lower_bound;
         }
@@ -357,18 +351,13 @@ inline real_t explore(Instance const&      inst,
 
         greedy_sol.idxs.clear();
         greedy(inst, lagr_mult, greedy_sol, cutoff);
-        if (greedy_sol.cost < best_greedy_cost) {
-            best_greedy_cost      = greedy_sol.cost;
+        if (greedy_sol.cost <= cutoff - CFT_EPSILON) {
+            cutoff                = greedy_sol.cost;
+            best_sol              = greedy_sol;
             best_greedy_lagr_mult = lagr_mult;
-
-            if (greedy_sol.cost < cutoff) {
-                cutoff   = greedy_sol.cost;
-                best_sol = greedy_sol;
-                IF_DEBUG(check_solution(inst, best_sol));
-            }
+            IF_DEBUG(check_solution(inst, best_sol));
         }
 
-        real_t step_size = 0.1;  // TODO(acco): should we vary this?
         for (size_t i = 0; i < inst.rows.size(); ++i) {
             real_t normalized_bound_diff = (best_sol.cost - sol.lower_bound) / norm;
             auto   violation             = static_cast<real_t>(1 - row_coverage[i]);
@@ -377,15 +366,6 @@ inline real_t explore(Instance const&      inst,
             lagr_mult[i]      = cft::max(0.0F, lagr_mult[i] + delta_mult);
             assert(std::isfinite(lagr_mult[i]) && "Multiplier is not finite");
         }
-
-        if (greedy_sol.cost == cutoff)
-            fmt::print("{:4}    {:6.2f}    {:6.2f}    {:6.2f}    {:6.2f}      {:6.2f}\n",
-                       iter,
-                       sol.lower_bound,
-                       best_lower_bound,
-                       greedy_sol.cost,
-                       best_sol.cost,
-                       step_size);
     }
     return best_lower_bound;
 }
