@@ -79,9 +79,7 @@ int main(int argc, char const** argv) {
             // TODO(any): cannot check best_sol atm since we loose the original instance
         }
 
-        // TODO(cava): Col fixing for inst considering core-inst?
-        col_fixing(inst, core.inst, fixing, lagr_mult, sol, greedy);
-        cft::perturb_lagr_multipliers(lagr_mult, rnd);
+        col_fixing(inst, core, fixing, lagr_mult, greedy);
         fmt::print("Fixing: rows left: {}, fixed cost: {}\n", inst.rows.size(), fixing.fixed_cost);
         cft::perturb_lagr_multipliers(lagr_mult, rnd);
     }

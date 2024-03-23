@@ -318,11 +318,10 @@ inline real_t explore(Instance const&      inst,
                       Solution&            best_sol,
                       std::vector<real_t>& best_greedy_lagr_mult) {
 
-    auto lagr_mult        = best_greedy_lagr_mult;
-    auto greedy_sol       = Solution();
-    auto best_lower_bound = limits<real_t>::min();
-
-    size_t max_iters = 250;  // TODO(all): consider making it a parameter.
+    auto   lagr_mult        = best_greedy_lagr_mult;
+    auto   greedy_sol       = Solution();
+    auto   best_lower_bound = limits<real_t>::min();
+    size_t max_iters        = 250;  // TODO(all): consider making it a parameter.
     for (size_t iter = 0; iter < max_iters; ++iter) {
         auto   sol          = compute_subgradient_solution(inst, lagr_mult);
         auto   row_coverage = compute_reduced_row_coverage(inst, sol);
