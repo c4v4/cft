@@ -62,27 +62,9 @@ struct ColFixing {
                 j = CFT_REMOVED_IDX;
             }
         remove_if(cols_to_fix.idxs, [](cidx_t j) { return j == CFT_REMOVED_IDX; });
-
         fmt::print("Fixing {} non-overlapping columns \n", cols_to_fix.idxs.size());
 
-        auto fix_at_least = max<cidx_t>(nrows / 200, 1);
-        if (fix_at_least > cols_to_fix.idxs.size())
-            greedy(inst, lagr_mult, cols_to_fix, limits<real_t>::max(), fix_at_least);
-
-        IF_DEBUG(real_t old_fixed_cost = fixing.fixed_cost);
-        fix_columns(inst, cols_to_fix.idxs, fixing);
-        assert(fixing.fixed_cost - old_fixed_cost == cols_to_fix.cost);
-
-        // TODO(cava): atm columns not in best_sol could be fixed by greedy, can we avoid this?
-        ridx_t prev_nrows = fixing.prev2curr_row_map.size();
-        for (ridx_t prev_i = 0; prev_i < prev_nrows; ++prev_i) {
-            ridx_t curr_i = fixing.prev2curr_row_map[prev_i];
-            if (curr_i != CFT_REMOVED_IDX) {
-                assert(curr_i <= prev_i);
-                lagr_mult[curr_i] = lagr_mult[prev_i];
-            }
-        }
-        lagr_mult.resize(prev_nrows);
+        _complete_fixing(inst, fixing, lagr_mult, greedy);
     }
 
     // The original column fixing does not consider the current best solution to further restrict
@@ -97,31 +79,34 @@ struct ColFixing {
                     Solution&            best_sol,
                     Greedy&              greedy) {
 
-        ridx_t nrows = inst.rows.size();
-        cover_counts.reset(nrows);
         cols_to_fix.idxs.clear();
-
-        auto const& core_inst    = core.inst;
-        auto const& core_col_map = core.col_map;
         for (cidx_t j : best_sol.idxs) {
-            real_t lagr_cost = core_inst.costs[j];
-            for (ridx_t i : core_inst.cols[j])
+            real_t lagr_cost = core.inst.costs[j];
+            for (ridx_t i : core.inst.cols[j])
                 lagr_cost -= lagr_mult[i];
 
-            if (lagr_cost < col_fix_thresh) {
-                cols_to_fix.idxs.emplace_back(j);
-                cover_counts.cover(core_inst.cols[j]);
-            }
+            if (lagr_cost < col_fix_thresh)
+                cols_to_fix.idxs.push_back(core.col_map[j]);
         }
 
-        auto fix_at_least = max<cidx_t>(nrows / 200, 1);
+        _complete_fixing(inst, fixing, lagr_mult, greedy);
+    }
+
+private:
+    void _complete_fixing(Instance&            inst,
+                          FixingData&          fixing,
+                          std::vector<real_t>& lagr_mult,
+                          Greedy&              greedy) {
+
+        ridx_t nrows        = inst.rows.size();
+        auto   fix_at_least = max<cidx_t>(nrows / 200, 1);
         if (fix_at_least > cols_to_fix.idxs.size())
-            greedy(core_inst, lagr_mult, cols_to_fix, limits<real_t>::max(), fix_at_least);
+            greedy(inst, lagr_mult, cols_to_fix, limits<real_t>::max(), fix_at_least);
 
-        for (cidx_t& j : cols_to_fix.idxs)
-            j = core_col_map[j];
-
+        IF_DEBUG(real_t old_fixed_cost = fixing.fixed_cost);
         fix_columns(inst, cols_to_fix.idxs, fixing);
+        assert(fixing.fixed_cost - old_fixed_cost == cols_to_fix.cost);
+
         // TODO(cava): atm columns not in best_sol could be fixed by greedy, can we avoid this?
         ridx_t prev_nrows = fixing.prev2curr_row_map.size();
         for (ridx_t prev_i = 0; prev_i < prev_nrows; ++prev_i) {
