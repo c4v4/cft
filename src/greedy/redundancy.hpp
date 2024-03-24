@@ -18,7 +18,6 @@
 #include "core/coverage.hpp"
 #include "core/limits.hpp"
 #include "core/sort.hpp"
-#include "fmt/base.h"
 #include "instance/Instance.hpp"
 
 
