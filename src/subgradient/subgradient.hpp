@@ -4,6 +4,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstddef>
+#include <type_traits>
 #include <vector>
 
 #include "core/cft.hpp"
@@ -129,90 +130,111 @@ struct PricingManager {
     }
 };
 
-// A solution, i.e., a set of columns and its associated lower bound.
-struct SubgradientSolution {
-    // The index and reduced cost of columns defining the solution.
-    std::vector<CidxAndCost> col_info;
-    // The lower bound associated with the solution.
-    real_t lower_bound;
-};
-
 // Computes a solution by inspection by including all columns having a negative reduced cost.
-inline SubgradientSolution compute_subgradient_solution(Instance const&            inst,
-                                                        std::vector<real_t> const& lagr_mult) {
-    auto sol = SubgradientSolution{};
+// TODO(cava): Here to save it in the repo, remove it!
+// inline void update_lbsol_and_reduced_costs(Instance const&            inst,
+//                                            std::vector<real_t> const& lagr_mult_delta,
+//                                            Solution&                  lb_sol,
+//                                            std::vector<real_t>&       reduced_costs) {
+//     lb_sol.idxs.clear();
+//     for (real_t value : lagr_mult_delta)
+//         lb_sol.cost += value;
+//
+//     // Update reduced costs
+//     for (ridx_t i = 0; i < inst.rows.size(); ++i)
+//         if (lagr_mult_delta[i] != 0.0)  // exact match since caused by integral violation = 0
+//             for (auto j : inst.rows[i]) {
+//                 real_t old_rc = reduced_costs[j];
+//                 reduced_costs[j] -= lagr_mult_delta[i];
+//                 lb_sol.cost += min(0.0F, reduced_costs[j]) - min(0.0F, old_rc);
+//             }
+//
+//     for (cidx_t j = 0; j < inst.cols.size(); ++j)
+//         if (reduced_costs[j] < 0.0)
+//             lb_sol.idxs.push_back(j);
+// }
 
-    sol.lower_bound = 0;
+inline void update_lbsol_and_reduced_costs(Instance const&            inst,
+                                           std::vector<real_t> const& lagr_mult,
+                                           Solution&                  lb_sol,
+                                           std::vector<real_t>&       reduced_costs) {
+    lb_sol.idxs.clear();
+    lb_sol.cost = 0.0;
     for (real_t const value : lagr_mult)
-        sol.lower_bound += value;
+        lb_sol.cost += value;
 
     for (cidx_t j = 0; j < inst.cols.size(); ++j) {
 
-        real_t reduced_cost = inst.costs[j];
+        reduced_costs[j] = inst.costs[j];
         for (ridx_t i : inst.cols[j])
-            reduced_cost -= lagr_mult[i];
+            reduced_costs[j] -= lagr_mult[i];
 
-        if (reduced_cost < 0.0) {
-            sol.col_info.push_back({j, reduced_cost});
-            sol.lower_bound += reduced_cost;
+        if (reduced_costs[j] < 0.0) {
+            lb_sol.idxs.push_back(j);
+            lb_sol.cost += reduced_costs[j];
         }
     }
-
-    return sol;
 }
 
 // Computes the row coverage of the given solution.
-inline CoverCounters<> compute_row_coverage(Instance const& inst, SubgradientSolution const& sol) {
+inline void compute_row_coverage(Instance const&  inst,
+                                 Solution const&  sol,
+                                 CoverCounters<>& row_coverage) {
     // TODO(acco): consider moving to member.
-    auto row_coverage = CoverCounters<>(inst.rows.size());
-
-    for (auto const& c : sol.col_info)
-        row_coverage.cover(inst.cols[c.col]);
-
-    return row_coverage;
+    row_coverage.reset(inst.rows.size());
+    for (cidx_t j : sol.idxs)
+        row_coverage.cover(inst.cols[j]);
 }
 
 // Computes the row coverage of the given solution by including the best non-redundant columns.
-inline CoverCounters<> compute_reduced_row_coverage(Instance const&      inst,
-                                                    Sorter&              sorter,
-                                                    SubgradientSolution& sol) {
+inline void compute_reduced_row_coverage(Instance const&            inst,
+                                         std::vector<real_t> const& reduced_costs,
+                                         Sorter&                    sorter,
+                                         CoverCounters<>&           row_coverage,
+                                         Solution&                  sol) {
     // TODO(acco): consider moving to member.
-    auto row_coverage = CoverCounters<>(inst.rows.size());
-    sorter.sort(sol.col_info, [](CidxAndCost a) { return a.cost; });
+    row_coverage.reset(inst.rows.size());
+    sorter.sort(sol.idxs, [&](cidx_t j) { return reduced_costs[j]; });
 
-    // TODO(acco): consider the opposite approach in which we first add all columns, identify the
-    // redundant ones, sort them and remove the worst. This may allows us to sort less columns.
-    for (auto const& c : sol.col_info) {
-        auto const& col = inst.cols[c.col];
+    for (cidx_t j : sol.idxs) {
+        auto col = inst.cols[j];
         if (!row_coverage.is_redundant_cover(col))
             row_coverage.cover(col);
     }
 
-    return row_coverage;
+    // TODO(any): The search trajectory changes, so we need average testing to see which is faster.
+    // TODO(any): Note that the use of our custom sorter might change significantly the performance.
+
+    // The other approach that computes coverage, sort redundant and remove one by one.
+    // for (CidxAndCost c : lb_sol.idxs)
+    //     row_coverage.cover(inst.cols[c.col]);
+    //
+    // auto red_cols = std::vector<CidxAndCost>();
+    // for (cidx_t s = 0; s < lb_sol.idxs.size(); ++s)
+    //    if (row_coverage.is_redundant_uncover(inst.cols[lb_sol.idxs[s].col]))
+    //        red_cols.push_back({s, lb_sol.idxs[s].cost});
+    //
+    // sorter.sort(red_cols, [&](CidxAndCost c) { return -c.cost; });
+    //
+    // for (CidxAndCost c : red_cols) {
+    //    auto col = inst.cols[lb_sol.idxs[c.col].col];
+    //    if (!row_coverage.is_redundant_uncover(col)) {
+    //        row_coverage.uncover(col);
+    //        lb_sol.idxs[c.col].col = CFT_REMOVED_IDX;
+    //    }
+    //}
+    //
+    // remove_if(lb_sol.idxs, [](CidxAndCost c) { return c.col == CFT_REMOVED_IDX; });
 }
 
 // Computes the subgradient squared norm according to the given row coverage.
-inline real_t compute_subgradient_norm(Instance const&                inst,
-                                       CoverCounters<uint16_t> const& row_coverage) {
+inline real_t compute_subgradient_norm(CoverCounters<> const& row_coverage) {
     int32_t norm = 0;
-    for (size_t i = 0; i < inst.rows.size(); ++i) {
+    for (size_t i = 0; i < row_coverage.size(); ++i) {
         int32_t violation = 1 - row_coverage[i];
         norm += violation * violation;
     }
     return static_cast<real_t>(norm);
-}
-
-// Greedily creates lagrangian multipliers for the given instance.
-inline std::vector<real_t> compute_greedy_multipliers(Instance const& inst) {
-    auto lagr_mult = std::vector<real_t>(inst.rows.size(), limits<real_t>::max());
-
-    for (size_t i = 0; i < inst.rows.size(); ++i)
-        for (cidx_t const j : inst.rows[i]) {
-            real_t const candidate = inst.costs[j] / static_cast<real_t>(inst.cols[j].size());
-            lagr_mult[i]           = cft::min(lagr_mult[i], candidate);
-        }
-
-    return lagr_mult;
 }
 
 // Defines lagrangian multipliers as a perturbation of the given ones.
@@ -223,144 +245,168 @@ inline void perturb_lagr_multipliers(std::vector<real_t>& lagr_mult, cft::prng_t
     }
 }
 
+inline void update_lagr_mult(CoverCounters<> const& row_coverage,
+                             real_t                 step_factor,
+                             std::vector<real_t>&   lagr_mult) {
+
+    for (size_t i = 0; i < row_coverage.size(); ++i) {
+        auto violation = static_cast<real_t>(1 - row_coverage[i]);
+
+        real_t old_mult   = lagr_mult[i];
+        real_t delta_mult = step_factor * violation;
+        lagr_mult[i]      = cft::max(0.0F, old_mult + delta_mult);
+        assert(std::isfinite(lagr_mult[i]) && "Multiplier is not finite");
+    }
+}
+
 // Subgradient phase of the Three-phase algorithm.
-// TODO(acco): Consider implementing it as a functor.
-inline real_t subgradient(Instance const&      orig_inst,
-                       InstAndMap&          core,
-                       Sorter&              sorter,
-                       real_t               cutoff,
-                       real_t               best_ub,
-                       real_t&              step_size,
-                       std::vector<real_t>& best_lagr_mult) {
+struct Subgradient {
+private:
+    // Caches
+    Pricer              price;
+    Solution            lb_sol;
+    CoverCounters<>     row_coverage;
+    std::vector<real_t> reduced_costs;
+    std::vector<real_t> lagr_mult;
 
-    size_t const nrows = orig_inst.rows.size();
+    // Initialize lower-bounds and multipliers as if lagr_mult were 0s and have just been updated to
+    // new_lagr_mult.
+    // NOTE: This function assumes to be called just before the start of a new iteration of the
+    // subgradient loop. In this location, lagr_mult has just been updated (so here they already
+    // have the "new" values), while reduced_costs and lb_sol have the values corresponding to
+    // lagr_mult = 0s, since they are updated at the start.
+    real_t _reset_mult_and_lb(std::vector<real_t> const& col_costs,
+                              std::vector<real_t> const& new_lagr_mult) {
+        lagr_mult = new_lagr_mult;
 
-    assert(!orig_inst.cols.empty() && "Empty instance");
-    assert(!core.inst.cols.empty() && "Empty core instance");
-    assert(nrows == core.inst.rows.size() && "Incompatible instances");
-
-    auto next_step_size = StepSizeManager(20, step_size);
-    auto should_exit    = ExitConditionManager(300);
-    auto should_price   = PricingManager(10, std::min(1000UL, nrows / 3));
-    auto price          = Pricer();
-
-    // TODO(acco): consider moving to members.
-    auto lagr_mult    = best_lagr_mult;
-    auto best_core_lb = limits<real_t>::min();
-
-    size_t max_iters = 10 * nrows;
-    for (size_t iter = 0; iter < max_iters; ++iter) {
-        auto   sol          = compute_subgradient_solution(core.inst, lagr_mult);
-        auto   row_coverage = compute_reduced_row_coverage(core.inst, sorter, sol);
-        real_t norm         = compute_subgradient_norm(core.inst, row_coverage);
-
-        if (sol.lower_bound > best_core_lb) {
-            IF_DEBUG(fmt::print("SUBG > New best lower bound: {}\n", sol.lower_bound));
-            best_core_lb   = sol.lower_bound;
-            best_lagr_mult = lagr_mult;
-        }
-
-        if (norm == 0.0) {
-            assert(best_core_lb < cutoff && "Optimum is above cutoff");
-            assert(best_core_lb == sol.lower_bound && "Inconsistent lower bound");
-            fmt::print("SUBG > Found optimal solution.\n");
-            best_lagr_mult = lagr_mult;
-            return best_core_lb;
-        }
-
-        if (should_exit(iter, best_core_lb))
-            return best_core_lb;
-
-        step_size = next_step_size(iter, sol.lower_bound);
-        for (size_t i = 0; i < nrows; ++i) {
-            real_t normalized_bound_diff = (best_ub - sol.lower_bound) / norm;
-            auto   violation             = static_cast<real_t>(1 - row_coverage[i]);
-
-            real_t delta_mult = step_size * normalized_bound_diff * violation;
-            lagr_mult[i]      = cft::max(0.0F, lagr_mult[i] + delta_mult);
-            assert(std::isfinite(lagr_mult[i]) && "Multiplier is not finite");
-        }
-
-        if (should_price(iter) && iter < max_iters - 1) {
-            real_t real_lb = price(orig_inst, lagr_mult, core);
-            should_price.update(best_core_lb, real_lb, best_ub);
-            fmt::print("SUBG > {:4}: Pricing: core LB: {}, real LB: {}\n",
-                       iter,
-                       best_core_lb,
-                       real_lb);
-
-            if (real_lb >= cutoff - CFT_EPSILON) {
-                fmt::print("SUBG > Unpromising set of columns.\n");
-                return real_lb;
-            }
-            best_core_lb = limits<real_t>::min();  // TODO(cava): avoid pricing during last iter
-        }
+        // Ready to be updated at the start of the loop
+        reduced_costs = col_costs;
+        lb_sol.cost   = 0.0;
+        lb_sol.idxs.clear();
+        return 0.0;  // the LB is exactly 0 (no negative reduced costs)
     }
-    return best_core_lb;
-}
 
-// Heuristic phase of the Three-phase algorithm.
-// NOTE: It seems that in the original they store the lagrangian multipliers associated to the best
-// lower bound, however, it seems to work better if we store the lagrangian multipliers associated
-// to the best greedy solution. (But this might be due to the different column fixing we are using).
-// TODO(acco): Consider implementing it as a functor.
-inline real_t heuristic(Instance const&      inst,
-                      Greedy&              greedy,
+public:
+    real_t operator()(Instance const&      orig_inst,
+                      InstAndMap&          core,
+                      Sorter&              sorter,
                       real_t               cutoff,
-                      real_t               step_size,
-                      Solution&            best_sol,
-                      std::vector<real_t>& best_greedy_lagr_mult) {
+                      real_t               best_ub,
+                      real_t&              step_size,
+                      std::vector<real_t>& best_lagr_mult) {
 
-    auto   lagr_mult        = best_greedy_lagr_mult;
-    auto   greedy_sol       = Solution();
-    auto   best_lower_bound = limits<real_t>::min();
-    size_t max_iters        = 250;  // TODO(all): consider making it a parameter.
-    for (size_t iter = 0; iter < max_iters; ++iter) {
-        auto   sol          = compute_subgradient_solution(inst, lagr_mult);
-        auto   row_coverage = compute_row_coverage(inst, sol);
-        real_t norm         = compute_subgradient_norm(inst, row_coverage);
+        size_t const nrows       = orig_inst.rows.size();
+        real_t const max_real_lb = cutoff - CFT_EPSILON;
 
-        if (sol.lower_bound > best_lower_bound)
-            best_lower_bound = sol.lower_bound;
+        assert(!orig_inst.cols.empty() && "Empty instance");
+        assert(!core.inst.cols.empty() && "Empty core instance");
+        assert(nrows == core.inst.rows.size() && "Incompatible instances");
 
-        assert(best_lower_bound <= best_sol.cost && "Inconsistent lower bound");
-        if (best_lower_bound >= cutoff - CFT_EPSILON) {
-            fmt::print("HEUR > Unpromising set of columns.\n");
-            return best_lower_bound;
+        auto next_step_size = StepSizeManager(20, step_size);
+        auto should_exit    = ExitConditionManager(300);
+        auto should_price   = PricingManager(10, std::min(1000UL, nrows / 3));
+        auto best_core_lb   = _reset_mult_and_lb(core.inst.costs, best_lagr_mult);
+        auto best_real_lb   = limits<real_t>::min();
+
+        size_t max_iters = 10 * nrows;
+        for (size_t iter = 0; iter < max_iters && best_real_lb < max_real_lb; ++iter) {
+
+            update_lbsol_and_reduced_costs(core.inst, lagr_mult, lb_sol, reduced_costs);
+            compute_reduced_row_coverage(core.inst, reduced_costs, sorter, row_coverage, lb_sol);
+            real_t norm = compute_subgradient_norm(row_coverage);
+
+            if (lb_sol.cost > best_core_lb) {
+                IF_DEBUG(fmt::print("SUBG > New best lower bound: {}\n", lb_sol.cost));
+                best_core_lb   = lb_sol.cost;
+                best_lagr_mult = lagr_mult;
+            }
+
+            if (norm == 0.0) {
+                assert(best_core_lb < cutoff && "Optimum is above cutoff");
+                assert(best_core_lb == lb_sol.cost && "Inconsistent lower bound");
+                fmt::print("SUBG > Found optimal solution.\n");
+                best_lagr_mult = lagr_mult;
+                return best_core_lb;
+            }
+
+            if (should_exit(iter, best_core_lb))
+                return best_core_lb;
+
+            step_size          = next_step_size(iter, lb_sol.cost);
+            real_t step_factor = step_size * (best_ub - lb_sol.cost) / norm;
+            update_lagr_mult(row_coverage, step_factor, lagr_mult);
+
+            if (should_price(iter) && iter < max_iters - 1) {
+                real_t real_lb = price(orig_inst, lagr_mult, core);
+                should_price.update(best_core_lb, real_lb, best_ub);
+
+                fmt::print("SUBG > {:4}: Pricing: core LB: {}, real LB: {}\n",
+                           iter,
+                           best_core_lb,
+                           real_lb);
+
+                best_real_lb = max(best_real_lb, real_lb);
+                best_core_lb = _reset_mult_and_lb(core.inst.costs, lagr_mult);
+            }
         }
+        return best_real_lb;
+    }
 
-        if (norm == 0.0) {  // Return optimum
-            assert(best_lower_bound < cutoff && "Optimum is above cutoff");
-            assert(best_lower_bound == sol.lower_bound && "Inconsistent lower bound");
-            fmt::print("HEUR > Found optimal solution.\n");
-            best_greedy_lagr_mult = lagr_mult;
-            best_sol.cost         = sol.lower_bound;
-            best_sol.idxs.clear();
-            for (auto c : sol.col_info)
-                best_sol.idxs.push_back(c.col);
-            return best_lower_bound;
-        }
+    // Heuristic phase of the Three-phase algorithm.
+    // NOTE: It seems that in the original they store the lagrangian multipliers associated to the
+    // best lower bound, however, it seems to work better if we store the lagrangian multipliers
+    // associated to the best greedy solution. (But this might be due to the different column fixing
+    // we are using).
+    // TODO(acco): Consider implementing it as a functor.
+    void heuristic(Instance const&      inst,
+                   Greedy&              greedy,
+                   real_t               cutoff,
+                   real_t               step_size,
+                   Solution&            best_sol,
+                   std::vector<real_t>& best_lagr_mult) {
 
-        greedy_sol.idxs.clear();
-        greedy(inst, lagr_mult, greedy_sol, cutoff);
-        if (greedy_sol.cost <= cutoff - CFT_EPSILON) {
-            cutoff                = greedy_sol.cost;
-            best_sol              = greedy_sol;
-            best_greedy_lagr_mult = lagr_mult;
-            IF_DEBUG(check_solution(inst, best_sol));
-        }
+        auto greedy_sol   = Solution();
+        auto best_core_lb = _reset_mult_and_lb(inst.costs, best_lagr_mult);
 
-        for (size_t i = 0; i < inst.rows.size(); ++i) {
-            real_t normalized_bound_diff = (best_sol.cost - sol.lower_bound) / norm;
-            auto   violation             = static_cast<real_t>(1 - row_coverage[i]);
+        size_t max_iters = 250;  // TODO(all): consider making it a parameter.
+        for (size_t iter = 0; iter < max_iters; ++iter) {
+            update_lbsol_and_reduced_costs(inst, lagr_mult, lb_sol, reduced_costs);
+            compute_row_coverage(inst, lb_sol, row_coverage);
+            real_t norm = compute_subgradient_norm(row_coverage);
 
-            real_t delta_mult = step_size * normalized_bound_diff * violation;
-            lagr_mult[i]      = cft::max(0.0F, lagr_mult[i] + delta_mult);
-            assert(std::isfinite(lagr_mult[i]) && "Multiplier is not finite");
+            if (lb_sol.cost > best_core_lb) {
+                best_core_lb   = lb_sol.cost;
+                best_lagr_mult = lagr_mult;
+            }
+
+            assert(best_core_lb <= best_sol.cost && "Inconsistent lower bound");
+            if (best_core_lb >= cutoff - CFT_EPSILON)
+                return;
+
+            if (norm == 0.0) {  // Return optimum
+                assert(best_core_lb < cutoff && "Optimum is above cutoff");
+                assert(best_core_lb == lb_sol.cost && "Inconsistent lower bound");
+                fmt::print("HEUR > Found optimal solution.\n");
+                best_lagr_mult = lagr_mult;
+                best_sol       = lb_sol;
+                return;
+            }
+
+            greedy_sol.idxs.clear();
+            greedy(inst, lagr_mult, reduced_costs, greedy_sol, cutoff);
+            if (greedy_sol.cost <= cutoff - CFT_EPSILON) {
+                cutoff   = greedy_sol.cost;
+                best_sol = greedy_sol;
+                fmt::print("HEUR > Improved current solution {}\n", best_sol.cost);
+                IF_DEBUG(check_solution(inst, best_sol));
+            }
+
+            real_t step_factor = step_size * (best_sol.cost - lb_sol.cost) / norm;
+            update_lagr_mult(row_coverage, step_factor, lagr_mult);
         }
     }
-    return best_lower_bound;
-}
+};
+
 
 }  // namespace cft
 

@@ -27,10 +27,26 @@ namespace cft {
 // internal details hidden, unlike using an external struct for cache storage. At the end of the day
 // though, it can be mentally thought of as a function.
 struct Greedy {
+private:
     // Caches
     Sorter         sorter;
-    Scores         scores;
-    RedundancyData red_set;
+    Scores         score_info;
+    RedundancyData redund_info;
+
+public:
+    void operator()(Instance const&            inst,
+                    std::vector<real_t> const& lagr_mult,
+                    Solution&                  sol,
+                    real_t                     cutoff_cost  = limits<real_t>::max(),
+                    cidx_t                     max_sol_size = limits<cidx_t>::max()) {
+
+        score_info.gammas = inst.costs;
+        for (cidx_t j = 0; j < inst.cols.size(); ++j)
+            for (ridx_t i : inst.cols[j])
+                score_info.gammas[j] -= lagr_mult[i];
+
+        operator()(inst, lagr_mult, score_info.gammas, sol, cutoff_cost, max_sol_size);
+    }
 
     // The greedy algorithm:
     // 1. Initialize column scores (based on the current lagragian multipliers)
@@ -39,91 +55,94 @@ struct Greedy {
     // NOTE: a valid solution is returned only if its cost is below the cutoff_cost
     void operator()(Instance const&            inst,
                     std::vector<real_t> const& lagr_mult,
+                    std::vector<real_t> const& reduced_costs,
                     Solution&                  sol,
                     real_t                     cutoff_cost  = limits<real_t>::max(),
                     cidx_t                     max_sol_size = limits<cidx_t>::max()) {
 
-        ridx_t nrows_to_cover = inst.rows.size();
+        score_info.gammas = reduced_costs;
 
-        auto& total_cover = red_set.total_cover;
-        total_cover.reset(inst.rows.size());
+        ridx_t nrows       = inst.rows.size();
+        auto&  total_cover = redund_info.total_cover;
+        total_cover.reset(nrows);
 
-        if (sol.idxs.empty())
-            scores.init_scores(inst, lagr_mult, sorter);
-        else {
-            for (cidx_t j : sol.idxs)
-                nrows_to_cover -= total_cover.cover(inst.cols[j]);
-            scores.init_scores(inst, lagr_mult, total_cover, sorter);
-        }
+        ridx_t nrows_to_cover = nrows;
+        complete_scores_init(inst, score_info);
+        if (!sol.idxs.empty())
+            nrows_to_cover -= update_already_covered(inst, sol, lagr_mult, score_info, total_cover);
+
+        auto   smaller_size         = min(nrows_to_cover, inst.cols.size());
+        auto   good_scores          = compute_good_scores(sorter, score_info, smaller_size);
+        real_t score_update_trigger = good_scores.back().score;
 
         // Fill solution
         while (nrows_to_cover > 0 && sol.idxs.size() < max_sol_size) {
-            cidx_t jstar = scores.extract_minscore_col(inst, lagr_mult, total_cover, sorter);
+
+            cidx_t s_min     = argmin(good_scores, ScoreKey{});
+            real_t min_score = good_scores[s_min].score;
+            if (min_score >= score_update_trigger) {
+                smaller_size         = min(nrows_to_cover, inst.cols.size() - sol.idxs.size());
+                good_scores          = compute_good_scores(sorter, score_info, smaller_size);
+                score_update_trigger = good_scores.back().score;
+                s_min                = argmin(good_scores, ScoreKey{});
+            }
+
+            cidx_t jstar = score_info.scores[s_min].idx;
+            assert(score_info.scores[s_min].score < limits<real_t>::max() && "Illegal score");
+            assert(!any(sol.idxs, [=](cidx_t j) { return j == jstar; }) && "Duplicate column");
             sol.idxs.push_back(jstar);
+            sol.cost += inst.costs[jstar];
+
+            update_changed_scores(inst, lagr_mult, total_cover, s_min, score_info);
             nrows_to_cover -= total_cover.cover(inst.cols[jstar]);
         }
 
-        // Redundancy removal
-        _complete_init_redund_set(red_set, inst, sol.idxs, cutoff_cost);
-        if (_try_early_exit(red_set, sol))
-            return;
-        IF_DEBUG(check_redundancy_data(inst, sol.idxs, red_set));
+        _remove_redundant_cols(inst, redund_info, sorter, cutoff_cost, sol);
+    }
 
-        heuristic_removal(red_set, inst);
-        if (_try_early_exit(red_set, sol))
-            return;
-        IF_DEBUG(check_redundancy_data(inst, sol.idxs, red_set));
+private:
+    static void _remove_redundant_cols(Instance const& inst,
+                                       RedundancyData& redund_info,  // input in .total_cover
+                                       Sorter&         sorter,       // cache
+                                       real_t          cutoff_cost,  // early exit cutoff
+                                       Solution&       sol           // input/output solution
+    ) {
 
-        enumeration_removal(red_set, inst);
-        sol.cost = red_set.best_cost;
+        complete_init_redund_set(redund_info, inst, sol.idxs, sorter, cutoff_cost);
+        if (_try_early_exit(redund_info, sol))
+            return;
+        IF_DEBUG(check_redundancy_data(inst, sol.idxs, redund_info));
+
+        heuristic_removal(redund_info, inst);
+        if (_try_early_exit(redund_info, sol))
+            return;
+        IF_DEBUG(check_redundancy_data(inst, sol.idxs, redund_info));
+
+        enumeration_removal(redund_info, inst);
+        sol.cost = redund_info.best_cost;
         if (sol.cost >= cutoff_cost)
             return;
 
         remove_if(sol.idxs, [&](cidx_t j) {
-            return any(red_set.cols_to_remove, [j](cidx_t r) { return r == j; });
+            return any(redund_info.cols_to_remove, [j](cidx_t r) { return r == j; });
         });
     }
 
-private:
-    void _complete_init_redund_set(RedundancyData&            red_data,
-                                   Instance const&            inst,
-                                   std::vector<cidx_t> const& sol,
-                                   real_t                     cutoff_cost) {
-
-        red_data.redund_set.clear();
-        red_data.partial_cover.reset(inst.rows.size());
-        red_data.partial_cov_count = 0;
-        red_data.cols_to_remove.clear();
-        red_data.best_cost    = cutoff_cost;
-        red_data.partial_cost = 0.0;
-
-        for (cidx_t j : sol)
-            if (red_data.total_cover.is_redundant_uncover(inst.cols[j]))
-                red_data.redund_set.push_back({j, inst.costs[j]});
-            else {
-                red_data.partial_cov_count += red_data.partial_cover.cover(inst.cols[j]);
-                red_data.partial_cost += inst.costs[j];
-                if (red_data.partial_cost >= cutoff_cost)
-                    return;
-            }
-        sorter.sort(red_data.redund_set, [&](CidxAndCost x) { return inst.costs[x.col]; });
-    }
-
-    static bool _try_early_exit(RedundancyData& red_data, Solution& sol) {
-        sol.cost = red_data.partial_cost;
-        if (red_data.partial_cost >= red_data.best_cost || red_data.redund_set.empty())
+    static bool _try_early_exit(RedundancyData& redund_info, Solution& sol) {
+        sol.cost = redund_info.partial_cost;
+        if (redund_info.partial_cost >= redund_info.best_cost || redund_info.redund_set.empty())
             return true;  // Discard sol
 
-        if (red_data.partial_cov_count < red_data.partial_cover.size())
+        if (redund_info.partial_cov_count < redund_info.partial_cover.size())
             return false;  // Continue with following step
 
         // Complete sol
-        for (CidxAndCost x : red_data.redund_set)
-            red_data.cols_to_remove.push_back(x.col);
+        for (CidxAndCost x : redund_info.redund_set)
+            redund_info.cols_to_remove.push_back(x.col);
 
         // TODO(cava): profile and see if sort + bin-search is faster
         remove_if(sol.idxs, [&](cidx_t j) {
-            return any(red_data.cols_to_remove, [j](cidx_t r) { return r == j; });
+            return any(redund_info.cols_to_remove, [j](cidx_t r) { return r == j; });
         });
 
         return true;

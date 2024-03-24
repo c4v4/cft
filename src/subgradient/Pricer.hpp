@@ -15,12 +15,13 @@ namespace {
     inline real_t compute_col_reduced_costs(Instance const&            inst,
                                             std::vector<real_t> const& lagr_mult,
                                             std::vector<real_t>&       reduced_costs) {
+
         real_t real_lower_bound = 0.0;
         for (real_t u : lagr_mult)
             real_lower_bound += u;
 
+        reduced_costs = inst.costs;
         for (cidx_t j = 0; j < inst.cols.size(); ++j) {
-            reduced_costs[j] = inst.costs[j];
             for (ridx_t i : inst.cols[j])
                 reduced_costs[j] -= lagr_mult[i];
 

@@ -33,6 +33,11 @@ struct Span {
         return start == finish;
     }
 
+    CFT_NODISCARD reference back() const {
+        assert(start != finish);
+        return *(finish - 1);
+    }
+
     CFT_NODISCARD iterator begin() const {
         return start;
     }
