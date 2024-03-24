@@ -52,7 +52,6 @@ private:
                 score_data.cover_count -= 1;
                 score_data.gamma += lagr_mult[i];
 
-                // TODO(cava): in theory, scores can be updated once at the end
                 score_data.score = _compute_score(score_data.gamma, score_data.cover_count);
                 assert(std::isfinite(score_data.gamma) && "Gamma is not finite");
                 assert(std::isfinite(score_data.score) && "Score is not finite");

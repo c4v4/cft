@@ -223,8 +223,9 @@ inline void perturb_lagr_multipliers(std::vector<real_t>& lagr_mult, cft::prng_t
     }
 }
 
+// Subgradient phase of the Three-phase algorithm.
 // TODO(acco): Consider implementing it as a functor.
-inline real_t optimize(Instance const&      orig_inst,
+inline real_t subgradient(Instance const&      orig_inst,
                        InstAndMap&          core,
                        Sorter&              sorter,
                        real_t               cutoff,
@@ -298,11 +299,12 @@ inline real_t optimize(Instance const&      orig_inst,
     return best_core_lb;
 }
 
+// Heuristic phase of the Three-phase algorithm.
 // NOTE: It seems that in the original they store the lagrangian multipliers associated to the best
 // lower bound, however, it seems to work better if we store the lagrangian multipliers associated
 // to the best greedy solution. (But this might be due to the different column fixing we are using).
 // TODO(acco): Consider implementing it as a functor.
-inline real_t explore(Instance const&      inst,
+inline real_t heuristic(Instance const&      inst,
                       Greedy&              greedy,
                       real_t               cutoff,
                       real_t               step_size,
@@ -323,14 +325,14 @@ inline real_t explore(Instance const&      inst,
 
         assert(best_lower_bound <= best_sol.cost && "Inconsistent lower bound");
         if (best_lower_bound >= cutoff - CFT_EPSILON) {
-            fmt::print("SUBG > Unpromising set of columns.\n");
+            fmt::print("HEUR > Unpromising set of columns.\n");
             return best_lower_bound;
         }
 
         if (norm == 0.0) {  // Return optimum
             assert(best_lower_bound < cutoff && "Optimum is above cutoff");
             assert(best_lower_bound == sol.lower_bound && "Inconsistent lower bound");
-            fmt::print("SUBG > Found optimal solution.\n");
+            fmt::print("HEUR > Found optimal solution.\n");
             best_greedy_lagr_mult = lagr_mult;
             best_sol.cost         = sol.lower_bound;
             best_sol.idxs.clear();
