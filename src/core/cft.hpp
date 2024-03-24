@@ -6,8 +6,6 @@
 
 #include "core/limits.hpp"
 
-#define NO_INLINE  //__attribute__((noinline))
-
 #ifdef VERBOSE
 #define IF_VERBOSE(...) __VA_ARGS__
 #else
@@ -20,8 +18,11 @@
 #define IF_DEBUG(...) __VA_ARGS__
 #endif
 
+// Reserve column index to mark removed/invalid columns
 #define CFT_REMOVED_IDX (cft::limits<cidx_t>::max())
-#define CFT_EPSILON     cft::real_t(1 - 1e-6)  // 1-1e-6 for integer costs, 1e-6 for float costs
+
+// Epsilon value for floating point comparisons of costs
+#define CFT_EPSILON cft::real_t(1 - 1e-6)  // 1-1e-6 for integer costs, 1e-6 for float costs
 
 namespace cft {
 
@@ -41,10 +42,18 @@ struct Solution {
 
 }  // namespace cft
 
+// Nodiscard attribute to warn if the return value is not used
 #ifdef __GNUC__
 #define CFT_NODISCARD __attribute__((warn_unused_result))
 #elif defined(_MSC_VER) && _MSC_VER >= 1700
 #define CFT_NODISCARD _Check_return_
+#endif
+
+// Noinline attribute to help profiling specific functions
+#if defined(__GNUC__) || defined(__clang__)
+#define CFT_NOINLINE __attribute__((noinline))
+#elif defined(_MSC_VER)
+#define CFT_NOINLINE __declspec(noinline)
 #endif
 
 
