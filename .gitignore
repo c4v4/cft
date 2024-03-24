@@ -49,4 +49,3 @@ instances/cvrp/G2_z273519_cplex273287.scp
 instances/cvrp/L2_z115772_cplex115714.scp
 TODO.md
 perf.data*
-bench.sh

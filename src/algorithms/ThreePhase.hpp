@@ -52,33 +52,31 @@ namespace {
     inline InstAndMap build_tentative_core_instance(Instance const& inst,
                                                     Sorter&         sorter,
                                                     size_t          min_row_coverage) {
-        ridx_t nrows         = inst.rows.size();
-        auto   core_inst     = Instance{};
-        auto   selected_cols = std::vector<cidx_t>();
+        ridx_t nrows        = inst.rows.size();
+        auto   core_inst    = Instance{};
+        auto   core_col_map = std::vector<cidx_t>();
 
-        // Select the first n columns of each row (there might be duplicates)
-        selected_cols.reserve(nrows * min_row_coverage);
+        core_col_map.reserve(nrows * min_row_coverage);
         for (auto const& row : inst.rows)
-            for (size_t n = 0; n < min(row.size(), min_row_coverage); ++n) {
-                cidx_t j = row[n];  // column covering row i
-                selected_cols.push_back(j);
-            }
+            for (size_t n = 0; n < min(row.size(), min_row_coverage); ++n)
+                core_col_map.push_back(row[n]);
 
-        // There might be duplicates, so let's sort the column list to detect them
-        sorter.sort(selected_cols);
+        sorter.sort(core_col_map);
         cidx_t w      = 0;
-        cidx_t prev_j = CFT_REMOVED_IDX;  // To detect duplicates
-        for (cidx_t j : selected_cols) {
+        cidx_t prev_j = CFT_REMOVED_IDX;
+        for (cidx_t j : core_col_map) {
             if (j == prev_j)
-                continue;  // Skip duplicate
-            prev_j             = j;
-            selected_cols[w++] = j;                  // Store 1 column per set of duplicates
-            push_back_col_from(inst, j, core_inst);  // Add column to core_inst
+                continue;
+            prev_j            = j;
+            core_col_map[w++] = j;
+            core_inst.cols.push_back(inst.cols[j]);
+            core_inst.costs.push_back(inst.costs[j]);
+            core_inst.solcosts.push_back(inst.solcosts[j]);
         }
-        selected_cols.resize(w);
+        core_col_map.resize(w);
 
         fill_rows_from_cols(core_inst.cols, nrows, core_inst.rows);
-        return {std::move(core_inst), std::move(selected_cols)};
+        return {std::move(core_inst), std::move(core_col_map)};
     }
 
 }  // namespace
@@ -100,7 +98,6 @@ public:
 
         size_t iter_counter = 0;
         while (!inst.rows.empty()) {
-            auto timer = Chrono<>();
             fmt::print("3PHS > Starting 3-phase iteration: {}\n", ++iter_counter);
 
             auto core      = build_tentative_core_instance(inst, sorter, min_row_coverage);
@@ -117,7 +114,7 @@ public:
 
             subgrad.heuristic(core.inst, greedy, cutoff, step_size, sol, lagr_mult);
 
-            fmt::print("3PHS > Lower bound: {:.2f}, Solution cost: {:.2f}\n",
+            fmt::print("3PHS > Lower bound: {}, Solution cost: {}\n",
                        real_lb + fixing.fixed_cost,
                        sol.cost + fixing.fixed_cost);
 
