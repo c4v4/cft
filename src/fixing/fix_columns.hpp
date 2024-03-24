@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Francesco Cavaliere
+// Copyright (c) 2024 Luca Accorsi and Francesco Cavaliere
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 3 of the
 // License, or (at your option) any later version. This program is distributed in the hope that it
@@ -16,7 +16,6 @@
 #endif
 
 #include "core/cft.hpp"
-#include "core/limits.hpp"
 #include "instance/Instance.hpp"
 
 namespace cft {
@@ -27,7 +26,7 @@ struct FixingData {
     std::vector<cidx_t> prev2curr_col_map;
     std::vector<ridx_t> prev2curr_row_map;
     std::vector<cidx_t> fixed_cols;
-    real_t              fixed_cost;
+    real_t              fixed_cost = 0.0;
 };
 
 inline FixingData make_identity_fixing_data(cidx_t ncols, ridx_t nrows) {

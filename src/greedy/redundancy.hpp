@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Francesco Cavaliere
+// Copyright (c) 2024 Luca Accorsi and Francesco Cavaliere
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 3 of the
 // License, or (at your option) any later version. This program is distributed in the hope that it
@@ -10,11 +10,14 @@
 #ifndef CFT_SRC_GREEDY_REDUNDANCY_HPP
 #define CFT_SRC_GREEDY_REDUNDANCY_HPP
 
+#ifndef NDEBUG
+#include <fmt/base.h>
+#endif
+
 #include "core/cft.hpp"
 #include "core/coverage.hpp"
 #include "core/limits.hpp"
 #include "core/sort.hpp"
-#include "fmt/base.h"
 #include "instance/Instance.hpp"
 
 

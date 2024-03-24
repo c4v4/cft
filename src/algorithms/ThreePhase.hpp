@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Francesco Cavaliere
+// Copyright (c) 2024 Luca Accorsi and Francesco Cavaliere
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -86,7 +86,6 @@ private:
     Greedy      greedy;
     ColFixing   col_fixing;
     Sorter      sorter;
-
 
 public:
     Solution operator()(Instance& inst, prng_t& rnd) {
