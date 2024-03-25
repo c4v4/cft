@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef CAV_SRC_ALGORITHMS_THREEPHASE_HPP
-#define CAV_SRC_ALGORITHMS_THREEPHASE_HPP
+#ifndef CFT_SRC_ALGORITHMS_THREEPHASE_HPP
+#define CFT_SRC_ALGORITHMS_THREEPHASE_HPP
 
 #include "core/Chrono.hpp"
 #include "core/cft.hpp"
@@ -33,7 +33,7 @@ namespace {
         best_sol.cost = sol.cost + fixing.fixed_cost;
         best_sol.idxs = fixing.fixed_cols;
         for (cidx_t j : sol.idxs)
-            best_sol.idxs.push_back(fixing.curr2orig_col_map[j]);
+            best_sol.idxs.push_back(fixing.curr2orig.col_map[j]);
     }
 
     // Greedily creates lagrangian multipliers for the given instance.
@@ -139,4 +139,4 @@ public:
     }
 };
 }  // namespace cft
-#endif /* CAV_SRC_ALGORITHMS_THREEPHASE_HPP */
+#endif /* CFT_SRC_ALGORITHMS_THREEPHASE_HPP */

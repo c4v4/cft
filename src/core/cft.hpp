@@ -1,5 +1,5 @@
-#ifndef CFT_INCLUDE_CFT_HPP
-#define CFT_INCLUDE_CFT_HPP
+#ifndef CFT_SRC_CORE_CFT_HPP
+#define CFT_SRC_CORE_CFT_HPP
 
 #include <cstdint>
 #include <vector>
@@ -57,4 +57,4 @@ struct Solution {
 #endif
 
 
-#endif /* CFT_INCLUDE_CFT_HPP */
+#endif /* CFT_SRC_CORE_CFT_HPP */

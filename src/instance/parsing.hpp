@@ -7,8 +7,8 @@
 // have received a copy of the GNU General Public License along with this program. If not, see
 // <https://www.gnu.org/licenses/>.
 
-#ifndef CFT_INCLUDE_PARSING_HPP
-#define CFT_INCLUDE_PARSING_HPP
+#ifndef CFT_SRC_INSTANCE_PARSING_HPP
+#define CFT_SRC_INSTANCE_PARSING_HPP
 
 #include <cassert>
 #include <vector>
@@ -131,4 +131,4 @@ inline FileData parse_cvrp_instance(std::string const& path) {
 }  // namespace cft
 
 
-#endif /* CFT_INCLUDE_PARSING_HPP */
+#endif /* CFT_SRC_INSTANCE_PARSING_HPP */

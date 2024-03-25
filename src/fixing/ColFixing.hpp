@@ -27,6 +27,7 @@ struct ColFixing {
     // Caches
     Solution        cols_to_fix;
     CoverCounters<> cover_counts;
+    IdxsMaps        prev2curr;
 
     // Original Column Fixing
     void operator()(Instance&            inst,
@@ -65,7 +66,7 @@ struct ColFixing {
         remove_if(cols_to_fix.idxs, [](cidx_t j) { return j == CFT_REMOVED_IDX; });
         fmt::print("CFIX > Fixing {} non-overlapping columns \n", cols_to_fix.idxs.size());
 
-        _complete_fixing(inst, fixing, lagr_mult, greedy, cols_to_fix);
+        _complete_fixing(inst, fixing, prev2curr, lagr_mult, greedy, cols_to_fix);
         fmt::print("CFIX > Fixing ended in {:.2f}s\n", timer.elapsed<sec>());
     }
 
@@ -92,13 +93,14 @@ struct ColFixing {
                 cols_to_fix.idxs.push_back(core.col_map[j]);
         }
 
-        _complete_fixing(inst, fixing, lagr_mult, greedy, cols_to_fix);
+        _complete_fixing(inst, fixing, prev2curr, lagr_mult, greedy, cols_to_fix);
         fmt::print("CFIX > Fixing ended in {:.2f}s\n", timer.elapsed<sec>());
     }
 
 private:
     static void _complete_fixing(Instance&            inst,
                                  FixingData&          fixing,
+                                 IdxsMaps&            prev2curr,
                                  std::vector<real_t>& lagr_mult,
                                  Greedy&              greedy,
                                  Solution&            cols_to_fix) {
@@ -108,13 +110,12 @@ private:
         greedy(inst, lagr_mult, cols_to_fix, limits<real_t>::max(), fix_at_least);
 
         IF_DEBUG(real_t old_fixed_cost = fixing.fixed_cost);
-        fix_columns(inst, cols_to_fix.idxs, fixing);
+        fix_columns(inst, cols_to_fix.idxs, fixing, prev2curr);
         assert(fixing.fixed_cost - old_fixed_cost == cols_to_fix.cost);
 
-        // TODO(cava): atm columns not in best_sol could be fixed by greedy, can we avoid this?
-        ridx_t prev_nrows = fixing.prev2curr_row_map.size();
+        ridx_t prev_nrows = prev2curr.row_map.size();
         for (ridx_t prev_i = 0; prev_i < prev_nrows; ++prev_i) {
-            ridx_t curr_i = fixing.prev2curr_row_map[prev_i];
+            ridx_t curr_i = prev2curr.row_map[prev_i];
             if (curr_i != CFT_REMOVED_IDX) {
                 assert(curr_i <= prev_i);
                 lagr_mult[curr_i] = lagr_mult[prev_i];

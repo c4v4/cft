@@ -1,5 +1,5 @@
-#ifndef CFT_INCLUDE_INSTANCE_HPP
-#define CFT_INCLUDE_INSTANCE_HPP
+#ifndef CFT_SRC_INSTANCE_INSTANCE_HPP
+#define CFT_SRC_INSTANCE_INSTANCE_HPP
 
 
 #include <cassert>
@@ -61,4 +61,4 @@ struct InstAndMap {
 
 }  // namespace cft
 
-#endif /* CFT_INCLUDE_INSTANCE_HPP */
+#endif /* CFT_SRC_INSTANCE_INSTANCE_HPP */

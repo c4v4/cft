@@ -8,8 +8,8 @@
 // <https://www.gnu.org/licenses/>.
 
 
-#ifndef CFT_INCLUDE_SORTED_ARRAY_HPP
-#define CFT_INCLUDE_SORTED_ARRAY_HPP
+#ifndef CFT_SRC_CORE_SORTED_ARRAY_HPP
+#define CFT_SRC_CORE_SORTED_ARRAY_HPP
 
 #include <cassert>
 #include <cstddef>
@@ -104,4 +104,4 @@ inline SortedArray<T, Nm, no_cvr<Comp>> make_custom_compare_sorted_array(Comp co
 }
 
 }  // namespace cft
-#endif /*CFT_INCLUDE_SORTED_ARRAY_HPP*/
+#endif /*CFT_SRC_CORE_SORTED_ARRAY_HPP*/

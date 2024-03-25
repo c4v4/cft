@@ -7,8 +7,8 @@
 // have received a copy of the GNU General Public License along with this program. If not, see
 // <https://www.gnu.org/licenses/>.
 
-#ifndef CFT_INCLUDE_FILELINEITER_HPP
-#define CFT_INCLUDE_FILELINEITER_HPP
+#ifndef CFT_SRC_INSTANCE_FILELINEITER_HPP
+#define CFT_SRC_INSTANCE_FILELINEITER_HPP
 
 #include <fmt/format.h>
 
@@ -128,4 +128,4 @@ struct FileLineIterator {
 
 }  // namespace cft
 
-#endif /* CFT_INCLUDE_FILELINEITER_HPP */
+#endif /* CFT_SRC_INSTANCE_FILELINEITER_HPP */

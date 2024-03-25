@@ -7,8 +7,8 @@
 // have received a copy of the GNU General Public License along with this program. If not, see
 // <https://www.gnu.org/licenses/>.
 
-#ifndef CAV_INCLUDE_UTIL_FUNCTIONS_HPP
-#define CAV_INCLUDE_UTIL_FUNCTIONS_HPP
+#ifndef CFT_SRC_CORE_UTILITY_HPP
+#define CFT_SRC_CORE_UTILITY_HPP
 
 #include <cstddef>
 
@@ -107,4 +107,4 @@ void remove_if(C& container, Op op) {
 
 }  // namespace cft
 
-#endif /* CAV_INCLUDE_UTIL_FUNCTIONS_HPP */
+#endif /* CFT_SRC_CORE_UTILITY_HPP */

@@ -7,8 +7,8 @@
 // have received a copy of the GNU General Public License along with this program. If not, see
 // <https://www.gnu.org/licenses/>.
 
-#ifndef CAV_INCLUDE_STRING_VIEW_HPP
-#define CAV_INCLUDE_STRING_VIEW_HPP
+#ifndef CFT_SRC_CORE_STRING_VIEW_HPP
+#define CFT_SRC_CORE_STRING_VIEW_HPP
 
 #include <cassert>
 #include <cstddef>
@@ -159,4 +159,4 @@ private:
 }  // namespace cft
 
 
-#endif /* CAV_INCLUDE_STRING_VIEW_HPP */
+#endif /* CFT_SRC_CORE_STRING_VIEW_HPP */

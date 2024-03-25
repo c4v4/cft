@@ -7,8 +7,8 @@
 // have received a copy of the GNU General Public License along with this program. If not, see
 // <https://www.gnu.org/licenses/>.
 
-#ifndef CFT_INCLUDE_RADIX_STUFF_HPP
-#define CFT_INCLUDE_RADIX_STUFF_HPP
+#ifndef CFT_SRC_CORE_RADIX_STUFF_HPP
+#define CFT_SRC_CORE_RADIX_STUFF_HPP
 
 #include <algorithm>
 #include <utility>
@@ -54,4 +54,4 @@ struct Sorter {
 
 }  // namespace cft
 
-#endif /* CFT_INCLUDE_RADIX_STUFF_HPP */
+#endif /* CFT_SRC_CORE_RADIX_STUFF_HPP */

@@ -7,8 +7,8 @@
 // have received a copy of the GNU General Public License along with this program. If not, see
 // <https://www.gnu.org/licenses/>.
 
-#ifndef CFT_INCLUDE_GREEDY_HPP
-#define CFT_INCLUDE_GREEDY_HPP
+#ifndef CFT_SRC_GREEDY_GREEDY_HPP
+#define CFT_SRC_GREEDY_GREEDY_HPP
 
 #include "Scores.hpp"
 #include "core/Chrono.hpp"
@@ -159,4 +159,4 @@ private:
 
 }  // namespace cft
 
-#endif /* CFT_INCLUDE_GREEDY_HPP */
+#endif /* CFT_SRC_GREEDY_GREEDY_HPP */

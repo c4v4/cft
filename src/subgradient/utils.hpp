@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef CAV_SRC_SUBGRADIENT_UTILS_HPP
-#define CAV_SRC_SUBGRADIENT_UTILS_HPP
+#ifndef CFT_SRC_SUBGRADIENT_UTILS_HPP
+#define CFT_SRC_SUBGRADIENT_UTILS_HPP
 
 #include <cassert>
 #include <cmath>
@@ -73,10 +73,11 @@ struct StepSizeManager {
         max_lower_bound = cft::max(max_lower_bound, lower_bound);
         if (iter == next_update_iter) {
             next_update_iter += period;
-            real_t const diff = (max_lower_bound - min_lower_bound) / max_lower_bound;
+            real_t diff = (max_lower_bound - min_lower_bound) / abs(max_lower_bound);
+            assert(diff >= 0.0 && "Negative difference in lower bounds");
             if (diff > 0.01)
                 curr_step_size /= 2.0;
-            else if (diff <= 0.001)
+            if (diff <= 0.001)
                 curr_step_size *= 1.5;
             min_lower_bound = limits<real_t>::max();
             max_lower_bound = limits<real_t>::min();
@@ -271,6 +272,6 @@ inline void update_lagr_mult(CoverCounters<> const& row_coverage,
     }
 }
 
-}
+}  // namespace cft
 
-#endif /* CAV_SRC_SUBGRADIENT_UTILS_HPP */
+#endif /* CFT_SRC_SUBGRADIENT_UTILS_HPP */

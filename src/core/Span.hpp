@@ -1,5 +1,5 @@
-#ifndef CFT_INCLUDE_SPAN_HPP
-#define CFT_INCLUDE_SPAN_HPP
+#ifndef CFT_SRC_CORE_SPAN_HPP
+#define CFT_SRC_CORE_SPAN_HPP
 
 #include <bits/iterator_concepts.h>
 
@@ -65,4 +65,4 @@ CFT_NODISCARD inline Span<ItT> make_span(ItT beg, size_t sz) {
 
 }  // namespace cft
 
-#endif /* CFT_INCLUDE_SPAN_HPP */
+#endif /* CFT_SRC_CORE_SPAN_HPP */
