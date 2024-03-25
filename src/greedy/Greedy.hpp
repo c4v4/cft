@@ -11,10 +11,12 @@
 #define CFT_INCLUDE_GREEDY_HPP
 
 #include "Scores.hpp"
+#include "core/Chrono.hpp"
 #include "core/cft.hpp"
 #include "core/coverage.hpp"
 #include "core/limits.hpp"
 #include "core/sort.hpp"
+#include "fmt/base.h"
 #include "greedy/redundancy.hpp"
 #include "instance/Instance.hpp"
 
@@ -40,6 +42,9 @@ public:
                     real_t                     cutoff_cost  = limits<real_t>::max(),
                     cidx_t                     max_sol_size = limits<cidx_t>::max()) {
 
+        if (sol.idxs.size() >= max_sol_size)
+            return;
+
         score_info.gammas = inst.costs;
         for (cidx_t j = 0; j < inst.cols.size(); ++j)
             for (ridx_t i : inst.cols[j])
@@ -59,6 +64,9 @@ public:
                     Solution&                  sol,
                     real_t                     cutoff_cost  = limits<real_t>::max(),
                     cidx_t                     max_sol_size = limits<cidx_t>::max()) {
+
+        if (sol.idxs.size() >= max_sol_size)
+            return;
 
         score_info.gammas = reduced_costs;
 

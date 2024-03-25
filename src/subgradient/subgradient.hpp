@@ -20,6 +20,7 @@
 #include <cstddef>
 #include <vector>
 
+#include "core/Chrono.hpp"
 #include "core/cft.hpp"
 #include "core/coverage.hpp"
 #include "core/limits.hpp"
@@ -75,6 +76,7 @@ public:
         assert(!core.inst.cols.empty() && "Empty core instance");
         assert(nrows == core.inst.rows.size() && "Incompatible instances");
 
+        auto timer          = Chrono<>();
         auto next_step_size = StepSizeManager(20, step_size);
         auto should_exit    = ExitConditionManager(300);
         auto should_price   = PricingManager(10, std::min(1000UL, nrows / 3));
@@ -89,7 +91,7 @@ public:
             real_t norm = compute_subgradient_norm(row_coverage);
 
             if (lb_sol.cost > best_core_lb) {
-                IF_DEBUG(fmt::print("SUBG > New best lower bound: {}\n", lb_sol.cost));
+                IF_DEBUG(fmt::print("SUBG > New best lower bound: {:.2f}\n", lb_sol.cost));
                 best_core_lb   = lb_sol.cost;
                 best_lagr_mult = lagr_mult;
             }
@@ -99,11 +101,11 @@ public:
                 assert(best_core_lb == lb_sol.cost && "Inconsistent lower bound");
                 fmt::print("SUBG > Found optimal solution.\n");
                 best_lagr_mult = lagr_mult;
-                return best_core_lb;
+                break;
             }
 
             if (should_exit(iter, best_core_lb))
-                return best_core_lb;
+                break;
 
             step_size          = next_step_size(iter, lb_sol.cost);
             real_t step_factor = step_size * (best_ub - lb_sol.cost) / norm;
@@ -113,7 +115,7 @@ public:
                 real_t real_lb = price(orig_inst, lagr_mult, core);
                 should_price.update(best_core_lb, real_lb, best_ub);
 
-                fmt::print("SUBG > {:4}: Pricing: core LB: {}, real LB: {}\n",
+                fmt::print("SUBG > {:4}: Pricing: core LB: {:.2f}, real LB: {:.2f}\n",
                            iter,
                            best_core_lb,
                            real_lb);
@@ -122,6 +124,8 @@ public:
                 best_core_lb = _reset_mult_and_lb(core.inst.costs, lagr_mult);
             }
         }
+
+        fmt::print("SUBG > Subgradient ended in {:.2f}s\n", timer.elapsed<sec>());
         return best_real_lb;
     }
 
@@ -138,6 +142,7 @@ public:
                    Solution&            best_sol,
                    std::vector<real_t>& best_lagr_mult) {
 
+        auto timer        = Chrono<>();
         auto greedy_sol   = Solution();
         auto best_core_lb = _reset_mult_and_lb(inst.costs, best_lagr_mult);
 
@@ -170,13 +175,15 @@ public:
             if (greedy_sol.cost <= cutoff - CFT_EPSILON) {
                 cutoff   = greedy_sol.cost;
                 best_sol = greedy_sol;
-                fmt::print("HEUR > Improved current solution {}\n", best_sol.cost);
+                fmt::print("HEUR > Improved current solution {:.2f}\n", best_sol.cost);
                 IF_DEBUG(check_solution(inst, best_sol));
             }
 
             real_t step_factor = step_size * (best_sol.cost - lb_sol.cost) / norm;
             update_lagr_mult(row_coverage, step_factor, lagr_mult);
         }
+
+        fmt::print("HEUR > Heuristic phase ended in {:.2f}s\n", timer.elapsed<sec>());
     }
 };
 

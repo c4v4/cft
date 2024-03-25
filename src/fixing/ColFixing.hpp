@@ -35,6 +35,7 @@ struct ColFixing {
                     std::vector<real_t>& lagr_mult,
                     Greedy&              greedy) {
 
+        auto   timer = Chrono<>();
         ridx_t nrows = inst.rows.size();
         cover_counts.reset(nrows);
         cols_to_fix.idxs.clear();
@@ -65,6 +66,7 @@ struct ColFixing {
         fmt::print("CFIX > Fixing {} non-overlapping columns \n", cols_to_fix.idxs.size());
 
         _complete_fixing(inst, fixing, lagr_mult, greedy, cols_to_fix);
+        fmt::print("CFIX > Fixing ended in {:.2f}s\n", timer.elapsed<sec>());
     }
 
     // The original column fixing does not consider the current best solution to further restrict
@@ -79,6 +81,7 @@ struct ColFixing {
                     Solution&            best_sol,
                     Greedy&              greedy) {
 
+        auto timer = Chrono<>();
         cols_to_fix.idxs.clear();
         for (cidx_t j : best_sol.idxs) {
             real_t lagr_cost = core.inst.costs[j];
@@ -90,6 +93,7 @@ struct ColFixing {
         }
 
         _complete_fixing(inst, fixing, lagr_mult, greedy, cols_to_fix);
+        fmt::print("CFIX > Fixing ended in {:.2f}s\n", timer.elapsed<sec>());
     }
 
 private:
@@ -100,13 +104,8 @@ private:
                                  Solution&            cols_to_fix) {
 
         ridx_t nrows        = inst.rows.size();
-        auto   fix_at_least = max<cidx_t>(nrows / 200, 1);
-        if (fix_at_least > cols_to_fix.idxs.size()) {
-            fmt::print("CFIX > partial cost fix {}, cols: {}\n",
-                       cols_to_fix.cost,
-                       cols_to_fix.idxs.size());
-            greedy(inst, lagr_mult, cols_to_fix, limits<real_t>::max(), fix_at_least);
-        }
+        auto   fix_at_least = cols_to_fix.idxs.size() + max<cidx_t>(nrows / 200, 1);
+        greedy(inst, lagr_mult, cols_to_fix, limits<real_t>::max(), fix_at_least);
 
         IF_DEBUG(real_t old_fixed_cost = fixing.fixed_cost);
         fix_columns(inst, cols_to_fix.idxs, fixing);

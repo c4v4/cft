@@ -16,6 +16,7 @@
 #ifndef CAV_SRC_ALGORITHMS_THREEPHASE_HPP
 #define CAV_SRC_ALGORITHMS_THREEPHASE_HPP
 
+#include "core/Chrono.hpp"
 #include "core/cft.hpp"
 #include "core/random.hpp"
 #include "fixing/ColFixing.hpp"
@@ -91,11 +92,13 @@ public:
     Solution operator()(Instance& inst, prng_t& rnd) {
         constexpr ridx_t min_row_coverage = 5;
 
-        auto best_sol = Solution();
-        auto fixing   = make_identity_fixing_data(inst.cols.size(), inst.rows.size());
+        auto tot_timer = Chrono<>();
+        auto best_sol  = Solution();
+        auto fixing    = make_identity_fixing_data(inst.cols.size(), inst.rows.size());
 
         size_t iter_counter = 0;
         while (!inst.rows.empty()) {
+            auto timer = Chrono<>();
             fmt::print("3PHS > Starting 3-phase iteration: {}\n", ++iter_counter);
 
             auto core      = build_tentative_core_instance(inst, sorter, min_row_coverage);
@@ -112,7 +115,7 @@ public:
 
             subgrad.heuristic(core.inst, greedy, cutoff, step_size, sol, lagr_mult);
 
-            fmt::print("3PHS > Lower bound: {}, Solution cost: {}\n",
+            fmt::print("3PHS > Lower bound: {:.2f}, Solution cost: {:.2f}\n",
                        real_lb + fixing.fixed_cost,
                        sol.cost + fixing.fixed_cost);
 
@@ -120,13 +123,18 @@ public:
                 convert_to_orig_sol(sol, fixing, best_sol);
 
             col_fixing(inst, core, fixing, lagr_mult, greedy);
-            fmt::print("3PHS > Fixing: rows left: {}, fixed cost: {}\n",
+            fmt::print("3PHS > Fixing: rows left: {}, fixed cost: {:.2f}\n",
                        inst.rows.size(),
                        fixing.fixed_cost);
             perturb_lagr_multipliers(lagr_mult, rnd);
+            fmt::print("3PHS > Finished iteration {}, time {:.2f}s\n",
+                       iter_counter,
+                       timer.elapsed<sec>());
         }
 
-        fmt::print("\n3PHS > Best solution cost: {}\n", best_sol.cost);
+        fmt::print("\n3PHS > Best solution cost: {:.2f}, time: {:.2f}s\n",
+                   best_sol.cost,
+                   tot_timer.elapsed<sec>());
         return best_sol;
     }
 };
