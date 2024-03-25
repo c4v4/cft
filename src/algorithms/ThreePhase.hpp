@@ -52,31 +52,33 @@ namespace {
     inline InstAndMap build_tentative_core_instance(Instance const& inst,
                                                     Sorter&         sorter,
                                                     size_t          min_row_coverage) {
-        ridx_t nrows        = inst.rows.size();
-        auto   core_inst    = Instance{};
-        auto   core_col_map = std::vector<cidx_t>();
+        ridx_t nrows         = inst.rows.size();
+        auto   core_inst     = Instance{};
+        auto   selected_cols = std::vector<cidx_t>();
 
-        core_col_map.reserve(nrows * min_row_coverage);
+        // Select the first n columns of each row (there might be duplicates)
+        selected_cols.reserve(nrows * min_row_coverage);
         for (auto const& row : inst.rows)
-            for (size_t n = 0; n < min(row.size(), min_row_coverage); ++n)
-                core_col_map.push_back(row[n]);
+            for (size_t n = 0; n < min(row.size(), min_row_coverage); ++n) {
+                cidx_t j = row[n];  // column covering row i
+                selected_cols.push_back(j);
+            }
 
-        sorter.sort(core_col_map);
+        // There might be duplicates, so let's sort the column list to detect them
+        sorter.sort(selected_cols);
         cidx_t w      = 0;
-        cidx_t prev_j = CFT_REMOVED_IDX;
-        for (cidx_t j : core_col_map) {
+        cidx_t prev_j = CFT_REMOVED_IDX;  // To detect duplicates
+        for (cidx_t j : selected_cols) {
             if (j == prev_j)
-                continue;
-            prev_j            = j;
-            core_col_map[w++] = j;
-            core_inst.cols.push_back(inst.cols[j]);
-            core_inst.costs.push_back(inst.costs[j]);
-            core_inst.solcosts.push_back(inst.solcosts[j]);
+                continue;  // Skip duplicate
+            prev_j             = j;
+            selected_cols[w++] = j;                  // Store 1 column per set of duplicates
+            push_back_col_from(inst, j, core_inst);  // Add column to core_inst
         }
-        core_col_map.resize(w);
+        selected_cols.resize(w);
 
         fill_rows_from_cols(core_inst.cols, nrows, core_inst.rows);
-        return {std::move(core_inst), std::move(core_col_map)};
+        return {std::move(core_inst), std::move(selected_cols)};
     }
 
 }  // namespace

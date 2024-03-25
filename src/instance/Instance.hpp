@@ -54,6 +54,14 @@ inline void fill_rows_from_cols(SparseBinMat<ridx_t> const&       cols,
     IF_DEBUG(col_and_rows_check(cols, rows));
 }
 
+// Copy a column from one instance to another pushing it back as last column.
+// The main utility of this function is to avoid forgetting somethign in the copy.
+inline void push_back_col_from(Instance const& src_inst, cidx_t j, Instance& dest_inst) {
+    dest_inst.cols.push_back(src_inst.cols[j]);
+    dest_inst.costs.push_back(src_inst.costs[j]);
+    dest_inst.solcosts.push_back(src_inst.solcosts[j]);
+}
+
 struct InstAndMap {
     Instance            inst;
     std::vector<cidx_t> col_map;

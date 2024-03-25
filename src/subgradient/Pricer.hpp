@@ -84,12 +84,8 @@ namespace {
         core_inst.rows.clear();
         core_inst.costs.clear();
         core_inst.solcosts.clear();
-
-        for (cidx_t j : idxs) {
-            core_inst.cols.push_back(inst.cols[j]);
-            core_inst.solcosts.push_back(inst.solcosts[j]);
-            core_inst.costs.push_back(inst.costs[j]);
-        }
+        for (cidx_t j : idxs)
+            push_back_col_from(inst, j, core_inst);  // Add column to core_inst
     }
 
 }  // namespace
