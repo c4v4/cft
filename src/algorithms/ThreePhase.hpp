@@ -98,6 +98,7 @@ public:
 
         size_t iter_counter = 0;
         while (!inst.rows.empty()) {
+            auto timer = Chrono<>();
             fmt::print("3PHS > Starting 3-phase iteration: {}\n", ++iter_counter);
 
             auto core      = build_tentative_core_instance(inst, sorter, min_row_coverage);
@@ -114,7 +115,7 @@ public:
 
             subgrad.heuristic(core.inst, greedy, cutoff, step_size, sol, lagr_mult);
 
-            fmt::print("3PHS > Lower bound: {}, Solution cost: {}\n",
+            fmt::print("3PHS > Lower bound: {:.2f}, Solution cost: {:.2f}\n",
                        real_lb + fixing.fixed_cost,
                        sol.cost + fixing.fixed_cost);
 
