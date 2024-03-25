@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef CAV_SRC_CORE_CHRONO_HPP
-#define CAV_SRC_CORE_CHRONO_HPP
+#ifndef CFT_SRC_CORE_CHRONO_HPP
+#define CFT_SRC_CORE_CHRONO_HPP
 
 
 #include <chrono>
@@ -73,4 +73,4 @@ struct Chrono {
 
 }  // namespace cft
 
-#endif /* CAV_SRC_CORE_CHRONO_HPP */
+#endif /* CFT_SRC_CORE_CHRONO_HPP */

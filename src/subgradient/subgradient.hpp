@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef CFT_INCLUDE_SUBGRADIENT_HPP
-#define CFT_INCLUDE_SUBGRADIENT_HPP
+#ifndef CFT_SRC_SUBGRADIENT_SUBGRADIENT_HPP
+#define CFT_SRC_SUBGRADIENT_SUBGRADIENT_HPP
 
 #include <cassert>
 #include <cstddef>
@@ -57,7 +57,7 @@ private:
         reduced_costs = col_costs;
         lb_sol.cost   = 0.0;
         lb_sol.idxs.clear();
-        return 0.0;  // the LB is exactly 0 (no negative reduced costs)
+        return limits<real_t>::min();  // NOTE: avoid 0.0, messes with the step size computation.
     }
 
 public:
@@ -82,6 +82,11 @@ public:
         auto should_price   = PricingManager(10, std::min(1000UL, nrows / 3));
         auto best_core_lb   = _reset_mult_and_lb(core.inst.costs, best_lagr_mult);
         auto best_real_lb   = limits<real_t>::min();
+
+        fmt::print("SUBG > Starting subgradient, LB {:.2f}, UB {:.2f}, cutoff {:.2f}\n",
+                   lb_sol.cost,
+                   best_ub,
+                   max_real_lb);
 
         size_t max_iters = 10 * nrows;
         for (size_t iter = 0; iter < max_iters && best_real_lb < max_real_lb; ++iter) {
@@ -115,10 +120,11 @@ public:
                 real_t real_lb = price(orig_inst, lagr_mult, core);
                 should_price.update(best_core_lb, real_lb, best_ub);
 
-                fmt::print("SUBG > {:4}: Pricing: core LB: {:.2f}, real LB: {:.2f}\n",
+                fmt::print("SUBG > {:4}: Core LB: {:10.2f}  Real LB: {:10.2f}  Step size: {:.1}\n",
                            iter,
                            best_core_lb,
-                           real_lb);
+                           real_lb,
+                           step_size);
 
                 best_real_lb = max(best_real_lb, real_lb);
                 best_core_lb = _reset_mult_and_lb(core.inst.costs, lagr_mult);
