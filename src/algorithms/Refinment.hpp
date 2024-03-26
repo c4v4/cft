@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Francesco Cavaliere
+// Copyright (c) 2024 Luca Accorsi and Francesco Cavaliere
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef CAV_SRC_ALGORITHMS_REFINMENT_HPP
-#define CAV_SRC_ALGORITHMS_REFINMENT_HPP
+#ifndef CFT_SRC_ALGORITHMS_REFINMENT_HPP
+#define CFT_SRC_ALGORITHMS_REFINMENT_HPP
 
 #include "algorithms/ThreePhase.hpp"
 #include "core/cft.hpp"
@@ -30,4 +30,4 @@ inline Solution run(Instance& inst, prng_t& rnd) {
 
 }  // namespace cft
 
-#endif /* CAV_SRC_ALGORITHMS_REFINMENT_HPP */
+#endif /* CFT_SRC_ALGORITHMS_REFINMENT_HPP */

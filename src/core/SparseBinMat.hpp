@@ -1,5 +1,5 @@
-#ifndef CFT_INCLUDE_SPARSEBINMAT_HPP
-#define CFT_INCLUDE_SPARSEBINMAT_HPP
+#ifndef CFT_SRC_CORE_SPARSEBINMAT_HPP
+#define CFT_SRC_CORE_SPARSEBINMAT_HPP
 
 #include <cassert>
 #include <vector>
@@ -60,4 +60,4 @@ struct SparseBinMat {
 
 }  // namespace cft
 
-#endif /* CFT_INCLUDE_SPARSEBINMAT_HPP */
+#endif /* CFT_SRC_CORE_SPARSEBINMAT_HPP */

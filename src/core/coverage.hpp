@@ -1,9 +1,8 @@
-#ifndef CFT_INCLUDE_COUNTSET_HPP
-#define CFT_INCLUDE_COUNTSET_HPP
+#ifndef CFT_SRC_CORE_COUNTSET_HPP
+#define CFT_SRC_CORE_COUNTSET_HPP
 
 #include <cassert>
 #include <cstddef>
-#include <type_traits>
 #include <vector>
 
 #include "core/cft.hpp"
@@ -135,4 +134,4 @@ struct CoverBits {
 }  // namespace cft
 
 
-#endif /* CFT_INCLUDE_COUNTSET_HPP */
+#endif /* CFT_SRC_CORE_COUNTSET_HPP */

@@ -1,5 +1,5 @@
-#ifndef CFT_INCLUDE_PRICER_HPP
-#define CFT_INCLUDE_PRICER_HPP
+#ifndef CFT_SRC_SUBGRADIENT_PRICER_HPP
+#define CFT_SRC_SUBGRADIENT_PRICER_HPP
 
 #include <vector>
 
@@ -15,12 +15,13 @@ namespace {
     inline real_t compute_col_reduced_costs(Instance const&            inst,
                                             std::vector<real_t> const& lagr_mult,
                                             std::vector<real_t>&       reduced_costs) {
+
         real_t real_lower_bound = 0.0;
         for (real_t u : lagr_mult)
             real_lower_bound += u;
 
+        reduced_costs = inst.costs;
         for (cidx_t j = 0; j < inst.cols.size(); ++j) {
-            reduced_costs[j] = inst.costs[j];
             for (ridx_t i : inst.cols[j])
                 reduced_costs[j] -= lagr_mult[i];
 
@@ -83,12 +84,8 @@ namespace {
         core_inst.rows.clear();
         core_inst.costs.clear();
         core_inst.solcosts.clear();
-
-        for (cidx_t j : idxs) {
-            core_inst.cols.push_back(inst.cols[j]);
-            core_inst.solcosts.push_back(inst.solcosts[j]);
-            core_inst.costs.push_back(inst.costs[j]);
-        }
+        for (cidx_t j : idxs)
+            push_back_col_from(inst, j, core_inst);  // Add column to core_inst
     }
 
 }  // namespace

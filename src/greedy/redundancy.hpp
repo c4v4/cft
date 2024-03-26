@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Francesco Cavaliere
+// Copyright (c) 2024 Luca Accorsi and Francesco Cavaliere
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 3 of the
 // License, or (at your option) any later version. This program is distributed in the hope that it
@@ -10,14 +10,18 @@
 #ifndef CFT_SRC_GREEDY_REDUNDANCY_HPP
 #define CFT_SRC_GREEDY_REDUNDANCY_HPP
 
+#ifndef NDEBUG
+#include <fmt/base.h>
+#endif
+
 #include "core/cft.hpp"
 #include "core/coverage.hpp"
 #include "core/limits.hpp"
-#include "fmt/base.h"
+#include "core/sort.hpp"
 #include "instance/Instance.hpp"
 
 
-#define CFT_ENUM_VARS 128
+#define CFT_ENUM_VARS 10
 
 namespace cft {
 
@@ -150,6 +154,31 @@ namespace {
         }
     };
 }  // namespace
+
+inline void complete_init_redund_set(RedundancyData&            red_data,
+                                     Instance const&            inst,
+                                     std::vector<cidx_t> const& sol,
+                                     Sorter&                    sorter,
+                                     real_t                     cutoff_cost) {
+
+    red_data.redund_set.clear();
+    red_data.partial_cover.reset(inst.rows.size());
+    red_data.partial_cov_count = 0;
+    red_data.cols_to_remove.clear();
+    red_data.best_cost    = cutoff_cost;
+    red_data.partial_cost = 0.0;
+
+    for (cidx_t j : sol)
+        if (red_data.total_cover.is_redundant_uncover(inst.cols[j]))
+            red_data.redund_set.push_back({j, inst.costs[j]});
+        else {
+            red_data.partial_cov_count += red_data.partial_cover.cover(inst.cols[j]);
+            red_data.partial_cost += inst.costs[j];
+            if (red_data.partial_cost >= cutoff_cost)
+                return;
+        }
+    sorter.sort(red_data.redund_set, [&](CidxAndCost x) { return inst.costs[x.col]; });
+}
 
 // Remove redundant columns from the redundancy set using an implicit enumeration. NOTE: assumes no
 // more than CFT_ENUM_VARS columns are redundant.

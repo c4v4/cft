@@ -7,8 +7,8 @@
 // have received a copy of the GNU General Public License along with this program. If not, see
 // <https://www.gnu.org/licenses/>.
 
-#ifndef CAV_INCLUDE_UTIL_FUNCTIONS_HPP
-#define CAV_INCLUDE_UTIL_FUNCTIONS_HPP
+#ifndef CFT_SRC_CORE_UTILITY_HPP
+#define CFT_SRC_CORE_UTILITY_HPP
 
 #include <cstddef>
 
@@ -89,17 +89,9 @@ constexpr size_t size(C const (& /*unused*/)[N]) {
 
 template <typename C, typename K>
 size_t argmin(C const& container, K key) {
-    if (size(container) == 0)
-        return 0;
-    size_t min_i   = 0;
-    auto   min_val = key(container[0]);
-    for (size_t i = 1; i < size(container); ++i) {
-        auto k = key(container[i]);
-        if (k < min_val) {
-            min_val = k;
-            min_i   = i;
-        }
-    }
+    size_t min_i = 0;
+    for (size_t i = 1; i < size(container); ++i)
+        min_i = key(container[i]) < key(container[min_i]) ? i : min_i;
     return min_i;
 }
 
@@ -115,4 +107,4 @@ void remove_if(C& container, Op op) {
 
 }  // namespace cft
 
-#endif /* CAV_INCLUDE_UTIL_FUNCTIONS_HPP */
+#endif /* CFT_SRC_CORE_UTILITY_HPP */

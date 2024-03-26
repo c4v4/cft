@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Francesco Cavaliere
+// Copyright (c) 2024 Luca Accorsi and Francesco Cavaliere
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 3 of the
 // License, or (at your option) any later version. This program is distributed in the hope that it
@@ -7,8 +7,8 @@
 // have received a copy of the GNU General Public License along with this program. If not, see
 // <https://www.gnu.org/licenses/>.
 
-#ifndef CFT_INCLUDE_PARSING_HPP
-#define CFT_INCLUDE_PARSING_HPP
+#ifndef CFT_SRC_INSTANCE_PARSING_HPP
+#define CFT_SRC_INSTANCE_PARSING_HPP
 
 #include <cassert>
 #include <vector>
@@ -131,4 +131,4 @@ inline FileData parse_cvrp_instance(std::string const& path) {
 }  // namespace cft
 
 
-#endif /* CFT_INCLUDE_PARSING_HPP */
+#endif /* CFT_SRC_INSTANCE_PARSING_HPP */

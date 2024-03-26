@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Francesco Cavaliere
+// Copyright (c) 2024 Luca Accorsi and Francesco Cavaliere
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 3 of the
 // License, or (at your option) any later version. This program is distributed in the hope that it
@@ -8,8 +8,8 @@
 // <https://www.gnu.org/licenses/>.
 
 
-#ifndef CFT_INCLUDE_SORTED_ARRAY_HPP
-#define CFT_INCLUDE_SORTED_ARRAY_HPP
+#ifndef CFT_SRC_CORE_SORTED_ARRAY_HPP
+#define CFT_SRC_CORE_SORTED_ARRAY_HPP
 
 #include <cassert>
 #include <cstddef>
@@ -104,4 +104,4 @@ inline SortedArray<T, Nm, no_cvr<Comp>> make_custom_compare_sorted_array(Comp co
 }
 
 }  // namespace cft
-#endif /*CFT_INCLUDE_SORTED_ARRAY_HPP*/
+#endif /*CFT_SRC_CORE_SORTED_ARRAY_HPP*/

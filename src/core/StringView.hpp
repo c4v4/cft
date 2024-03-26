@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Francesco Cavaliere
+// Copyright (c) 2024 Luca Accorsi and Francesco Cavaliere
 // This program is free software: you can redistribute it and/or modify it under the terms of the
 // GNU General Public License as published by the Free Software Foundation, either version 3 of the
 // License, or (at your option) any later version. This program is distributed in the hope that it
@@ -7,12 +7,13 @@
 // have received a copy of the GNU General Public License along with this program. If not, see
 // <https://www.gnu.org/licenses/>.
 
-#ifndef CAV_INCLUDE_STRING_VIEW_HPP
-#define CAV_INCLUDE_STRING_VIEW_HPP
+#ifndef CFT_SRC_CORE_STRING_VIEW_HPP
+#define CFT_SRC_CORE_STRING_VIEW_HPP
 
 #include <cassert>
 #include <cstddef>
 #include <cstring>
+#include <string>
 
 #include "core/cft.hpp"
 
@@ -158,4 +159,4 @@ private:
 }  // namespace cft
 
 
-#endif /* CAV_INCLUDE_STRING_VIEW_HPP */
+#endif /* CFT_SRC_CORE_STRING_VIEW_HPP */

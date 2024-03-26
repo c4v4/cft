@@ -2,7 +2,6 @@
 #include <fmt/ranges.h>
 
 #include "algorithms/Refinment.hpp"
-#include "algorithms/ThreePhase.hpp"
 #include "core/cft.hpp"
 #include "instance/Instance.hpp"
 #include "instance/parsing.hpp"
@@ -40,7 +39,7 @@ int main(int argc, char const** argv) {
     auto rnd  = cft::prng_t{0};
 
     auto sol = cft::run(inst, rnd);
-    fmt::print("REFN > Best solution cost: {}\n", sol.cost);
+    fmt::print("REFN > Best solution cost: {:.2f}\n", sol.cost);
 
     return EXIT_SUCCESS;
 }

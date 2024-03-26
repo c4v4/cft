@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef CFT_INCLUDE_RANDOM_HPP
-#define CFT_INCLUDE_RANDOM_HPP
+#ifndef CFT_SRC_CORE_RANDOM_HPP
+#define CFT_SRC_CORE_RANDOM_HPP
 
 #include <cassert>
 
@@ -92,4 +92,4 @@ inline int roll_dice(prng_t& rnd, IntT min, IntT max) noexcept {
 
 }  // namespace cft
 
-#endif /* CFT_INCLUDE_RANDOM_HPP */
+#endif /* CFT_SRC_CORE_RANDOM_HPP */

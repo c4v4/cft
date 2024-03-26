@@ -7,8 +7,8 @@
 // have received a copy of the GNU General Public License along with this program. If not, see
 // <https://www.gnu.org/licenses/>.
 
-#ifndef CFT_INCLUDE_LIMITS_HPP
-#define CFT_INCLUDE_LIMITS_HPP
+#ifndef CFT_SRC_CORE_LIMITS_HPP
+#define CFT_SRC_CORE_LIMITS_HPP
 
 #include <limits>
 
@@ -33,4 +33,4 @@ struct limits {
 
 }  // namespace cft
 
-#endif /* CFT_INCLUDE_LIMITS_HPP */
+#endif /* CFT_SRC_CORE_LIMITS_HPP */
