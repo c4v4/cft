@@ -50,6 +50,7 @@ if (UNIT_TESTS)
                 test/utility_unittests.cpp
                 test/StringView_unittests.cpp
                 test/coverage_unittests.cpp
+                test/random_unittests.cpp
                 test/SortedArray_unittests.cpp)
 
     add_executable(tests ${SOURCES})

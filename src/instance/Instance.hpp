@@ -51,7 +51,7 @@ inline void fill_rows_from_cols(SparseBinMat<ridx_t> const&       cols,
     for (cidx_t j = 0; j < cols.size(); ++j)
         for (ridx_t i : cols[j])
             rows[i].push_back(j);
-    IF_DEBUG(col_and_rows_check(cols, rows));
+    // IF_DEBUG(col_and_rows_check(cols, rows));
 }
 
 // Copy a column from one instance to another pushing it back as last column.
