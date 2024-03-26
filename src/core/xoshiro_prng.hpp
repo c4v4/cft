@@ -31,6 +31,7 @@ namespace cft { namespace random {
 
     constexpr uint64_t default_seed = 0x9e3779b97f4a7c15ULL;  // Default seed value
 
+    // SplitMix64
     template <typename IntT, size_t N>
     std::array<IntT, N> generate_state_from_seed(uint64_t init_seed = default_seed) {
         auto     seeds   = std::array<IntT, N>{};
@@ -52,8 +53,8 @@ namespace cft { namespace random {
     // Version: 1.0
     class Xoshiro256PlusImpl {
     public:
-        using state_type  = std::array<uint64_t, 4>;
         using result_type = uint64_t;
+        using state_type  = std::array<result_type, 4>;
         state_type m_state;
 
         inline result_type operator()() {
@@ -124,8 +125,8 @@ namespace cft { namespace random {
     // Version: 1.0
     class Xoshiro256PlusPlusImpl {
     public:
-        using state_type  = std::array<uint64_t, 4>;
         using result_type = uint64_t;
+        using state_type  = std::array<result_type, 4>;
         state_type m_state;
 
         inline result_type operator()() {
@@ -196,8 +197,8 @@ namespace cft { namespace random {
     // Version: 1.0
     class Xoshiro256StarStarImpl {
     public:
-        using state_type  = std::array<uint64_t, 4>;
         using result_type = uint64_t;
+        using state_type  = std::array<result_type, 4>;
         state_type m_state;
 
         inline result_type operator()() {
@@ -268,8 +269,8 @@ namespace cft { namespace random {
     // Version: 1.0
     class Xoroshiro128Plus {
     public:
-        using state_type  = std::array<uint64_t, 2>;
         using result_type = uint64_t;
+        using state_type  = std::array<result_type, 2>;
         state_type m_state;
 
         inline Xoroshiro128Plus(uint64_t seed = default_seed)
@@ -336,8 +337,8 @@ namespace cft { namespace random {
     // Version: 1.0
     class Xoroshiro128PlusPlus {
     public:
-        using state_type  = std::array<uint64_t, 2>;
         using result_type = uint64_t;
+        using state_type  = std::array<result_type, 2>;
         state_type m_state;
 
         inline Xoroshiro128PlusPlus(uint64_t seed = default_seed)
@@ -404,8 +405,8 @@ namespace cft { namespace random {
     // Version: 1.0
     class Xoroshiro128StarStar {
     public:
-        using state_type  = std::array<uint64_t, 2>;
         using result_type = uint64_t;
+        using state_type  = std::array<result_type, 2>;
         state_type m_state;
 
         inline Xoroshiro128StarStar(uint64_t seed = default_seed)
@@ -472,8 +473,8 @@ namespace cft { namespace random {
     // Version: 1.0
     class Xoshiro128PlusImpl {
     public:
-        using state_type  = std::array<uint32_t, 4>;
         using result_type = uint32_t;
+        using state_type  = std::array<result_type, 4>;
         state_type m_state;
 
         inline result_type operator()() {
@@ -538,8 +539,8 @@ namespace cft { namespace random {
     // Version: 1.0
     class Xoshiro128PlusPlusImpl {
     public:
-        using state_type  = std::array<uint32_t, 4>;
         using result_type = uint32_t;
+        using state_type  = std::array<result_type, 4>;
         state_type m_state;
 
         inline result_type operator()() {
@@ -604,8 +605,8 @@ namespace cft { namespace random {
     // Version: 1.1
     class Xoshiro128StarStarImpl {
     public:
-        using state_type  = std::array<uint32_t, 4>;
         using result_type = uint32_t;
+        using state_type  = std::array<result_type, 4>;
         state_type m_state;
 
         inline result_type operator()() {
@@ -664,11 +665,11 @@ namespace cft { namespace random {
 
     template <typename GenT>
     struct RandMixIn : GenT {
-        using state_type  = typename GenT::state_type;
         using result_type = typename GenT::result_type;
+        using state_type  = typename GenT::state_type;
 
         RandMixIn(uint64_t seed = default_seed)
-            : GenT{generate_state_from_seed<uint64_t, 4>(seed)} {
+            : GenT{generate_state_from_seed<result_type, 4>(seed)} {
         }
 
         RandMixIn(state_type state)
