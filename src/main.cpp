@@ -1,7 +1,7 @@
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 
-#include "algorithms/Refinment.hpp"
+#include "algorithms/Refinement.hpp"
 #include "core/cft.hpp"
 #include "instance/Instance.hpp"
 #include "instance/parsing.hpp"

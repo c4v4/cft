@@ -83,6 +83,17 @@ namespace {
 
 }  // namespace
 
+struct ThreePhaseResult {
+    Solution sol;
+
+    // TODO(any): consider putting together multipliers and LB in a struct
+    // TODO(any): opposite of the previous todo, the LB can be computed on-the-fly in the refinement
+    // procedure starting from the multipliers (but this probably means keeping a useless copy of
+    // instance only for this computation, so maybe it's better to store it here)
+    std::vector<real_t> unfixed_lagr_mult;
+    real_t              unfixed_lb;
+};
+
 struct ThreePhase {
 private:
     Subgradient subgrad;
@@ -91,17 +102,18 @@ private:
     Sorter      sorter;
 
 public:
-    Solution operator()(Instance& inst, prng_t& rnd) {
+    ThreePhaseResult operator()(Instance& inst, prng_t& rnd) {
         constexpr ridx_t min_row_coverage = 5;
 
-        auto tot_timer = Chrono<>();
-        auto best_sol  = Solution();
-        auto fixing    = make_identity_fixing_data(inst.cols.size(), inst.rows.size());
+        auto   tot_timer         = Chrono<>();
+        auto   best_sol          = Solution();
+        auto   unfixed_lagr_mult = std::vector<real_t>();  // Best multipliers without fixing
+        real_t unfixed_lb        = limits<real_t>::min();  // Best lower bound without fixing
+        auto   fixing            = make_identity_fixing_data(inst.cols.size(), inst.rows.size());
 
-        size_t iter_counter = 0;
-        while (!inst.rows.empty()) {
+        for (size_t iter_counter = 0; !inst.rows.empty(); ++iter_counter) {
             auto timer = Chrono<>();
-            fmt::print("3PHS > Starting 3-phase iteration: {}\n", ++iter_counter);
+            fmt::print("3PHS > Starting 3-phase iteration: {}\n", iter_counter);
 
             auto core      = build_tentative_core_instance(inst, sorter, min_row_coverage);
             auto lagr_mult = compute_greedy_multipliers(core.inst);
@@ -112,6 +124,12 @@ public:
             auto   cutoff    = std::min(sol.cost, best_sol.cost - fixing.fixed_cost);
 
             auto real_lb = subgrad(inst, core, sorter, cutoff, sol.cost, step_size, lagr_mult);
+
+            if (iter_counter == 0) {
+                unfixed_lagr_mult = lagr_mult;
+                unfixed_lb        = real_lb;
+            }
+
             if (real_lb >= cutoff - CFT_EPSILON)
                 break;
 
@@ -137,7 +155,7 @@ public:
         fmt::print("\n3PHS > Best solution cost: {:.2f}, time: {:.2f}s\n",
                    best_sol.cost,
                    tot_timer.elapsed<sec>());
-        return best_sol;
+        return {std::move(best_sol), std::move(unfixed_lagr_mult), unfixed_lb};
     }
 };
 }  // namespace cft
