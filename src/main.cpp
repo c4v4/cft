@@ -7,21 +7,21 @@
 #include "instance/parsing.hpp"
 
 void print_inst_summary(cft::FileData const& fdata) {
-    fmt::print("3PHS > Instance summary:\n");
-    fmt::print("3PHS >   nrows:     {}\n", fdata.inst.rows.size());
-    fmt::print("3PHS >   ncols:     {}\n", fdata.inst.cols.size());
-    fmt::print("3PHS >   costs:     {} {} {} {} ...\n",
+    fmt::print("CFT  > Instance summary:\n");
+    fmt::print("CFT  >   nrows:     {}\n", fdata.inst.rows.size());
+    fmt::print("CFT  >   ncols:     {}\n", fdata.inst.cols.size());
+    fmt::print("CFT  >   costs:     {} {} {} {} ...\n",
                fdata.inst.costs[0],
                fdata.inst.costs[1],
                fdata.inst.costs[2],
                fdata.inst.costs[3]);
-    fmt::print("3PHS >   solcosts:  {} {} {} {} ...\n",
+    fmt::print("CFT  >   solcosts:  {} {} {} {} ...\n",
                fdata.inst.solcosts[0],
                fdata.inst.solcosts[1],
                fdata.inst.solcosts[2],
                fdata.inst.solcosts[3]);
     if (!fdata.warmstart.empty())
-        fmt::print("3PHS >   warmstart: {} {} {} {} ...\n",
+        fmt::print("CFT  >   warmstart: {} {} {} {} ...\n",
                    fdata.warmstart[0],
                    fdata.warmstart[1],
                    fdata.warmstart[2],
@@ -29,7 +29,7 @@ void print_inst_summary(cft::FileData const& fdata) {
 
     // print first 10 columns
     for (size_t i = 0; i < 4; ++i)
-        fmt::print("3PHS >   col[{}]: {}\n", i, fmt::join(fdata.inst.cols[i], ", "));
+        fmt::print("CFT  >   col[{}]: {}\n", i, fmt::join(fdata.inst.cols[i], ", "));
 }
 
 int main(int argc, char const** argv) {
@@ -39,7 +39,7 @@ int main(int argc, char const** argv) {
     auto rnd  = cft::prng_t{0};
 
     auto sol = cft::run(inst, rnd);
-    fmt::print("REFN > Best solution cost: {:.2f}\n", sol.cost);
+    fmt::print("CFT  > Best solution cost: {:.2f}\n", sol.cost);
 
     return EXIT_SUCCESS;
 }

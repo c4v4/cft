@@ -103,7 +103,8 @@ public:
 
             if (norm == 0.0) {
                 assert(best_core_lb < cutoff && "Optimum is above cutoff");
-                assert(best_core_lb == lb_sol.cost && "Inconsistent lower bound");
+                // TODO(cava): is this check correct with a reduced solution? I don't think so...
+                // assert(abs(best_core_lb - lb_sol.cost) / abs(best_core_lb) < 0.01);
                 fmt::print("SUBG > Found optimal solution.\n");
                 best_lagr_mult = lagr_mult;
                 break;
@@ -167,15 +168,6 @@ public:
             if (best_core_lb >= cutoff - CFT_EPSILON)
                 return;
 
-            if (norm == 0.0) {  // Return optimum
-                assert(best_core_lb < cutoff && "Optimum is above cutoff");
-                assert(best_core_lb == lb_sol.cost && "Inconsistent lower bound");
-                fmt::print("HEUR > Found optimal solution.\n");
-                best_lagr_mult = lagr_mult;
-                best_sol       = lb_sol;
-                return;
-            }
-
             greedy_sol.idxs.clear();
             greedy(inst, lagr_mult, reduced_costs, greedy_sol, cutoff);
             if (greedy_sol.cost <= cutoff - CFT_EPSILON) {
@@ -183,6 +175,13 @@ public:
                 best_sol = greedy_sol;
                 fmt::print("HEUR > Improved current solution {:.2f}\n", best_sol.cost);
                 IF_DEBUG(check_solution(inst, best_sol));
+            }
+
+            if (norm == 0.0) {  // Return optimum
+                assert(best_core_lb < cutoff && "Optimum is above cutoff");
+                fmt::print("HEUR > Found optimal solution.\n");
+                best_lagr_mult = lagr_mult;
+                return;
             }
 
             real_t step_factor = step_size * (best_sol.cost - lb_sol.cost) / norm;

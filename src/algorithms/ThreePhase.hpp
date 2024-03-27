@@ -150,9 +150,10 @@ public:
             fmt::print("3PHS > Finished iteration {}, time {:.2f}s\n",
                        iter_counter,
                        timer.elapsed<sec>());
+            break;
         }
 
-        fmt::print("\n3PHS > Best solution cost: {:.2f}, time: {:.2f}s\n",
+        fmt::print("3PHS > Best solution cost: {:.2f}, time: {:.2f}s\n",
                    best_sol.cost,
                    tot_timer.elapsed<sec>());
         return {std::move(best_sol), std::move(unfixed_lagr_mult), unfixed_lb};

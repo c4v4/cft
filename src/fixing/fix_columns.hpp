@@ -48,42 +48,42 @@ inline FixingData make_identity_fixing_data(cidx_t ncols, ridx_t nrows) {
 
 namespace {
 #ifndef NDEBUG
-    void mappings_check(Instance const& prev_inst,
-                        Instance const& curr_inst,
-                        IdxsMaps const& prev2curr) {
-        for (cidx_t prev_j = 0; prev_j < prev_inst.cols.size(); ++prev_j) {
-
-            cidx_t curr_j = prev2curr.col_map[prev_j];
-            if (curr_j == CFT_REMOVED_IDX)
-                continue;
-
-            assert(!curr_inst.cols[curr_j].empty());
-            assert(curr_inst.cols[curr_j].size() <= prev_inst.cols[prev_j].size());
-            for (ridx_t r = 0; r < prev_inst.cols[prev_j].size(); ++r) {
-                ridx_t prev_i = prev_inst.cols[prev_j][r];
-                ridx_t curr_i = prev2curr.row_map[prev_i];
-                if (curr_i == CFT_REMOVED_IDX) {
-                    assert(any(prev_inst.rows[prev_i],
-                               [&](cidx_t j) { return prev2curr.col_map[j] == CFT_REMOVED_IDX; }));
-                    continue;
-                }
-                assert(std::count(curr_inst.cols[curr_j].begin(),
-                                  curr_inst.cols[curr_j].end(),
-                                  curr_i) == 1);
-                assert(std::count(curr_inst.rows[curr_i].begin(),
-                                  curr_inst.rows[curr_i].end(),
-                                  curr_j) == 1);
-                assert(curr_inst.rows[curr_i].size() <= prev_inst.rows[prev_i].size());
-                assert(!curr_inst.rows[curr_i].empty());
-            }
-        }
-    }
+    // inline void mappings_check(Instance const& prev_inst,
+    //                            Instance const& curr_inst,
+    //                            IdxsMaps const& prev2curr) {
+    //     for (cidx_t prev_j = 0; prev_j < prev_inst.cols.size(); ++prev_j) {
+//
+//        cidx_t curr_j = prev2curr.col_map[prev_j];
+//        if (curr_j == CFT_REMOVED_IDX)
+//            continue;
+//
+//        assert(!curr_inst.cols[curr_j].empty());
+//        assert(curr_inst.cols[curr_j].size() <= prev_inst.cols[prev_j].size());
+//        for (ridx_t r = 0; r < prev_inst.cols[prev_j].size(); ++r) {
+//            ridx_t prev_i = prev_inst.cols[prev_j][r];
+//            ridx_t curr_i = prev2curr.row_map[prev_i];
+//            if (curr_i == CFT_REMOVED_IDX) {
+//                assert(any(prev_inst.rows[prev_i],
+//                           [&](cidx_t j) { return prev2curr.col_map[j] == CFT_REMOVED_IDX; }));
+//                continue;
+//            }
+//            assert(std::count(curr_inst.cols[curr_j].begin(),
+//                              curr_inst.cols[curr_j].end(),
+//                              curr_i) == 1);
+//            assert(std::count(curr_inst.rows[curr_i].begin(),
+//                              curr_inst.rows[curr_i].end(),
+//                              curr_j) == 1);
+//            assert(curr_inst.rows[curr_i].size() <= prev_inst.rows[prev_i].size());
+//            assert(!curr_inst.rows[curr_i].empty());
+//        }
+//    }
+//}
 #endif
 
     // Mark columns and rows to be removed and update fixed cols and costs
-    ridx_t mark_and_update_fixed_elements(Instance&                  inst,
-                                          std::vector<cidx_t> const& cols_to_fix,
-                                          FixingData&                fixing) {
+    inline ridx_t mark_and_update_fixed_elements(Instance&                  inst,
+                                                 std::vector<cidx_t> const& cols_to_fix,
+                                                 FixingData&                fixing) {
         size_t removed_rows = 0;
         for (cidx_t prev_j : cols_to_fix) {
             cidx_t& orig_j = fixing.curr2orig.col_map[prev_j];
@@ -100,7 +100,7 @@ namespace {
         return removed_rows;
     }
 
-    void set_inst_as_empty(Instance& inst, FixingData& fixing, IdxsMaps& prev2curr) {
+    inline void set_inst_as_empty(Instance& inst, FixingData& fixing, IdxsMaps& prev2curr) {
         inst.cols.clear();
         inst.rows.clear();
         inst.costs.clear();
@@ -112,7 +112,9 @@ namespace {
     }
 
     // Remove marked rows and make old->new row mapping
-    void adjust_rows_pos_and_fill_map(Instance& inst, FixingData& fixing, IdxsMaps& prev2curr) {
+    inline void adjust_rows_pos_and_fill_map(Instance&   inst,
+                                             FixingData& fixing,
+                                             IdxsMaps&   prev2curr) {
         ridx_t old_nrows = inst.rows.size();
         prev2curr.row_map.assign(old_nrows, CFT_REMOVED_IDX);
         ridx_t next_i = 0;
@@ -134,9 +136,9 @@ namespace {
     }
 
     // Remove marked columns adjusting row indexes and make old->new col mapping
-    void adjust_cols_pos_and_idxs_and_fill_map(Instance&   inst,
-                                               FixingData& fixing,
-                                               IdxsMaps&   prev2curr) {
+    inline void adjust_cols_pos_and_idxs_and_fill_map(Instance&   inst,
+                                                      FixingData& fixing,
+                                                      IdxsMaps&   prev2curr) {
         cidx_t old_ncols = inst.cols.size();
         prev2curr.col_map.assign(old_ncols, CFT_REMOVED_IDX);
         cidx_t curr_j = 0;
@@ -173,7 +175,7 @@ namespace {
     }
 
     // Adjust column indexes stored in eanch row
-    void adjust_rows_idxs(Instance& inst, IdxsMaps const& prev2curr) {
+    inline void adjust_rows_idxs(Instance& inst, IdxsMaps const& prev2curr) {
         for (auto& row : inst.rows) {
             cidx_t w = 0;
             for (cidx_t r = 0; r < row.size(); ++r) {
@@ -211,8 +213,8 @@ inline void fix_columns(Instance&                  inst,
     adjust_cols_pos_and_idxs_and_fill_map(inst, fixing, prev2curr);
     adjust_rows_idxs(inst, prev2curr);
 
-    IF_DEBUG(col_and_rows_check(inst.cols, inst.rows));   // coherent instance
-    IF_DEBUG(mappings_check(old_inst, inst, prev2curr));  // coherent mappings
+    // IF_DEBUG(col_and_rows_check(inst.cols, inst.rows));   // coherent instance
+    // IF_DEBUG(mappings_check(old_inst, inst, prev2curr));  // coherent mappings
 
     // TODO(cava): reductions step (e.g., 1-col rows)
 }

@@ -20,47 +20,50 @@
 #include "core/cft.hpp"
 #include "core/coverage.hpp"
 #include "fixing/fix_columns.hpp"
+#include "subgradient/utils.hpp"
 
 namespace cft {
 
-constexpr real_t alpha       = 1.1;
-constexpr real_t beta        = 1.0;
-constexpr real_t min_fixing  = 0.3;
-constexpr real_t max_finxing = 0.9;
+constexpr real_t alpha      = 1.1;
+constexpr real_t beta       = 1.0;
+constexpr real_t min_fixing = 0.3;
 
 inline void select_cols_to_fix(Instance const&            inst,            // in
                                std::vector<real_t> const& best_lagr_mult,  // in
-                               Solution&                  best_sol,        // in, but sorted
+                               Solution const&            best_sol,        // in
                                ridx_t                     nrows_to_fix,    // in
                                Sorter&                    sorter,          // cache
                                CoverCounters<>&           row_coverage,    // cache
                                std::vector<cidx_t>&       cols_to_fix      // out
 ) {
-
     ridx_t nrows = inst.rows.size();
     row_coverage.reset(nrows);
     for (cidx_t j : best_sol.idxs)
         row_coverage.cover(inst.cols[j]);
 
     // TODO(any): matches the paper name, maybe there exist a better name tho
-    auto deltas = std::vector<real_t>();
+    auto deltas = std::vector<CidxAndCost>();
+    deltas.reserve(best_sol.idxs.size());
     for (cidx_t j : best_sol.idxs) {
         auto   col          = inst.cols[j];
         real_t reduced_cost = inst.costs[j];
         for (ridx_t i : col)
             reduced_cost -= best_lagr_mult[i];
 
-        deltas[j] = max(reduced_cost, 0.0F);
+        real_t delta = max(reduced_cost, 0.0F);
         for (ridx_t i : col) {
             real_t cov = row_coverage[i];
-            deltas[j] += best_lagr_mult[i] * (cov - 1.0F) / cov;
+            delta += best_lagr_mult[i] * (cov - 1.0F) / cov;
         }
+        deltas.push_back({j, delta});
     }
-    sorter.sort(best_sol.idxs, [&](cidx_t j) { return deltas[j]; });
+    sorter.sort(deltas, [](CidxAndCost c) { return c.cost; });
 
     ridx_t covered_rows = 0;
     row_coverage.reset(nrows);
-    for (cidx_t j : best_sol.idxs) {
+    cols_to_fix.clear();
+    for (CidxAndCost c : deltas) {
+        cidx_t j = c.col;
         covered_rows += row_coverage.cover(inst.cols[j]);
         cols_to_fix.push_back(j);
         if (covered_rows >= nrows_to_fix)
@@ -71,6 +74,9 @@ inline void select_cols_to_fix(Instance const&            inst,            // in
 // Complete CFT algorithm (Refinement + call to 3-phase)
 inline Solution run(Instance const& orig_inst, prng_t& rnd, Solution const& warmstart_sol = {}) {
 
+    cidx_t ncols = orig_inst.cols.size();
+    ridx_t nrows = orig_inst.rows.size();
+
     auto sorter   = Sorter();
     auto inst     = orig_inst;
     auto best_sol = Solution();
@@ -80,35 +86,36 @@ inline Solution run(Instance const& orig_inst, prng_t& rnd, Solution const& warm
 
     auto   three_phase       = ThreePhase();
     auto   unfixed_lagr_mult = std::vector<real_t>();
-    auto   fixing            = FixingData();
     auto   cols_to_fix       = std::vector<cidx_t>();
+    auto   fixing            = make_identity_fixing_data(ncols, nrows);
     auto   prev2curr         = IdxsMaps();
     auto   max_cost          = limits<real_t>::max();
     real_t fix_fraction      = min_fixing;
     size_t iter_counter      = 0;
     for (;;) {
-
         auto result_3p = three_phase(inst, rnd);
 
         fix_fraction *= alpha;
-        if (result_3p.sol.cost < best_sol.cost) {
-            best_sol     = result_3p.sol;
+        if (result_3p.sol.cost + fixing.fixed_cost < best_sol.cost) {
+            convert_to_orig_sol(result_3p.sol, fixing, best_sol);
+            IF_DEBUG(check_solution(orig_inst, best_sol));
             fix_fraction = min_fixing;
         }
 
         if (iter_counter++ == 0) {
             unfixed_lagr_mult = std::move(result_3p.unfixed_lagr_mult);
-            max_cost          = beta * result_3p.unfixed_lb;  // TODO(any): consider CFT_EPSILON?
+            max_cost          = beta * result_3p.unfixed_lb + CFT_EPSILON;
         }
 
-        if (best_sol.cost <= max_cost || fix_fraction > max_finxing || inst.rows.empty())
+        if (best_sol.cost <= max_cost || inst.rows.empty())
             break;
 
-        fix_fraction = std::min(max_finxing, fix_fraction);
-
         auto covering_times = CoverCounters<>();
-        auto nrows_real     = static_cast<real_t>(inst.rows.size());
+        auto nrows_real     = static_cast<real_t>(nrows);
         auto nrows_to_fix   = static_cast<ridx_t>(nrows_real * fix_fraction);
+
+        fixing = make_identity_fixing_data(ncols, nrows);
+        inst   = orig_inst;
         select_cols_to_fix(inst,
                            unfixed_lagr_mult,
                            best_sol,
@@ -117,6 +124,12 @@ inline Solution run(Instance const& orig_inst, prng_t& rnd, Solution const& warm
                            covering_times,
                            cols_to_fix);
         fix_columns(inst, cols_to_fix, fixing, prev2curr);
+        fmt::print("REFN > Free rows {} ({:.1f}%), best sol {} fixed cost {}\n",
+                   inst.rows.size(),
+                   inst.rows.size() * 100.0 / orig_inst.rows.size(),
+                   fixing.fixed_cost,
+                   best_sol.cost,
+                   fixing.fixed_cost);
     }
 
     return best_sol;
