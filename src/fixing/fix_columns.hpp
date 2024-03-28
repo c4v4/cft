@@ -32,26 +32,24 @@ struct FixingData {
     real_t              fixed_cost = 0.0;
 };
 
-inline FixingData make_identity_fixing_data(cidx_t ncols, ridx_t nrows) {
-    auto fixing              = FixingData();
-    fixing.curr2orig.col_map = std::vector<cidx_t>(ncols);
-    fixing.curr2orig.row_map = std::vector<ridx_t>(nrows);
-    fixing.fixed_cols        = std::vector<cidx_t>();
-    fixing.fixed_cost        = 0.0;
+inline void make_identity_fixing_data(cidx_t ncols, ridx_t nrows, FixingData& fixing) {
+    fixing.curr2orig.col_map.resize(ncols);
+    fixing.curr2orig.row_map.resize(nrows);
+    fixing.fixed_cols.clear();
+    fixing.fixed_cost = 0.0;
 
     for (cidx_t j = 0; j < ncols; ++j)
         fixing.curr2orig.col_map[j] = j;
     for (ridx_t i = 0; i < nrows; ++i)
         fixing.curr2orig.row_map[i] = i;
-    return fixing;
 }
 
 namespace {
 #ifndef NDEBUG
-    // inline void mappings_check(Instance const& prev_inst,
-    //                            Instance const& curr_inst,
-    //                            IdxsMaps const& prev2curr) {
-    //     for (cidx_t prev_j = 0; prev_j < prev_inst.cols.size(); ++prev_j) {
+// inline void mappings_check(Instance const& prev_inst,
+//                            Instance const& curr_inst,
+//                            IdxsMaps const& prev2curr) {
+//     for (cidx_t prev_j = 0; prev_j < prev_inst.cols.size(); ++prev_j) {
 //
 //        cidx_t curr_j = prev2curr.col_map[prev_j];
 //        if (curr_j == CFT_REMOVED_IDX)

@@ -37,7 +37,7 @@ struct CidxAndCost {
 
 struct Solution {
     std::vector<cft::cidx_t> idxs = {};
-    cft::real_t              cost = cft::limits<cft::real_t>::max();
+    cft::real_t              cost = cft::limits<cft::real_t>::inf();
 };
 
 }  // namespace cft
