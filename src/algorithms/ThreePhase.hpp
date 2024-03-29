@@ -24,16 +24,35 @@
 #include "greedy/Greedy.hpp"
 #include "instance/Instance.hpp"
 #include "subgradient/subgradient.hpp"
+#include "subgradient/utils.hpp"
 
 namespace cft {
 namespace {
-    inline void convert_to_orig_sol(Solution const&   sol,
-                                    FixingData const& fixing,
-                                    Solution&         best_sol) {
+
+    // Simply transform a solution of an instance with fixing, to a solution of the original
+    // instance without fixing
+    inline void from_fixed_to_unfixed_sol(Solution const&   sol,
+                                          FixingData const& fixing,
+                                          Solution&         best_sol) {
         best_sol.cost = sol.cost + fixing.fixed_cost;
         best_sol.idxs = fixing.fixed_cols;
         for (cidx_t j : sol.idxs)
             best_sol.idxs.push_back(fixing.curr2orig.col_map[j]);
+    }
+
+    // Transform a solution of a core instance (i.e., where both fixing and pricing have been
+    // applied) to the original instance whole without fixing.
+    inline void from_core_to_unfixed_sol(Solution const&   sol,
+                                         InstAndMap const& core,
+                                         FixingData const& fixing,
+                                         Solution&         best_sol) {
+        best_sol.cost = sol.cost + fixing.fixed_cost;
+        best_sol.idxs = fixing.fixed_cols;
+        for (cidx_t j : sol.idxs) {
+            cidx_t unprice_j = core.col_map[j];
+            cidx_t unfixed_j = fixing.curr2orig.col_map[unprice_j];
+            best_sol.idxs.push_back(unfixed_j);
+        }
     }
 
     // Greedily creates lagrangian multipliers for the given instance.
@@ -83,6 +102,17 @@ namespace {
 
 }  // namespace
 
+struct ThreePhaseResult {
+    Solution sol;
+
+    // TODO(any): consider putting together multipliers and LB in a struct
+    // TODO(any): opposite of the previous todo, the LB can be computed on-the-fly in the refinement
+    // procedure starting from the multipliers (but this probably means keeping a useless copy of
+    // instance only for this computation, so maybe it's better to store it here)
+    std::vector<real_t> unfixed_lagr_mult;
+    real_t              unfixed_lb;
+};
+
 struct ThreePhase {
 private:
     Subgradient subgrad;
@@ -91,17 +121,20 @@ private:
     Sorter      sorter;
 
 public:
-    Solution operator()(Instance& inst, prng_t& rnd) {
+    ThreePhaseResult operator()(Instance& inst, prng_t& rnd) {
         constexpr ridx_t min_row_coverage = 5;
 
-        auto tot_timer = Chrono<>();
-        auto best_sol  = Solution();
-        auto fixing    = make_identity_fixing_data(inst.cols.size(), inst.rows.size());
+        auto   tot_timer         = Chrono<>();
+        auto   best_sol          = Solution();
+        auto   unfixed_lagr_mult = std::vector<real_t>();  // Best multipliers without fixing
+        real_t unfixed_lb        = limits<real_t>::min();  // Best lower bound without fixing
+        auto   fixing            = FixingData();
+        IF_DEBUG(auto inst_copy = inst);
+        make_identity_fixing_data(inst.cols.size(), inst.rows.size(), fixing);
 
-        size_t iter_counter = 0;
-        while (!inst.rows.empty()) {
+        for (size_t iter_counter = 0; !inst.rows.empty(); ++iter_counter) {
             auto timer = Chrono<>();
-            fmt::print("3PHS > Starting 3-phase iteration: {}\n", ++iter_counter);
+            fmt::print("3PHS > Starting 3-phase iteration: {}\n", iter_counter);
 
             auto core      = build_tentative_core_instance(inst, sorter, min_row_coverage);
             auto lagr_mult = compute_greedy_multipliers(core.inst);
@@ -112,6 +145,12 @@ public:
             auto   cutoff    = std::min(sol.cost, best_sol.cost - fixing.fixed_cost);
 
             auto real_lb = subgrad(inst, core, sorter, cutoff, sol.cost, step_size, lagr_mult);
+
+            if (iter_counter == 0) {
+                unfixed_lagr_mult = lagr_mult;
+                unfixed_lb        = real_lb;
+            }
+
             if (real_lb >= cutoff - CFT_EPSILON)
                 break;
 
@@ -121,8 +160,10 @@ public:
                        real_lb + fixing.fixed_cost,
                        sol.cost + fixing.fixed_cost);
 
-            if (sol.cost + fixing.fixed_cost < best_sol.cost)
-                convert_to_orig_sol(sol, fixing, best_sol);
+            if (sol.cost + fixing.fixed_cost < best_sol.cost) {
+                from_core_to_unfixed_sol(sol, core, fixing, best_sol);
+                IF_DEBUG(check_solution(inst_copy, best_sol));
+            }
 
             col_fixing(inst, core, fixing, lagr_mult, greedy);
             fmt::print("3PHS > Fixing: rows left: {}, fixed cost: {:.2f}\n",
@@ -134,10 +175,10 @@ public:
                        timer.elapsed<sec>());
         }
 
-        fmt::print("\n3PHS > Best solution cost: {:.2f}, time: {:.2f}s\n",
+        fmt::print("3PHS > Best solution cost: {:.2f}, time: {:.2f}s\n",
                    best_sol.cost,
                    tot_timer.elapsed<sec>());
-        return best_sol;
+        return {std::move(best_sol), std::move(unfixed_lagr_mult), unfixed_lb};
     }
 };
 }  // namespace cft

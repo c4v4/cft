@@ -38,7 +38,7 @@ inline void check_solution(cft::Instance const& inst, cft::Solution const& sol) 
 
     // check coverage
     cft::ridx_t covered_rows = 0;
-    auto        cover_bits   = cft::CoverBits(nrows);
+    auto        cover_bits   = cft::CoverCounters<>(nrows);
     for (auto j : sol.idxs)
         covered_rows += cover_bits.cover(inst.cols[j]);
     assert(covered_rows == nrows);
