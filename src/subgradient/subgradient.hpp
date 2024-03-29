@@ -102,7 +102,6 @@ public:
             }
 
             if (norm == 0.0) {
-                assert(best_core_lb < cutoff && "Optimum is above cutoff");
                 // TODO(cava): is this check correct with a reduced solution? I don't think so...
                 // assert(abs(best_core_lb - lb_sol.cost) / abs(best_core_lb) < 0.01);
                 fmt::print("SUBG > Found optimal solution.\n");

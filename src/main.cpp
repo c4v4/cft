@@ -34,12 +34,13 @@ void print_inst_summary(cft::FileData const& fdata) {
 
 int main(int argc, char const** argv) {
 
-    auto args = cft::make_span(argv, argc);
-    auto inst = cft::parse_rail_instance(args[1]);
-    auto rnd  = cft::prng_t{0};
+    auto timer = cft::Chrono<>();
+    auto args  = cft::make_span(argv, argc);
+    auto inst  = cft::parse_rail_instance(args[1]);
+    auto rnd   = cft::prng_t{0};
 
     auto sol = cft::run(inst, rnd);
-    fmt::print("CFT  > Best solution cost: {:.2f}\n", sol.cost);
+    fmt::print("CFT  > Best solution {:.2f} time {:.2}\n", sol.cost, timer.elapsed<cft::sec>());
 
     return EXIT_SUCCESS;
 }
