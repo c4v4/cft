@@ -13,8 +13,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef CAV_SRC_CORE_CLIARGS_HPPCFT_
-#define CAV_SRC_CORE_CLIARGS_HPPCFT_
+#ifndef CFT_SRC_CORE_CLIARGS_HPP
+#define CFT_SRC_CORE_CLIARGS_HPP
+
 
 #include <type_traits>
 
@@ -109,4 +110,5 @@ static inline CliArgs parse_cli_args(int argc, char const** argv) {
 }
 }  // namespace cft
 
-#endif /* CAV_SRC_CORE_CLIARGS_HPPCFT_ */
+
+#endif /* CFT_SRC_CORE_CLIARGS_HPP */

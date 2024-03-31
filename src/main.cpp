@@ -9,30 +9,30 @@
 #include "instance/Instance.hpp"
 #include "instance/parsing.hpp"
 
-void print_inst_summary(cft::FileData const& fdata) {
+void print_inst_summary(cft::Instance const& inst, cft::Solution const& warmstart = {}) {
     fmt::print("CFT  > Instance summary:\n");
-    fmt::print("CFT  >   nrows:     {}\n", fdata.inst.rows.size());
-    fmt::print("CFT  >   ncols:     {}\n", fdata.inst.cols.size());
+    fmt::print("CFT  >   nrows:     {}\n", inst.rows.size());
+    fmt::print("CFT  >   ncols:     {}\n", inst.cols.size());
     fmt::print("CFT  >   costs:     {} {} {} {} ...\n",
-               fdata.inst.costs[0],
-               fdata.inst.costs[1],
-               fdata.inst.costs[2],
-               fdata.inst.costs[3]);
+               inst.costs[0],
+               inst.costs[1],
+               inst.costs[2],
+               inst.costs[3]);
     fmt::print("CFT  >   solcosts:  {} {} {} {} ...\n",
-               fdata.inst.solcosts[0],
-               fdata.inst.solcosts[1],
-               fdata.inst.solcosts[2],
-               fdata.inst.solcosts[3]);
-    if (!fdata.warmstart.empty())
+               inst.solcosts[0],
+               inst.solcosts[1],
+               inst.solcosts[2],
+               inst.solcosts[3]);
+    if (!warmstart.idxs.empty())
         fmt::print("CFT  >   warmstart: {} {} {} {} ...\n",
-                   fdata.warmstart[0],
-                   fdata.warmstart[1],
-                   fdata.warmstart[2],
-                   fdata.warmstart[3]);
+                   warmstart.idxs[0],
+                   warmstart.idxs[1],
+                   warmstart.idxs[2],
+                   warmstart.idxs[3]);
 
     // print first 10 columns
     for (size_t i = 0; i < 4; ++i)
-        fmt::print("CFT  >   col[{}]: {}\n", i, fmt::join(fdata.inst.cols[i], ", "));
+        fmt::print("CFT  >   col[{}]: {}\n", i, fmt::join(inst.cols[i], ", "));
 }
 
 int main(int argc, char const** argv) {
@@ -70,7 +70,7 @@ int main(int argc, char const** argv) {
             throw std::runtime_error("Parser does not exists.");
         }
 
-        IF_DEBUG(print_inst_summary(inst));
+        IF_DEBUG(print_inst_summary(inst, warmstart));
         auto tlim = cli_args.time_limit;
         auto rnd  = cft::prng_t{cli_args.seed};
         auto sol  = cft::run(inst, rnd, tlim, warmstart);

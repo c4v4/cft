@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Francesco Cftaliere
+// Copyright (c) 2024 Francesco Cftaliere
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
 
 #ifndef CFT_SRC_CORE_RANDOM_HPP
 #define CFT_SRC_CORE_RANDOM_HPP
+
 
 #include <cassert>
 
@@ -145,5 +146,6 @@ inline std::array<bool, 2> two_coin_flips(RndT& rnd, double true_p = 0.5) noexce
 
 
 }  // namespace cft
+
 
 #endif /* CFT_SRC_CORE_RANDOM_HPP */

@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Luca Accorsi and Francesco Cavaliere
+// Copyright (c) 2024 Francesco Cavaliere
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
 
 #ifndef CFT_SRC_ALGORITHMS_THREEPHASE_HPP
 #define CFT_SRC_ALGORITHMS_THREEPHASE_HPP
+
 
 #include "core/Chrono.hpp"
 #include "core/cft.hpp"
@@ -182,4 +183,6 @@ public:
     }
 };
 }  // namespace cft
+
+
 #endif /* CFT_SRC_ALGORITHMS_THREEPHASE_HPP */

@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Luca Accorsi and Francesco Cavaliere
+// Copyright (c) 2024 Francesco Cavaliere
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,6 +15,7 @@
 
 #ifndef CFT_SRC_SUBGRADIENT_UTILS_HPP
 #define CFT_SRC_SUBGRADIENT_UTILS_HPP
+
 
 #include <cassert>
 #include <cmath>
@@ -273,5 +274,6 @@ inline void update_lagr_mult(CoverCounters<> const& row_coverage,
 }
 
 }  // namespace cft
+
 
 #endif /* CFT_SRC_SUBGRADIENT_UTILS_HPP */
