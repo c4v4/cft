@@ -176,7 +176,7 @@ public:
                 IF_DEBUG(check_solution(inst, best_sol));
             }
 
-            if (norm == 0.0) {  // Return optimum
+            if (norm == 0.0) {
                 assert(best_core_lb < cutoff && "Optimum is above cutoff");
                 fmt::print("HEUR > Found optimal solution.\n");
                 best_lagr_mult = lagr_mult;
