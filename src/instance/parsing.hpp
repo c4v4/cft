@@ -11,14 +11,15 @@
 #define CFT_SRC_INSTANCE_PARSING_HPP
 
 #include <cassert>
+#include <stdexcept>
 #include <vector>
 
 #include "core/SparseBinMat.hpp"
 #include "core/StringView.hpp"
 #include "core/cft.hpp"
 #include "core/limits.hpp"
+#include "core/parse_utils.hpp"
 #include "instance/Instance.hpp"
-#include "instance/parse_utils.hpp"
 
 namespace cft {
 
@@ -35,7 +36,8 @@ inline Instance parse_scp_instance(std::string const& path) {
     // Read nrows & ncols
     ridx_t nrows = string_to<ridx_t>::consume(line_view);
     cidx_t ncols = string_to<cidx_t>::consume(line_view);
-    assert(line_view.empty());
+    if (!line_view.empty())
+        throw std::invalid_argument("Invalid file format: not a SCP instance?");
 
     for (cidx_t j = 0; j < ncols; ++j) {
         if (line_view.empty())
@@ -49,13 +51,16 @@ inline Instance parse_scp_instance(std::string const& path) {
     for (size_t i = 0; i < nrows; ++i) {
         line_view    = file_iter.next();
         auto i_ncols = string_to<cidx_t>::consume(line_view);
-        assert(line_view.empty());
+        if (!line_view.empty())
+            throw std::invalid_argument("Invalid file format: not a SCP instance?");
 
         for (ridx_t n = 0; n < i_ncols; ++n) {
             if (line_view.empty())
                 line_view = file_iter.next();
             cidx_t cidx = string_to<cidx_t>::consume(line_view);
             assert(0 < cidx && cidx <= ncols);
+            if (cidx <= 0 || ncols < cidx)
+                throw std::invalid_argument("Invalid column index: not a SCP instance?");
             cols[cidx - 1].push_back(i);
         }
     }
@@ -83,8 +88,8 @@ inline Instance parse_rail_instance(std::string const& path) {
     // Read nrows & ncols
     ridx_t nrows = string_to<ridx_t>::consume(line_view);
     cidx_t ncols = string_to<cidx_t>::consume(line_view);
-    assert(line_view.empty());
-
+    if (!line_view.empty())
+        throw std::invalid_argument("Invalid file format: not a RAIL instance?");
     for (cidx_t j = 0; j < ncols; j++) {
         line_view = file_iter.next();
         inst.costs.push_back(string_to<real_t>::consume(line_view));
@@ -108,7 +113,8 @@ inline FileData parse_cvrp_instance(std::string const& path) {
     // Read nrows & ncols
     ridx_t nrows = string_to<ridx_t>::consume(line_view);
     cidx_t ncols = string_to<cidx_t>::consume(line_view);
-    assert(line_view.empty());
+    if (!line_view.empty())
+        throw std::invalid_argument("Invalid file format: not a CVRP instance?");
 
     for (cidx_t j = 0; j < ncols; j++) {
         line_view = file_iter.next();

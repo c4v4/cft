@@ -121,7 +121,7 @@ private:
     Sorter      sorter;
 
 public:
-    ThreePhaseResult operator()(Instance& inst, prng_t& rnd) {
+    ThreePhaseResult operator()(Instance& inst, prng_t& rnd, double tlim) {
         constexpr ridx_t min_row_coverage = 5;
 
         auto   tot_timer         = Chrono<>();
@@ -151,7 +151,7 @@ public:
                 unfixed_lb        = real_lb;
             }
 
-            if (real_lb >= cutoff - CFT_EPSILON)
+            if (real_lb >= cutoff - CFT_EPSILON || tot_timer.elapsed<sec>() > tlim)
                 break;
 
             subgrad.heuristic(core.inst, greedy, cutoff, step_size, sol, lagr_mult);

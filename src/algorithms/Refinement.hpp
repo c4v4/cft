@@ -91,8 +91,12 @@ public:
 constexpr real_t beta = 1.0;
 
 // Complete CFT algorithm (Refinement + call to 3-phase)
-inline Solution run(Instance const& orig_inst, prng_t& rnd, Solution const& warmstart_sol = {}) {
+inline Solution run(Instance const& orig_inst,
+                    prng_t&         rnd,
+                    double          tlim,
+                    Solution const& warmstart_sol = {}) {
 
+    auto   timer = Chrono<>();
     cidx_t ncols = orig_inst.cols.size();
     ridx_t nrows = orig_inst.rows.size();
 
@@ -112,8 +116,7 @@ inline Solution run(Instance const& orig_inst, prng_t& rnd, Solution const& warm
 
     for (size_t iter_counter = 0;; ++iter_counter) {
 
-        auto timer     = Chrono<>();
-        auto result_3p = three_phase(inst, rnd);
+        auto result_3p = three_phase(inst, rnd, tlim - timer.elapsed<sec>());
         if (result_3p.sol.cost + fixing.fixed_cost < best_sol.cost) {
             from_fixed_to_unfixed_sol(result_3p.sol, fixing, best_sol);
             IF_DEBUG(check_solution(orig_inst, best_sol));
@@ -124,7 +127,7 @@ inline Solution run(Instance const& orig_inst, prng_t& rnd, Solution const& warm
             max_cost        = beta * result_3p.unfixed_lb + CFT_EPSILON;
         }
 
-        if (best_sol.cost <= max_cost || inst.rows.empty())
+        if (best_sol.cost <= max_cost || inst.rows.empty() || timer.elapsed<sec>() > tlim)
             break;
 
         inst             = orig_inst;
