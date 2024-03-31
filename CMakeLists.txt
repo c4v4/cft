@@ -59,17 +59,3 @@ if (UNIT_TESTS)
     enable_testing()
 
 endif() 
-
-
-#########################################
-############## Old project ##############
-#########################################
-
-option(BUILD_OLD_CODE "Build old code." OFF)
-if (BUILD_OLD_CODE)
-
-    set(CMAKE_CXX_STANDARD 20)
-    add_executable(accft-old old/main.cpp)
-    target_link_libraries(accft-old PUBLIC ${LIBRARIES})
-
-endif()
