@@ -7,8 +7,8 @@
 // have received a copy of the GNU General Public License along with this program. If not, see
 // <https://www.gnu.org/licenses/>.
 
-#ifndef CFT_SRC_INSTANCE_FILELINEITER_HPP
-#define CFT_SRC_INSTANCE_FILELINEITER_HPP
+#ifndef CFT_SRC_CORE_PARSEUTILS_HPP
+#define CFT_SRC_CORE_PARSEUTILS_HPP
 
 #include <fmt/format.h>
 
@@ -101,7 +101,7 @@ struct string_to {
 
         if (end == str.data())
             throw std::invalid_argument(
-                fmt::format("Invalid argument parsing {}", typeid(T).name()));
+                fmt::format("Invalid argument parsing (typeid: {})", typeid(T).name()));
         str = str.remove_prefix(end - str.data());
 
         return static_cast<T>(val);
@@ -128,4 +128,4 @@ struct FileLineIterator {
 
 }  // namespace cft
 
-#endif /* CFT_SRC_INSTANCE_FILELINEITER_HPP */
+#endif /* CFT_SRC_CORE_PARSEUTILS_HPP */

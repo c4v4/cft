@@ -1,7 +1,10 @@
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 
+#include <cstdio>
+
 #include "algorithms/Refinement.hpp"
+#include "core/CliArgs.hpp"
 #include "core/cft.hpp"
 #include "instance/Instance.hpp"
 #include "instance/parsing.hpp"
@@ -33,14 +36,50 @@ void print_inst_summary(cft::FileData const& fdata) {
 }
 
 int main(int argc, char const** argv) {
+    fmt::print("CFT implementation by Luca Accorsi and Francesco Cavaliere.\n");
+    fmt::print("Compiled on " __DATE__ " at " __TIME__ ".\n\n");
 
-    auto timer = cft::Chrono<>();
-    auto args  = cft::make_span(argv, argc);
-    auto inst  = cft::parse_rail_instance(args[1]);
-    auto rnd   = cft::prng_t{0};
+    try {
+        auto timer    = cft::Chrono<>();
+        auto cli_args = cft::parse_cli_args(argc, argv);
+        cft::print_arg_values(cli_args);
 
-    auto sol = cft::run(inst, rnd);
-    fmt::print("CFT  > Best solution {:.2f} time {:.2}\n", sol.cost, timer.elapsed<cft::sec>());
+        auto inst      = cft::Instance{};
+        auto warmstart = cft::Solution{};
 
+        if (cli_args.parser == CFT_RAIL_PARSER) {
+            fmt::print("CFT  > Parsing RAIL instance from {}\n", cli_args.inst_path);
+            inst = cft::parse_rail_instance(cli_args.inst_path);
+
+        } else if (cli_args.parser == CFT_SCP_PARSER) {
+            fmt::print("CFT  > Parsing SCP instance from {}\n", cli_args.inst_path);
+            inst = cft::parse_scp_instance(cli_args.inst_path);
+
+        } else if (cli_args.parser == CFT_CVRP_PARSER) {
+            fmt::print("CFT  > Parsing CVRP instance from {}\n", cli_args.inst_path);
+            auto file_data = cft::parse_cvrp_instance(cli_args.inst_path);
+            inst           = std::move(file_data.inst);
+            warmstart.idxs = std::move(file_data.warmstart);
+            warmstart.cost = 0.0;
+            for (cft::cidx_t j : warmstart.idxs)
+                warmstart.cost += inst.costs[j];
+
+        } else {
+            fmt::print("CFT  > Parser {} does not exists.\n", cli_args.parser);
+            cft::print_cli_help_msg();
+            throw std::runtime_error("Parser does not exists.");
+        }
+
+        auto tlim = cli_args.time_limit;
+        auto rnd  = cft::prng_t{cli_args.seed};
+        auto sol  = cft::run(inst, rnd, tlim, warmstart);
+        fmt::print("CFT  > Best solution {:.2f} time {:.2}\n", sol.cost, timer.elapsed<cft::sec>());
+
+    } catch (std::exception const& e) {
+        fmt::print("\nCFT  > ERROR: {}\n", e.what());
+        std::fflush(stdout);
+        std::fflush(stderr);
+        return EXIT_FAILURE;
+    }
     return EXIT_SUCCESS;
 }
