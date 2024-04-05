@@ -47,7 +47,7 @@ using ridx_t = uint32_t;
 using real_t = float;
 
 struct CidxAndCost {
-    cidx_t col;
+    cidx_t idx;
     real_t cost;
 };
 

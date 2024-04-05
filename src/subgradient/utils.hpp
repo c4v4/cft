@@ -34,19 +34,19 @@ namespace cft {
 
 #ifndef NDEBUG
 // TODO(any): find a better place for this function.
-inline void check_solution(cft::Instance const& inst, cft::Solution const& sol) {
-    cft::ridx_t nrows = inst.rows.size();
+inline void check_solution(Instance const& inst, Solution const& sol) {
+    ridx_t nrows = inst.rows.size();
 
     // check coverage
-    cft::ridx_t covered_rows = 0;
-    auto        cover_bits   = cft::CoverCounters<>(nrows);
+    ridx_t covered_rows = 0;
+    auto   cover_bits   = CoverCounters<>(nrows);
     for (auto j : sol.idxs)
         covered_rows += cover_bits.cover(inst.cols[j]);
     assert(covered_rows == nrows);
 
     // check cost
-    cft::real_t total_cost = 0;
-    for (cft::cidx_t j : sol.idxs)
+    real_t total_cost = 0;
+    for (cidx_t j : sol.idxs)
         total_cost += inst.costs[j];
     assert(std::abs(total_cost - sol.cost) < 1e-6);
 }
@@ -70,8 +70,8 @@ struct StepSizeManager {
 
     // Computes the next step size.
     CFT_NODISCARD real_t operator()(size_t iter, real_t lower_bound) {
-        min_lower_bound = cft::min(min_lower_bound, lower_bound);
-        max_lower_bound = cft::max(max_lower_bound, lower_bound);
+        min_lower_bound = min(min_lower_bound, lower_bound);
+        max_lower_bound = max(max_lower_bound, lower_bound);
         if (iter == next_update_iter) {
             next_update_iter += period;
             real_t diff = (max_lower_bound - min_lower_bound) / abs(max_lower_bound);
@@ -205,40 +205,47 @@ inline void compute_reduced_row_coverage(Instance const&            inst,
                                          std::vector<real_t> const& reduced_costs,
                                          Sorter&                    sorter,
                                          CoverCounters<>&           row_coverage,
-                                         Solution&                  sol) {
+                                         Solution&                  lb_sol) {
     // TODO(acco): consider moving to member.
     row_coverage.reset(inst.rows.size());
-    sorter.sort(sol.idxs, [&](cidx_t j) { return reduced_costs[j]; });
+    sorter.sort(lb_sol.idxs, [&](cidx_t j) { return reduced_costs[j]; });
 
-    for (cidx_t j : sol.idxs) {
+    for (cidx_t& j : lb_sol.idxs) {
         auto col = inst.cols[j];
-        if (!row_coverage.is_redundant_cover(col))
+        if (!row_coverage.is_redundant_cover(col)) {
             row_coverage.cover(col);
+            lb_sol.cost -= reduced_costs[j];
+            j = CFT_REMOVED_IDX;
+        }
     }
 
     // TODO(any): The search trajectory changes, so we need average testing to see which is faster.
     // TODO(any): Note that the use of our custom sorter might change significantly the performance.
 
     // The other approach that computes coverage, sort redundant and remove one by one.
-    // for (CidxAndCost c : lb_sol.idxs)
-    //     row_coverage.cover(inst.cols[c.col]);
-    //
-    // auto red_cols = std::vector<CidxAndCost>();
+    // row_coverage.reset(inst.rows.size());
+    // for (cidx_t j : lb_sol.idxs)
+    //    row_coverage.cover(inst.cols[j]);
+
+    // auto red_cols = std::vector<cidx_t>();
     // for (cidx_t s = 0; s < lb_sol.idxs.size(); ++s)
-    //    if (row_coverage.is_redundant_uncover(inst.cols[lb_sol.idxs[s].col]))
-    //        red_cols.push_back({s, lb_sol.idxs[s].cost});
-    //
-    // sorter.sort(red_cols, [&](CidxAndCost c) { return -c.cost; });
-    //
-    // for (CidxAndCost c : red_cols) {
-    //    auto col = inst.cols[lb_sol.idxs[c.col].col];
-    //    if (!row_coverage.is_redundant_uncover(col)) {
-    //        row_coverage.uncover(col);
-    //        lb_sol.idxs[c.col].col = CFT_REMOVED_IDX;
-    //    }
+    //     if (row_coverage.is_redundant_uncover(inst.cols[lb_sol.idxs[s]]))
+    //         red_cols.push_back(s);
+
+    // sorter.sort(red_cols, [&](cidx_t j) { return -reduced_costs[j]; });
+
+    // for (cidx_t s : red_cols) {
+    //     cidx_t j   = lb_sol.idxs[s];
+    //     auto   col = inst.cols[j];
+    //     if (!row_coverage.is_redundant_uncover(col))
+    //         continue;
+
+    //    row_coverage.uncover(col);
+    //    lb_sol.idxs[s] = CFT_REMOVED_IDX;
+    //    lb_sol.cost -= reduced_costs[j];
     //}
-    //
-    // remove_if(lb_sol.idxs, [](CidxAndCost c) { return c.col == CFT_REMOVED_IDX; });
+
+    remove_if(lb_sol.idxs, [](cidx_t j) { return j == CFT_REMOVED_IDX; });
 }
 
 // Computes the subgradient squared norm according to the given row coverage.
@@ -252,7 +259,7 @@ inline real_t compute_subgradient_norm(CoverCounters<> const& row_coverage) {
 }
 
 // Defines lagrangian multipliers as a perturbation of the given ones.
-inline void perturb_lagr_multipliers(std::vector<real_t>& lagr_mult, cft::prng_t& rnd) {
+inline void perturb_lagr_multipliers(std::vector<real_t>& lagr_mult, prng_t& rnd) {
     for (float& u : lagr_mult) {
         u *= rnd_real(rnd, 0.9F, 1.1F);
         assert(std::isfinite(u) && "Multiplier is not finite");
@@ -268,7 +275,7 @@ inline void update_lagr_mult(CoverCounters<> const& row_coverage,
 
         real_t old_mult   = lagr_mult[i];
         real_t delta_mult = step_factor * violation;
-        lagr_mult[i]      = cft::max(0.0F, old_mult + delta_mult);
+        lagr_mult[i]      = max(0.0F, old_mult + delta_mult);
         assert(std::isfinite(lagr_mult[i]) && "Multiplier is not finite");
     }
 }

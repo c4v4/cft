@@ -65,7 +65,7 @@ inline void check_redundancy_data(Instance const&            inst,
         total_check.uncover(inst.cols[j]);
     }
     for (CidxAndCost x : red_set.redund_set)
-        part_cov_count -= part_check.uncover(inst.cols[x.col]);
+        part_cov_count -= part_check.uncover(inst.cols[x.idx]);
 
     assert(part_cov_count == red_set.partial_cov_count);
     for (ridx_t i = 0; i < inst.rows.size(); ++i) {
@@ -135,7 +135,7 @@ namespace {
                 return;
             }
 
-            cidx_t col_idx = red_data.redund_set[Depth].col;
+            cidx_t col_idx = red_data.redund_set[Depth].idx;
             auto   col     = inst.cols[col_idx];
 
             assert(!partial_cover.is_redundant_cover(col) || total_cover.is_redundant_uncover(col));
@@ -185,7 +185,7 @@ inline void complete_init_redund_set(RedundancyData&            red_data,
             if (red_data.partial_cost >= cutoff_cost)
                 return;
         }
-    sorter.sort(red_data.redund_set, [&](CidxAndCost x) { return inst.costs[x.col]; });
+    sorter.sort(red_data.redund_set, [&](CidxAndCost x) { return inst.costs[x.idx]; });
 }
 
 // Remove redundant columns from the redundancy set using an implicit enumeration. NOTE: assumes no
@@ -208,7 +208,7 @@ inline void enumeration_removal(RedundancyData& red_set, Instance const& inst) {
         // cols_to_keep is updated only if the upper bound is improved
         for (cidx_t r = 0; r < red_set.redund_set.size(); ++r)
             if (!cols_to_keep[r])
-                red_set.cols_to_remove.push_back(red_set.redund_set[r].col);
+                red_set.cols_to_remove.push_back(red_set.redund_set[r].idx);
 }
 
 // Remove redundant columns from the redundancy set using an heuristic greedy approach until
@@ -219,7 +219,7 @@ inline void heuristic_removal(RedundancyData& red_set, Instance const& inst) {
         if (red_set.partial_cov_count == red_set.partial_cover.size())
             return;
 
-        cidx_t j = red_set.redund_set.back().col;
+        cidx_t j = red_set.redund_set.back().idx;
         red_set.redund_set.pop_back();
         red_set.total_cover.uncover(inst.cols[j]);
         red_set.cols_to_remove.push_back(j);
@@ -228,10 +228,10 @@ inline void heuristic_removal(RedundancyData& red_set, Instance const& inst) {
         // of exting earlier (with more elements) and start the enumeration.
         // TODO(cava): test if it actually improve/degrade performace/quality
         remove_if(red_set.redund_set, [&](CidxAndCost x) {
-            if (red_set.total_cover.is_redundant_uncover(inst.cols[x.col]))
+            if (red_set.total_cover.is_redundant_uncover(inst.cols[x.idx]))
                 return false;
-            red_set.partial_cost += inst.costs[x.col];
-            red_set.partial_cov_count += red_set.partial_cover.cover(inst.cols[x.col]);
+            red_set.partial_cost += inst.costs[x.idx];
+            red_set.partial_cov_count += red_set.partial_cover.cover(inst.cols[x.idx]);
             return true;
         });
     }

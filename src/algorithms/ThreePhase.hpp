@@ -61,9 +61,9 @@ namespace {
         auto lagr_mult = std::vector<real_t>(inst.rows.size(), limits<real_t>::max());
 
         for (size_t i = 0; i < inst.rows.size(); ++i)
-            for (cidx_t const j : inst.rows[i]) {
-                real_t const candidate = inst.costs[j] / static_cast<real_t>(inst.cols[j].size());
-                lagr_mult[i]           = cft::min(lagr_mult[i], candidate);
+            for (cidx_t j : inst.rows[i]) {
+                real_t candidate = inst.costs[j] / static_cast<real_t>(inst.cols[j].size());
+                lagr_mult[i]     = cft::min(lagr_mult[i], candidate);
             }
 
         return lagr_mult;
@@ -130,6 +130,8 @@ public:
         auto   unfixed_lagr_mult = std::vector<real_t>();  // Best multipliers without fixing
         real_t unfixed_lb        = limits<real_t>::min();  // Best lower bound without fixing
         auto   fixing            = FixingData();
+        auto   core              = build_tentative_core_instance(inst, sorter, min_row_coverage);
+        auto   lagr_mult         = compute_greedy_multipliers(core.inst);
         IF_DEBUG(auto inst_copy = inst);
         make_identity_fixing_data(inst.cols.size(), inst.rows.size(), fixing);
 
@@ -137,9 +139,7 @@ public:
             auto timer = Chrono<>();
             fmt::print("3PHS > Starting 3-phase iteration: {}\n", iter_counter);
 
-            auto core      = build_tentative_core_instance(inst, sorter, min_row_coverage);
-            auto lagr_mult = compute_greedy_multipliers(core.inst);
-            auto sol       = Solution();
+            auto sol = Solution();
             greedy(core.inst, lagr_mult, sol);
 
             real_t step_size = 0.1;

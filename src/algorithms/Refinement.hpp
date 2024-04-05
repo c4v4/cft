@@ -77,7 +77,7 @@ public:
         row_coverage.reset(nrows);
         auto cols_to_fix = std::vector<cidx_t>();
         for (CidxAndCost c : deltas) {
-            cidx_t j = c.col;
+            cidx_t j = c.idx;
             covered_rows += row_coverage.cover(inst.cols[j]);
             cols_to_fix.push_back(j);
             if (covered_rows > nrows_to_fix) {
@@ -134,7 +134,8 @@ inline Solution run(Instance const& orig_inst,
         inst             = orig_inst;
         auto cols_to_fix = select_cols_to_fix(inst, nofix_lagr_mult, best_sol);
         make_identity_fixing_data(ncols, nrows, fixing);
-        fix_columns(inst, cols_to_fix, fixing, prev2curr);
+        fix_columns(inst, cols_to_fix, prev2curr);
+        apply_maps_to_fixing_data(inst, cols_to_fix, prev2curr, fixing);
 
         auto nrows_real  = static_cast<real_t>(orig_inst.rows.size());
         auto fixing_perc = static_cast<real_t>(inst.rows.size()) * 100.0F / nrows_real;

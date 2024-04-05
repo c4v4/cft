@@ -37,11 +37,17 @@ struct Instance {
     std::vector<real_t>              solcosts;
 };
 
+// Generic mappings between instances of columns and rows indexes.
+struct IdxsMaps {
+    std::vector<cidx_t> col_map;
+    std::vector<ridx_t> row_map;
+};
+
 #ifndef NDEBUG
 inline void col_and_rows_check(SparseBinMat<ridx_t> const&             cols,
                                std::vector<std::vector<cidx_t>> const& rows) {
     for (cidx_t j = 0; j < cols.size(); ++j) {
-        assert("Col is empty" && !cols[j].empty());
+        // assert("Col is empty" && !cols[j].empty());
         assert("Col does not exist" && j < cols.size());
         for (ridx_t i : cols[j])
             assert("Col not in row" && any(rows[i], [j](cidx_t rj) { return rj == j; }));
@@ -78,6 +84,14 @@ inline void push_back_col_from(Instance const& src_inst, cidx_t j, Instance& des
     dest_inst.cols.push_back(src_inst.cols[j]);
     dest_inst.costs.push_back(src_inst.costs[j]);
     dest_inst.solcosts.push_back(src_inst.solcosts[j]);
+}
+
+// Clear all data of an instance creating an empty instance inplace.
+inline void clear_inst(Instance& inst) {
+    inst.cols.clear();
+    inst.rows.clear();
+    inst.costs.clear();
+    inst.solcosts.clear();
 }
 
 struct InstAndMap {

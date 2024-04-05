@@ -74,7 +74,9 @@ int main(int argc, char const** argv) {
         auto tlim = cli_args.time_limit;
         auto rnd  = cft::prng_t{cli_args.seed};
         auto sol  = cft::run(inst, rnd, tlim, warmstart);
-        fmt::print("CFT  > Best solution {:.2f} time {:.2}\n", sol.cost, timer.elapsed<cft::sec>());
+        fmt::print("CFT  > Best solution {:.2f} time {:.2f}\n",
+                   sol.cost,
+                   timer.elapsed<cft::sec>());
 
     } catch (std::exception const& e) {
         fmt::print("\nCFT  > ERROR: {}\n", e.what());
