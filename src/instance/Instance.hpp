@@ -47,7 +47,7 @@ struct IdxsMaps {
 inline void col_and_rows_check(SparseBinMat<ridx_t> const&             cols,
                                std::vector<std::vector<cidx_t>> const& rows) {
     for (cidx_t j = 0; j < cols.size(); ++j) {
-        // assert("Col is empty" && !cols[j].empty());
+        assert("Col is empty" && !cols[j].empty());
         assert("Col does not exist" && j < cols.size());
         for (ridx_t i : cols[j])
             assert("Col not in row" && any(rows[i], [j](cidx_t rj) { return rj == j; }));

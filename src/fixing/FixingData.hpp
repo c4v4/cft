@@ -16,15 +16,22 @@
 #ifndef CAV_SRC_FIXING_FIXINGDATA_HPPCFT_
 #define CAV_SRC_FIXING_FIXINGDATA_HPPCFT_
 
+#include "core/cft.hpp"
 #include "instance/Instance.hpp"
 
 namespace cft {
+
+// Fixing data storing the mappings to the original instance and the original columns indexes and
+// costs of the fixed columns.
+// NOTE: the update of the fixing data must be done in two steps: one before removing the fixed
+// columns from the instance, and one after (once the old2new mappings are available).
 struct FixingData {
     IdxsMaps            curr2orig;
     std::vector<cidx_t> fixed_cols;
     real_t              fixed_cost = 0.0;
 };
 
+// Create a fixing data structure with identity mappings and no fixed columns.
 inline void make_identity_fixing_data(cidx_t ncols, ridx_t nrows, FixingData& fixing) {
     fixing.curr2orig.col_map.resize(ncols);
     fixing.curr2orig.row_map.resize(nrows);
@@ -37,32 +44,54 @@ inline void make_identity_fixing_data(cidx_t ncols, ridx_t nrows, FixingData& fi
         fixing.curr2orig.row_map[i] = i;
 }
 
-inline void apply_maps_to_fixing_data(Instance const&            inst,
-                                      std::vector<cidx_t> const& cols_to_fix,
-                                      IdxsMaps const&            prev2curr,
-                                      FixingData&                fixing) {
+// Invoke BEFORE removing fixed columns from the instance, otherwise `cols_to_fix` indexes will not
+// match the correct columns in `inst` (since they have just been removed).
+inline void add_cols_to_fixing_data(Instance const&            inst,         // in
+                                    std::vector<cidx_t> const& cols_to_fix,  // in
+                                    FixingData&                fixing        // inout
+) {
+    assert("Size mismatch between fixing data and inst columns" &&
+           fixing.curr2orig.col_map.size() == inst.cols.size());
 
     // Use old fixing data to insert fixed columns and costs
     for (cidx_t j : cols_to_fix) {
-        cidx_t orig_j = fixing.curr2orig.col_map[j];
+        assert("Column not in instance" && j < inst.cols.size());
+        cidx_t orig_j = fixing.curr2orig.col_map[j];  // Use old fixing to store original indexes
         assert(orig_j != CFT_REMOVED_IDX);
         fixing.fixed_cols.push_back(orig_j);
         fixing.fixed_cost += inst.costs[j];
     }
+}
+
+// Invoke AFTER having removed fixed columns from the instance, since a valid `old2new` mapping
+// must be available.
+inline void apply_maps_to_fixing_data(Instance const& inst,     // in
+                                      IdxsMaps const& old2new,  // in
+                                      FixingData&     fixing    // inout
+) {
+    cidx_t old_ncols = old2new.col_map.size();
+    ridx_t old_nrows = old2new.row_map.size();
+    cidx_t new_ncols = inst.cols.size();
+    ridx_t new_nrows = inst.rows.size();
+
+    assert("Instance wit fixing has more columns than before" && new_ncols <= old_ncols);
+    assert("Instance wit fixing has more rows than before" && new_nrows <= old_nrows);
 
     // Update original col mappings
-    for (cidx_t prev_j = 0; prev_j < prev2curr.col_map.size(); ++prev_j) {
-        cidx_t curr_j = prev2curr.col_map[prev_j];
-        if (curr_j != CFT_REMOVED_IDX)
-            fixing.curr2orig.col_map[curr_j] = fixing.curr2orig.col_map[prev_j];
+    for (cidx_t old_j = 0; old_j < old_ncols; ++old_j) {
+        cidx_t new_j = old2new.col_map[old_j];
+        if (new_j != CFT_REMOVED_IDX)
+            fixing.curr2orig.col_map[new_j] = fixing.curr2orig.col_map[old_j];
     }
+    fixing.curr2orig.col_map.resize(new_ncols);
 
     // Update original row mappings
-    for (ridx_t prev_i = 0; prev_i < prev2curr.row_map.size(); ++prev_i) {
-        ridx_t curr_i = prev2curr.row_map[prev_i];
-        if (curr_i != CFT_REMOVED_IDX)
-            fixing.curr2orig.row_map[curr_i] = fixing.curr2orig.row_map[prev_i];
+    for (ridx_t old_i = 0; old_i < old_nrows; ++old_i) {
+        ridx_t new_i = old2new.row_map[old_i];
+        if (new_i != CFT_REMOVED_IDX)
+            fixing.curr2orig.row_map[new_i] = fixing.curr2orig.row_map[old_i];
     }
+    fixing.curr2orig.row_map.resize(new_nrows);
 }
 
 }  // namespace cft

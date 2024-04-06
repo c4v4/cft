@@ -38,40 +38,31 @@ struct ColFixing {
     // Caches
     Solution        cols_to_fix;
     CoverCounters<> cover_counts;
-    IdxsMaps        prev2curr;  // Indexes mappings between before/after fixing instances
+    IdxsMaps        old2new;  // Indexes mappings between before/after fixing instances
 
     // Original Column Fixing
     void operator()(Instance&            inst,       // inout
-                    InstAndMap&          core,       // inout
                     FixingData&          fixing,     // inout
                     std::vector<real_t>& lagr_mult,  // inout
                     Greedy&              greedy      // cache
     ) {
-        assert(inst.rows.size() == core.inst.rows.size());
+        // assert(inst.rows.size() == core.inst.rows.size());
+        assert(inst.rows.size() == fixing.curr2orig.row_map.size());
+        assert(inst.rows.size() == lagr_mult.size());
 
         auto   timer = Chrono<>();
         ridx_t nrows = inst.rows.size();
-        cover_counts.reset(nrows);
-        cols_to_fix.idxs.clear();
-        cols_to_fix.cost = 0.0;
 
-        _select_non_overlapping_cols(core.inst, lagr_mult, cover_counts, cols_to_fix);
+        _select_non_overlapping_cols(inst, lagr_mult, cover_counts, cols_to_fix);
         fmt::print("CFIX > Fixing {} non-overlapping columns \n", cols_to_fix.idxs.size());
 
         auto fix_at_least = cols_to_fix.idxs.size() + max<cidx_t>(nrows / 200, 1);
-        greedy(core.inst, lagr_mult, cols_to_fix, limits<real_t>::max(), fix_at_least);
+        greedy(inst, lagr_mult, cols_to_fix, limits<real_t>::max(), fix_at_least);
 
-        // First fix column in core-instance
-        fix_columns(core.inst, cols_to_fix.idxs, prev2curr);
-
-        // Map columns to fix into their original indexes
-        for (cidx_t& j : cols_to_fix.idxs)
-            j = core.col_map[j];
-
-        // Fix them into instance and computing fixing data and mappings
-        fix_columns(inst, cols_to_fix.idxs, prev2curr);
-        apply_maps_to_fixing_data(inst, cols_to_fix.idxs, prev2curr, fixing);
-        _apply_maps_to_lagr_mult(prev2curr, lagr_mult);
+        add_cols_to_fixing_data(inst, cols_to_fix.idxs, fixing);
+        remove_fixed_cols_from_inst(cols_to_fix.idxs, inst, old2new);
+        apply_maps_to_fixing_data(inst, old2new, fixing);
+        _apply_maps_to_lagr_mult(old2new, lagr_mult);
 
         fmt::print("CFIX > Fixing ended in {:.2f}s\n", timer.elapsed<sec>());
     }
@@ -82,6 +73,11 @@ private:
                                              std::vector<real_t> const& lagr_mult,
                                              CoverCounters<>&           cover_counts,
                                              Solution&                  cols_to_fix) {
+
+        cover_counts.reset(inst.rows.size());
+        cols_to_fix.idxs.clear();
+        cols_to_fix.cost = 0.0;
+
         for (cidx_t j = 0; j < inst.cols.size(); ++j) {
             real_t j_red_cost = inst.costs[j];
             for (ridx_t i : inst.cols[j])
@@ -106,18 +102,18 @@ private:
         remove_if(cols_to_fix.idxs, [](cidx_t j) { return j == CFT_REMOVED_IDX; });
     }
 
-    static void _apply_maps_to_lagr_mult(IdxsMaps const&      prev2curr,
-                                         std::vector<real_t>& lagr_mult) {
+    static void _apply_maps_to_lagr_mult(IdxsMaps const& old2new, std::vector<real_t>& lagr_mult) {
 
-        ridx_t prev_nrows = prev2curr.row_map.size();
-        for (ridx_t prev_i = 0; prev_i < prev_nrows; ++prev_i) {
-            ridx_t curr_i = prev2curr.row_map[prev_i];
-            if (curr_i != CFT_REMOVED_IDX) {
-                assert(curr_i <= prev_i);
-                lagr_mult[curr_i] = lagr_mult[prev_i];
+        ridx_t old_nrows = old2new.row_map.size();
+        ridx_t new_i     = 0;
+        for (ridx_t old_i = 0; old_i < old_nrows; ++old_i)
+            if (old2new.row_map[old_i] != CFT_REMOVED_IDX) {
+                assert(new_i <= old_i);
+                assert(new_i == old2new.row_map[old_i]);
+                lagr_mult[new_i] = lagr_mult[old_i];
+                ++new_i;
             }
-        }
-        lagr_mult.resize(prev_nrows);
+        lagr_mult.resize(new_i);
     }
 };
 

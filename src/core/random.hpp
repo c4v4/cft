@@ -23,32 +23,31 @@
 #include "core/xoshiro_prng.hpp"
 
 namespace cft {
-namespace {
-    template <typename TargetT = uint64_t>
-    struct prng_picker {
-        using type = random::Xoshiro256PlusPlus;
-    };
+template <typename TargetT = uint64_t>
+struct prng_picker {
+    using type = Xoshiro256PlusPlus;
+};
 
-    template <>
-    struct prng_picker<uint32_t> {
-        using type = random::Xoshiro128PlusPlus;
-    };
+template <>
+struct prng_picker<uint32_t> {
+    using type = Xoshiro128PlusPlus;
+};
 
-    template <>
-    struct prng_picker<float> {
-        using type = random::Xoshiro128Plus;
-    };
+template <>
+struct prng_picker<float> {
+    using type = Xoshiro128Plus;
+};
 
-    template <>
-    struct prng_picker<double> {
-        using type = random::Xoshiro256Plus;
-    };
-}  // namespace
+template <>
+struct prng_picker<double> {
+    using type = Xoshiro256Plus;
+};
 
 // Default PRNG for our project
 using prng_t = prng_picker<real_t>::type;  // default
 
-//////////////////////////////////// UTILITY RANDOM FUNCTIONS ///////////////////////////////////
+//////////////////////////////////// UTILITY RANDOM FUNCTIONS
+//////////////////////////////////////
 
 // Generate a canonical uniform distribution in the [0,1) range (unbiased)
 template <typename FlT = real_t, typename RndT = prng_t>
@@ -143,7 +142,6 @@ inline std::array<bool, 2> two_coin_flips(RndT& rnd, double true_p = 0.5) noexce
     auto rnd_val = rnd();
     return {rnd_val <= end1, beg2 <= rnd_val && rnd_val <= end2};
 }
-
 
 }  // namespace cft
 

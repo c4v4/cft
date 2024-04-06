@@ -28,7 +28,8 @@
 
 // TODO(cava): we probably need 1 max 2 of these, just test and remove the others
 
-namespace cft { namespace random {
+namespace cft {
+namespace random {
     namespace {
         inline uint64_t rot_l(uint64_t x, uint32_t s) {
             return (x << s) | (x >> (64U - s));
@@ -710,15 +711,15 @@ namespace cft { namespace random {
             return GenT::m_state != rhs.m_state;
         }
     };
-
-    using Xoshiro256Plus     = RandMixIn<Xoshiro256PlusImpl>;
-    using Xoshiro256PlusPlus = RandMixIn<Xoshiro256PlusPlusImpl>;
-    using Xoshiro256StarStar = RandMixIn<Xoshiro256StarStarImpl>;
-    using Xoshiro128Plus     = RandMixIn<Xoshiro128PlusImpl>;
-    using Xoshiro128PlusPlus = RandMixIn<Xoshiro128PlusPlusImpl>;
-    using Xoshiro128StarStar = RandMixIn<Xoshiro128StarStarImpl>;
-
 }  // namespace random
+
+using Xoshiro256Plus     = random::RandMixIn<random::Xoshiro256PlusImpl>;
+using Xoshiro256PlusPlus = random::RandMixIn<random::Xoshiro256PlusPlusImpl>;
+using Xoshiro256StarStar = random::RandMixIn<random::Xoshiro256StarStarImpl>;
+using Xoshiro128Plus     = random::RandMixIn<random::Xoshiro128PlusImpl>;
+using Xoshiro128PlusPlus = random::RandMixIn<random::Xoshiro128PlusPlusImpl>;
+using Xoshiro128StarStar = random::RandMixIn<random::Xoshiro128StarStarImpl>;
+
 }  // namespace cft
 
 
