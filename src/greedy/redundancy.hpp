@@ -1,14 +1,21 @@
-// Copyright (c) 2024 Luca Accorsi and Francesco Cavaliere
-// This program is free software: you can redistribute it and/or modify it under the terms of the
-// GNU General Public License as published by the Free Software Foundation, either version 3 of the
-// License, or (at your option) any later version. This program is distributed in the hope that it
-// will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-// FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should
-// have received a copy of the GNU General Public License along with this program. If not, see
-// <https://www.gnu.org/licenses/>.
+// Copyright (c) 2024 Francesco Cavaliere
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #ifndef CFT_SRC_GREEDY_REDUNDANCY_HPP
 #define CFT_SRC_GREEDY_REDUNDANCY_HPP
+
 
 #ifndef NDEBUG
 #include <fmt/base.h>
@@ -18,6 +25,7 @@
 #include "core/coverage.hpp"
 #include "core/limits.hpp"
 #include "core/sort.hpp"
+#include "core/utility.hpp"
 #include "instance/Instance.hpp"
 
 
@@ -230,5 +238,6 @@ inline void heuristic_removal(RedundancyData& red_set, Instance const& inst) {
 }
 
 }  // namespace cft
+
 
 #endif /* CFT_SRC_GREEDY_REDUNDANCY_HPP */

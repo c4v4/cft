@@ -1,14 +1,24 @@
-// Copyright (c) 2023 Francesco Cavaliere
-// This program is free software: you can redistribute it and/or modify it under the terms of the
-// GNU General Public License as published by the Free Software Foundation, either version 3 of the
-// License, or (at your option) any later version. This program is distributed in the hope that it
-// will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-// FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should
-// have received a copy of the GNU General Public License along with this program. If not, see
-// <https://www.gnu.org/licenses/>.
+// Copyright (c) 2024 Francesco Cavaliere
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 // Based on Reputeless' Xoshiro-cpp (github.com/Reputeless/Xoshiro-cpp) which is based on David
 // Blackman and Sebastiano Vigna's xoshiro/xoroshiro generators (prng.di.unimi.it/)
+
+#ifndef CFT_SRC_CORE_XOSHIRO_PRNG_HPP
+#define CFT_SRC_CORE_XOSHIRO_PRNG_HPP
+
 
 #include <array>
 #include <cstddef>
@@ -710,3 +720,6 @@ namespace cft { namespace random {
 
 }  // namespace random
 }  // namespace cft
+
+
+#endif /* CFT_SRC_CORE_XOSHIRO_PRNG_HPP */

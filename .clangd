@@ -97,7 +97,9 @@ Diagnostics:
 
             modernize-pass-by-value,
 
-            cppcoreguidelines-pro-type-union-access # custom variant-like
+            cppcoreguidelines-pro-type-union-access, # custom variant-like
+
+            readability-use-anyofallof
             ]
             
 InlayHints:

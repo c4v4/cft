@@ -1,22 +1,28 @@
-// Copyright (c) 2024 Luca Accorsi and Francesco Cavaliere
-// This program is free software: you can redistribute it and/or modify it under the terms of the
-// GNU General Public License as published by the Free Software Foundation, either version 3 of the
-// License, or (at your option) any later version. This program is distributed in the hope that it
-// will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-// FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should
-// have received a copy of the GNU General Public License along with this program. If not, see
-// <https://www.gnu.org/licenses/>.
+// Copyright (c) 2024 Francesco Cavaliere
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #ifndef CFT_SRC_GREEDY_GREEDY_HPP
 #define CFT_SRC_GREEDY_GREEDY_HPP
 
+
 #include "Scores.hpp"
-#include "core/Chrono.hpp"
 #include "core/cft.hpp"
 #include "core/coverage.hpp"
 #include "core/limits.hpp"
 #include "core/sort.hpp"
-#include "fmt/base.h"
+#include "core/utility.hpp"
 #include "greedy/redundancy.hpp"
 #include "instance/Instance.hpp"
 
@@ -158,5 +164,6 @@ private:
 };
 
 }  // namespace cft
+
 
 #endif /* CFT_SRC_GREEDY_GREEDY_HPP */

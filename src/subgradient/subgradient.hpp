@@ -16,6 +16,7 @@
 #ifndef CFT_SRC_SUBGRADIENT_SUBGRADIENT_HPP
 #define CFT_SRC_SUBGRADIENT_SUBGRADIENT_HPP
 
+
 #include <cassert>
 #include <cstddef>
 #include <vector>
@@ -194,4 +195,5 @@ public:
 
 }  // namespace cft
 
-#endif
+
+#endif /* CFT_SRC_SUBGRADIENT_SUBGRADIENT_HPP */
