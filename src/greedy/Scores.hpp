@@ -126,7 +126,7 @@ inline void update_changed_scores(Instance const&            inst,
             update_row_scores(inst.rows[i], lagr_mult[i], score_info);
 }
 
-inline score_subspan_t get_good_scores(Sorter& sorter, Scores& score_info, size_t amount) {
+inline score_subspan_t get_good_scores(Scores& score_info, size_t amount) {
     assert(amount > 0 && "Good size must be greater than 0");
     auto& scores = score_info.scores;  // shorthand
 
@@ -138,7 +138,7 @@ inline score_subspan_t get_good_scores(Sorter& sorter, Scores& score_info, size_
     });
 
     amount = std::min(amount, scores.size());
-    sorter.nth_element(scores, amount, ScoreKey{});
+    cft::nth_element(scores, amount, ScoreKey{});
     for (cidx_t s = 0; s < scores.size(); ++s)
         score_info.score_map[scores[s].idx] = s;
 

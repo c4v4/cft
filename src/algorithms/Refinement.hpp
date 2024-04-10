@@ -42,7 +42,6 @@ namespace local { namespace {
 
         real_t          fix_fraction = min_fixing;
         real_t          prev_cost    = limits<real_t>::inf();
-        Sorter          sorter;
         CoverCounters<> row_coverage;
 
     public:
@@ -81,7 +80,7 @@ namespace local { namespace {
                 delta += max(reduced_cost, 0.0F);
                 deltas.push_back({j, delta});
             }
-            sorter.sort(deltas, [](CidxAndCost c) { return c.cost; });
+            cft::sort(deltas, [](CidxAndCost c) { return c.cost; });
 
             ridx_t covered_rows = 0;
             row_coverage.reset(nrows);

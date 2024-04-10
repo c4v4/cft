@@ -166,7 +166,6 @@ namespace local { namespace {
 inline void complete_init_redund_set(RedundancyData&            red_data,
                                      Instance const&            inst,
                                      std::vector<cidx_t> const& sol,
-                                     Sorter&                    sorter,
                                      real_t                     cutoff_cost) {
 
     red_data.redund_set.clear();
@@ -185,7 +184,7 @@ inline void complete_init_redund_set(RedundancyData&            red_data,
             if (red_data.partial_cost >= cutoff_cost)
                 return;
         }
-    sorter.sort(red_data.redund_set, [&](CidxAndCost x) { return inst.costs[x.idx]; });
+    cft::sort(red_data.redund_set, [&](CidxAndCost x) { return inst.costs[x.idx]; });
 }
 
 // Remove redundant columns from the redundancy set using an implicit enumeration. NOTE: assumes

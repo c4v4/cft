@@ -34,7 +34,6 @@ class ThreePhase {
     Subgradient subgrad;
     Greedy      greedy;
     ColFixing   col_fixing;
-    Sorter      sorter;
 
 public:
     struct ThreePhaseResult {
@@ -54,7 +53,7 @@ public:
 
         auto tot_timer = Chrono<>();
 
-        auto core = _build_tentative_core_instance(inst, sorter, min_row_coverage);
+        auto core = _build_tentative_core_instance(inst, min_row_coverage);
 
         // First iter data (without fixing) needed by Refinement
         auto   unfixed_lagr_mult = std::vector<real_t>();
@@ -78,7 +77,7 @@ public:
 
             real_t step_size = init_step_size;
             auto   cutoff    = best_sol.cost - fixing.fixed_cost;
-            auto   real_lb   = subgrad(inst, cutoff, sorter, core, step_size, lagr_mult);
+            auto   real_lb   = subgrad(inst, cutoff, core, step_size, lagr_mult);
 
             if (iter_counter == 0) {
                 unfixed_lagr_mult = lagr_mult;
@@ -159,7 +158,6 @@ private:
     }
 
     static InstAndMap _build_tentative_core_instance(Instance const& inst,
-                                                     Sorter&         sorter,
                                                      size_t          min_row_coverage) {
         ridx_t nrows         = inst.rows.size();
         auto   core_inst     = Instance{};
@@ -174,7 +172,7 @@ private:
             }
 
         // There might be duplicates, so let's sort the column list to detect them
-        sorter.sort(selected_cols);
+        cft::sort(selected_cols);
         cidx_t w     = 0;
         cidx_t old_j = CFT_REMOVED_IDX;  // To detect duplicates
         for (cidx_t j : selected_cols) {
