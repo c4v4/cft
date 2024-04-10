@@ -19,8 +19,6 @@
 
 #include <chrono>
 
-#include "core/cft.hpp"
-
 namespace cft {
 
 using nsec    = std::chrono::nanoseconds;
@@ -42,31 +40,31 @@ struct Chrono {
     }
 
     template <typename UnitT2>
-    CFT_NODISCARD static constexpr double time_cast(double t) {
+    static constexpr double time_cast(double t) {
         using factor = std::ratio_divide<typename UnitT::period, typename UnitT2::period>;
         return t * factor::num / factor::den;
     }
 
     // Time elapsed since the start of the timer, resets the timer to the current istant
-    CFT_NODISCARD uint64_t restart() {
+    uint64_t restart() {
         auto old = start;
         start    = high_res_clock::now();
         return std::chrono::duration_cast<UnitT>(start - old).count();
     }
 
     template <typename UnitT2>
-    CFT_NODISCARD double restart() {
+    double restart() {
         return time_cast<UnitT2>(restart());
     }
 
     // Time elapsed since the start of the timer, does not reset the timer
-    CFT_NODISCARD uint64_t elapsed() const {
+    uint64_t elapsed() const {
         auto now = high_res_clock::now();
         return std::chrono::duration_cast<UnitT>(now - start).count();
     }
 
     template <typename UnitT2>
-    CFT_NODISCARD double elapsed() const {
+    double elapsed() const {
         return time_cast<UnitT2>(elapsed());
     }
 };

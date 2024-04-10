@@ -21,22 +21,19 @@
 #include <fmt/base.h>
 #endif
 
+#include "core/Instance.hpp"
 #include "core/cft.hpp"
-#include "core/coverage.hpp"
-#include "core/limits.hpp"
-#include "core/sort.hpp"
-#include "core/utility.hpp"
-#include "instance/Instance.hpp"
+#include "utils/coverage.hpp"
+#include "utils/limits.hpp"
+#include "utils/sort.hpp"
+#include "utils/utility.hpp"
 
 
 #define CFT_ENUM_VARS 10
 
 namespace cft {
-
 // Data structure to store the redundancy set and related information
 struct RedundancyData {
-    // TODO(cava): shouldn't change much, but we could use a SparseBinMat to store columns locally
-
     std::vector<CidxAndCost> redund_set;      // redundant columns + their cost
     CoverCounters<>          total_cover;     // row-cov if all the remaining columns are selected
     CoverCounters<>          partial_cover;   // row-cov if we selected the current column
@@ -76,93 +73,94 @@ inline void check_redundancy_data(Instance const&            inst,
 #endif
 
 namespace local { namespace {
-        // When the threshold is below a certain value, we can enumerate all possible
-        // non-redundant combinations. As the threshold is known at compile-time, the enumeration
-        // has a fixed maximum depth. Enumerator utilizes partial specialization (since `if
-        // constexpr` is a C++17 feature) to limit the number of enumeration steps and (technically)
-        // remove the recursion.
-        template <size_t Cur>
-        struct Enumerator;
 
-        template <>
-        struct Enumerator<CFT_ENUM_VARS> {
-            static void invoke(Instance const& /*inst*/,
-                               RedundancyData& red_data,
-                               bool (&vars)[CFT_ENUM_VARS],
-                               bool (&sol)[CFT_ENUM_VARS]) {
+    // When the threshold is below a certain value, we can enumerate all possible
+    // non-redundant combinations. As the threshold is known at compile-time, the enumeration
+    // has a fixed maximum depth. Enumerator utilizes partial specialization (since `if
+    // constexpr` is a C++17 feature) to limit the number of enumeration steps and (technically)
+    // remove the recursion.
+    template <size_t Cur>
+    struct Enumerator;
 
-                IF_DEBUG(fmt::print("{}] ", CFT_ENUM_VARS));
+    template <>
+    struct Enumerator<CFT_ENUM_VARS> {
+        static void invoke(Instance const& /*inst*/,
+                           RedundancyData& red_data,
+                           bool (&vars)[CFT_ENUM_VARS],
+                           bool (&sol)[CFT_ENUM_VARS]) {
 
-                if (red_data.partial_cost < red_data.best_cost) {
-                    red_data.best_cost = red_data.partial_cost;
-                    for (cidx_t s = 0; s < CFT_ENUM_VARS; ++s)
-                        sol[s] = vars[s];
-                }
+            IF_DEBUG(fmt::print("{}] ", CFT_ENUM_VARS));
+
+            if (red_data.partial_cost < red_data.best_cost) {
+                red_data.best_cost = red_data.partial_cost;
+                for (cidx_t s = 0; s < CFT_ENUM_VARS; ++s)
+                    sol[s] = vars[s];
+            }
 
 #ifndef NDEBUG
-                for (ridx_t i = 0; i < red_data.partial_cover.size(); ++i) {
-                    assert(red_data.total_cover[i] > 0);
-                    assert(red_data.partial_cover[i] > 0);
-                    assert(red_data.partial_cover[i] <= red_data.total_cover[i]);
-                }
-#endif
+            for (ridx_t i = 0; i < red_data.partial_cover.size(); ++i) {
+                assert(red_data.total_cover[i] > 0);
+                assert(red_data.partial_cover[i] > 0);
+                assert(red_data.partial_cover[i] <= red_data.total_cover[i]);
             }
-        };
+#endif
+        }
+    };
 
-        template <size_t Depth>
-        struct Enumerator {
-            static void invoke(Instance const& inst,
-                               RedundancyData& red_data,
-                               bool (&vars)[CFT_ENUM_VARS],
-                               bool (&sol)[CFT_ENUM_VARS]) {
+    template <size_t Depth>
+    struct Enumerator {
+        static void invoke(Instance const& inst,
+                           RedundancyData& red_data,
+                           bool (&vars)[CFT_ENUM_VARS],
+                           bool (&sol)[CFT_ENUM_VARS]) {
 
-                IF_DEBUG(fmt::print("{} ", Depth));
+            IF_DEBUG(fmt::print("{} ", Depth));
 
-                auto& partial_cover = red_data.partial_cover;
-                auto& total_cover   = red_data.total_cover;
+            auto& partial_cover = red_data.partial_cover;
+            auto& total_cover   = red_data.total_cover;
 
 #ifndef NDEBUG
-                assert(red_data.partial_cov_count <= partial_cover.size());
-                for (ridx_t i = 0; i < partial_cover.size(); ++i) {
-                    assert(total_cover[i] > 0);
-                    assert(partial_cover[i] <= total_cover[i]);
-                }
+            assert(red_data.partial_cov_count <= partial_cover.size());
+            for (ridx_t i = 0; i < partial_cover.size(); ++i) {
+                assert(total_cover[i] > 0);
+                assert(partial_cover[i] <= total_cover[i]);
+            }
 #endif
 
-                if (Depth == red_data.redund_set.size() ||
-                    red_data.partial_cov_count == partial_cover.size()) {
-                    Enumerator<CFT_ENUM_VARS>::invoke(inst, red_data, vars, sol);
-                    return;
-                }
-
-                cidx_t col_idx = red_data.redund_set[Depth].idx;
-                auto   col     = inst.cols[col_idx];
-
-                assert(!partial_cover.is_redundant_cover(col) ||
-                       total_cover.is_redundant_uncover(col));
-
-                if (red_data.partial_cost + red_data.redund_set[Depth].cost < red_data.best_cost &&
-                    !partial_cover.is_redundant_cover(col)) {
-
-                    vars[Depth] = true;
-                    red_data.partial_cov_count += partial_cover.cover(col);
-                    red_data.partial_cost += red_data.redund_set[Depth].cost;
-
-                    Enumerator<Depth + 1>::invoke(inst, red_data, vars, sol);
-
-                    vars[Depth] = false;
-                    red_data.partial_cov_count -= partial_cover.uncover(col);
-                    red_data.partial_cost -= red_data.redund_set[Depth].cost;
-                }
-
-                if (total_cover.is_redundant_uncover(col)) {
-                    total_cover.uncover(col);
-                    Enumerator<Depth + 1>::invoke(inst, red_data, vars, sol);
-                    total_cover.cover(col);
-                }
+            if (Depth == red_data.redund_set.size() ||
+                red_data.partial_cov_count == partial_cover.size()) {
+                Enumerator<CFT_ENUM_VARS>::invoke(inst, red_data, vars, sol);
+                return;
             }
-        };
-    }  // namespace
+
+            cidx_t col_idx = red_data.redund_set[Depth].idx;
+            auto   col     = inst.cols[col_idx];
+
+            assert(!partial_cover.is_redundant_cover(col) || total_cover.is_redundant_uncover(col));
+
+            if (red_data.partial_cost + red_data.redund_set[Depth].cost < red_data.best_cost &&
+                !partial_cover.is_redundant_cover(col)) {
+
+                vars[Depth] = true;
+                red_data.partial_cov_count += partial_cover.cover(col);
+                red_data.partial_cost += red_data.redund_set[Depth].cost;
+
+                Enumerator<Depth + 1>::invoke(inst, red_data, vars, sol);
+
+                vars[Depth] = false;
+                red_data.partial_cov_count -= partial_cover.uncover(col);
+                red_data.partial_cost -= red_data.redund_set[Depth].cost;
+            }
+
+            if (total_cover.is_redundant_uncover(col)) {
+                total_cover.uncover(col);
+                Enumerator<Depth + 1>::invoke(inst, red_data, vars, sol);
+                total_cover.cover(col);
+            }
+        }
+    };
+
+}  // namespace
 }  // namespace local
 
 inline void complete_init_redund_set(RedundancyData&            red_data,
@@ -190,8 +188,8 @@ inline void complete_init_redund_set(RedundancyData&            red_data,
     sorter.sort(red_data.redund_set, [&](CidxAndCost x) { return inst.costs[x.idx]; });
 }
 
-// Remove redundant columns from the redundancy set using an implicit enumeration. NOTE: assumes no
-// more than CFT_ENUM_VARS columns are redundant.
+// Remove redundant columns from the redundancy set using an implicit enumeration. NOTE: assumes
+// no more than CFT_ENUM_VARS columns are redundant.
 inline void enumeration_removal(RedundancyData& red_set, Instance const& inst) {
     assert(red_set.redund_set.size() <= CFT_ENUM_VARS);
     real_t old_ub = red_set.best_cost;

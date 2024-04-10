@@ -1,10 +1,10 @@
 #include <catch2/catch.hpp>
 
 #include "algorithms/ThreePhase.hpp"
-#include "core/coverage.hpp"
-#include "core/sort.hpp"
-#include "instance/Instance.hpp"
-#include "instance/parsing.hpp"
+#include "utils/coverage.hpp"
+#include "utils/sort.hpp"
+#include "core/Instance.hpp"
+#include "core/parsing.hpp"
 
 namespace cft {
 

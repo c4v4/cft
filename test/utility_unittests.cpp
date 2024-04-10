@@ -2,7 +2,7 @@
 #include <catch2/catch.hpp>
 #include <cstring>
 
-#include "core/utility.hpp"
+#include "utils/utility.hpp"
 
 namespace cft {
 

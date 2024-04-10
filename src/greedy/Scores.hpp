@@ -19,12 +19,12 @@
 
 #include <cmath>
 
+#include "core/Instance.hpp"
 #include "core/cft.hpp"
-#include "core/coverage.hpp"
-#include "core/limits.hpp"
-#include "core/sort.hpp"
-#include "core/utility.hpp"
-#include "instance/Instance.hpp"
+#include "utils/coverage.hpp"
+#include "utils/limits.hpp"
+#include "utils/sort.hpp"
+#include "utils/utility.hpp"
 
 namespace cft {
 struct ScoreData {
@@ -33,7 +33,7 @@ struct ScoreData {
 };
 
 struct ScoreKey {
-    CFT_NODISCARD real_t operator()(ScoreData sd) const {
+    real_t operator()(ScoreData sd) const {
         return sd.score;
     }
 };
@@ -47,10 +47,10 @@ struct Scores {
     std::vector<cidx_t>    score_map;     // maps column index to score index
 };
 
-// Score computed as descrived in the paper. Mu represents the number of still uncovered rows that
-// would be covered by the current column. Gamma represents the reduced cost of the column minus the
-// component of the lagrangian multiplier associated with already covered rows.
-CFT_NODISCARD inline real_t compute_score(real_t gamma, ridx_t mu) {
+// Score computed as descrived in the paper. Mu represents the number of still uncovered rows
+// that would be covered by the current column. Gamma represents the reduced cost of the column
+// minus the component of the lagrangian multiplier associated with already covered rows.
+inline real_t compute_score(real_t gamma, ridx_t mu) {
     if (mu == 0)
         return limits<real_t>::max();
     if (gamma > 0)
@@ -60,7 +60,8 @@ CFT_NODISCARD inline real_t compute_score(real_t gamma, ridx_t mu) {
 
 // Initialize the scores for the greedy algorithm
 inline void complete_scores_init(Instance const& inst, Scores& score_info) {
-    assert(score_info.gammas.size() == inst.cols.size() && "Expected initialized gammas vector");
+    assert(score_info.gammas.size() == inst.cols.size() && "Expected initialized gammas "
+                                                           "vector");
 
     cidx_t ncols = inst.cols.size();
     score_info.scores.clear();
@@ -95,11 +96,11 @@ inline void update_row_scores(std::vector<cidx_t> const& row,
     }
 }
 
-CFT_NODISCARD inline cidx_t update_already_covered(Instance const&            inst,
-                                                   Solution const&            sol,
-                                                   std::vector<real_t> const& lagr_mult,
-                                                   Scores&                    score_info,
-                                                   CoverCounters<>&           total_cover) {
+inline cidx_t update_covered(Instance const&            inst,
+                             Solution const&            sol,
+                             std::vector<real_t> const& lagr_mult,
+                             Scores&                    score_info,
+                             CoverCounters<>&           total_cover) {
 
     cidx_t covered_rows = 0;
     for (cidx_t j : sol.idxs)
@@ -125,8 +126,8 @@ inline void update_changed_scores(Instance const&            inst,
             update_row_scores(inst.rows[i], lagr_mult[i], score_info);
 }
 
-inline score_subspan_t compute_good_scores(Sorter& sorter, Scores& score_info, size_t good_size) {
-    assert(good_size > 0 && "Good size must be greater than 0");
+inline score_subspan_t get_good_scores(Sorter& sorter, Scores& score_info, size_t amount) {
+    assert(amount > 0 && "Good size must be greater than 0");
     auto& scores = score_info.scores;  // shorthand
 
     remove_if(scores, [&](ScoreData sd) {
@@ -136,15 +137,13 @@ inline score_subspan_t compute_good_scores(Sorter& sorter, Scores& score_info, s
         return true;
     });
 
-    good_size = std::min(good_size, scores.size());
-    sorter.nth_element(scores, good_size, ScoreKey{});
+    amount = std::min(amount, scores.size());
+    sorter.nth_element(scores, amount, ScoreKey{});
     for (cidx_t s = 0; s < scores.size(); ++s)
         score_info.score_map[scores[s].idx] = s;
 
-    return make_span(scores.begin(), good_size);
+    return make_span(scores.begin(), amount);
 }
-
-
 }  // namespace cft
 
 

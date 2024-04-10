@@ -20,8 +20,7 @@
 #include <cassert>
 #include <vector>
 
-#include "core/Span.hpp"
-#include "core/cft.hpp"
+#include "utils/Span.hpp"
 
 namespace cft {
 
@@ -33,25 +32,25 @@ struct SparseBinMat {
     std::vector<IdxT>   idxs;
     std::vector<size_t> begs = {0};
 
-    CFT_NODISCARD Span<IdxT*> operator[](std::size_t i) {
+    Span<IdxT*> operator[](std::size_t i) {
         assert(i < begs.size() - 1);
         assert(begs[i] < idxs.size());
         assert(begs[i + 1] <= idxs.size());
         return {idxs.data() + begs[i], idxs.data() + begs[i + 1]};
     }
 
-    CFT_NODISCARD Span<IdxT const*> operator[](std::size_t i) const {
+    Span<IdxT const*> operator[](std::size_t i) const {
         assert(i < begs.size());
         assert(begs[i] < idxs.size());
         assert(begs[i + 1] <= idxs.size());
         return {idxs.data() + begs[i], idxs.data() + begs[i + 1]};
     }
 
-    CFT_NODISCARD std::size_t size() const {
+    std::size_t size() const {
         return begs.size() - 1;
     }
 
-    CFT_NODISCARD bool empty() const {
+    bool empty() const {
         return begs.size() == 1;
     }
 

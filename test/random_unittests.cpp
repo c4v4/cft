@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
 
-#include "core/random.hpp"
+#include "utils/random.hpp"
 
 namespace cft {
 

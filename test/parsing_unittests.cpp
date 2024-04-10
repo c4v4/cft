@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
 
-#include "instance/parsing.hpp"
+#include "core/parsing.hpp"
 
 namespace cft {
 namespace local { namespace {

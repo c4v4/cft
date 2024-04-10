@@ -24,9 +24,10 @@
 #include <fstream>
 #include <stdexcept>
 #include <type_traits>
+#include <vector>
 
-#include "core/StringView.hpp"
-#include "core/limits.hpp"
+#include "utils/StringView.hpp"
+#include "utils/limits.hpp"
 
 namespace cft {
 
@@ -34,13 +35,13 @@ template <bool C, typename T1, typename T2>
 using if_t = typename std::conditional<C, T1, T2>::type;
 
 struct IsSpace {
-    CFT_NODISCARD bool operator()(char c) const noexcept {
+    bool operator()(char c) const noexcept {
         return std::isspace(c) != 0;
     }
 };
 
 struct NotSpace {
-    CFT_NODISCARD bool operator()(char c) const noexcept {
+    bool operator()(char c) const noexcept {
         return std::isspace(c) == 0;
     }
 };
@@ -127,7 +128,7 @@ struct FileLineIterator {
         : in(path) {
     }
 
-    CFT_NODISCARD StringView next() {
+    StringView next() {
         std::getline(in, line);
         return trim(StringView(line));
     }

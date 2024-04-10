@@ -4,27 +4,27 @@
 #include <cstdio>
 
 #include "algorithms/Refinement.hpp"
-#include "core/CliArgs.hpp"
+#include "core/Instance.hpp"
 #include "core/cft.hpp"
-#include "instance/Instance.hpp"
-#include "instance/parsing.hpp"
+#include "core/parsing.hpp"
+#include "utils/CliArgs.hpp"
 
 void print_inst_summary(cft::Instance const& inst, cft::Solution const& warmstart = {}) {
-    fmt::print("CFT  > Instance summary:\n");
-    fmt::print("CFT  >   nrows:     {}\n", inst.rows.size());
-    fmt::print("CFT  >   ncols:     {}\n", inst.cols.size());
-    fmt::print("CFT  >   costs:     {} {} {} {} ...\n",
+    fmt::print("CFT > Instance summary:\n");
+    fmt::print("CFT >   nrows:     {}\n", inst.rows.size());
+    fmt::print("CFT >   ncols:     {}\n", inst.cols.size());
+    fmt::print("CFT >   costs:     {} {} {} {} ...\n",
                inst.costs[0],
                inst.costs[1],
                inst.costs[2],
                inst.costs[3]);
-    fmt::print("CFT  >   solcosts:  {} {} {} {} ...\n",
+    fmt::print("CFT >   solcosts:  {} {} {} {} ...\n",
                inst.solcosts[0],
                inst.solcosts[1],
                inst.solcosts[2],
                inst.solcosts[3]);
     if (!warmstart.idxs.empty())
-        fmt::print("CFT  >   warmstart: {} {} {} {} ...\n",
+        fmt::print("CFT >   warmstart: {} {} {} {} ...\n",
                    warmstart.idxs[0],
                    warmstart.idxs[1],
                    warmstart.idxs[2],
@@ -32,7 +32,7 @@ void print_inst_summary(cft::Instance const& inst, cft::Solution const& warmstar
 
     // print first 10 columns
     for (size_t i = 0; i < 4; ++i)
-        fmt::print("CFT  >   col[{}]: {}\n", i, fmt::join(inst.cols[i], ", "));
+        fmt::print("CFT >   col[{}]: {}\n", i, fmt::join(inst.cols[i], ", "));
 }
 
 int main(int argc, char const** argv) {
@@ -48,15 +48,15 @@ int main(int argc, char const** argv) {
         auto warmstart = cft::Solution{};
 
         if (cli_args.parser == CFT_RAIL_PARSER) {
-            fmt::print("CFT  > Parsing RAIL instance from {}\n", cli_args.inst_path);
+            fmt::print("CFT > Parsing RAIL instance from {}\n", cli_args.inst_path);
             inst = cft::parse_rail_instance(cli_args.inst_path);
 
         } else if (cli_args.parser == CFT_SCP_PARSER) {
-            fmt::print("CFT  > Parsing SCP instance from {}\n", cli_args.inst_path);
+            fmt::print("CFT > Parsing SCP instance from {}\n", cli_args.inst_path);
             inst = cft::parse_scp_instance(cli_args.inst_path);
 
         } else if (cli_args.parser == CFT_CVRP_PARSER) {
-            fmt::print("CFT  > Parsing CVRP instance from {}\n", cli_args.inst_path);
+            fmt::print("CFT > Parsing CVRP instance from {}\n", cli_args.inst_path);
             auto file_data = cft::parse_cvrp_instance(cli_args.inst_path);
             inst           = std::move(file_data.inst);
             warmstart.idxs = std::move(file_data.warmstart);
@@ -65,7 +65,7 @@ int main(int argc, char const** argv) {
                 warmstart.cost += inst.costs[j];
 
         } else {
-            fmt::print("CFT  > Parser {} does not exists.\n", cli_args.parser);
+            fmt::print("CFT > Parser {} does not exists.\n", cli_args.parser);
             cft::print_cli_help_msg();
             throw std::runtime_error("Parser does not exists.");
         }
@@ -74,9 +74,7 @@ int main(int argc, char const** argv) {
         auto tlim = cli_args.time_limit;
         auto rnd  = cft::prng_t{cli_args.seed};
         auto sol  = cft::run(inst, rnd, tlim, warmstart);
-        fmt::print("CFT  > Best solution {:.2f} time {:.2f}\n",
-                   sol.cost,
-                   timer.elapsed<cft::sec>());
+        fmt::print("CFT > Best solution {:.2f} time {:.2f}\n", sol.cost, timer.elapsed<cft::sec>());
 
     } catch (std::exception const& e) {
         fmt::print("\nCFT  > ERROR: {}\n", e.what());

@@ -19,10 +19,9 @@
 
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <utility>
-
-#include "core/cft.hpp"
 
 namespace cft {
 template <typename T, std::size_t Nm, typename Comp = std::less<T>>
@@ -43,29 +42,29 @@ struct SortedArray : Comp /*EBO*/ {
     T        data[Nm];
     uint32_t sz = 0ULL;
 
-    CFT_NODISCARD size_type size() const {
+    size_type size() const {
         return sz;
     }
 
-    CFT_NODISCARD T const& back() const {
+    T const& back() const {
         assert(sz > 0);
         return data[sz - 1];
     }
 
-    CFT_NODISCARD T const& operator[](size_type i) const {
+    T const& operator[](size_type i) const {
         assert(i < sz);
         return data[i];
     }
 
-    CFT_NODISCARD T const* begin() const {
+    T const* begin() const {
         return std::addressof(data[0]);
     }
 
-    CFT_NODISCARD T const* end() const {
+    T const* end() const {
         return std::addressof(data[sz]);
     }
 
-    CFT_NODISCARD bool compare(T const& a, T const& b) const {
+    bool compare(T const& a, T const& b) const {
         return Comp::operator()(a, b);
     }
 
