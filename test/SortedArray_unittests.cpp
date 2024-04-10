@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
 
-#include "core/SortedArray.hpp"
+#include "utils/SortedArray.hpp"
 
 namespace cft {
 

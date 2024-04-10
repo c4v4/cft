@@ -35,31 +35,31 @@ namespace local { namespace {
 }  // namespace local
 
 struct IdentityFtor {
-template <typename T>
-T&& operator()(T&& t) const noexcept {
-    return std::forward<T>(t);
-}
+    template <typename T>
+    T&& operator()(T&& t) const noexcept {
+        return std::forward<T>(t);
+    }
 };
 
 struct Sorter {
-// Temporary implementation with fallback to std::nth_element
-template <typename C, typename K = IdentityFtor>
-void nth_element(C& container, size_t nth_elem, K key = {}) {
-    using value_type = local::container_value_type_t<C>;
-    std::nth_element(container.begin(),
-                     container.begin() + nth_elem,
-                     container.end(),
-                     [&](value_type const& a, value_type const& b) { return key(a) < key(b); });
-}
+    // Temporary implementation with fallback to std::nth_element
+    template <typename C, typename K = IdentityFtor>
+    void nth_element(C& container, size_t nth_elem, K key = {}) {
+        using value_type = local::container_value_type_t<C>;
+        std::nth_element(container.begin(),
+                         container.begin() + nth_elem,
+                         container.end(),
+                         [&](value_type const& a, value_type const& b) { return key(a) < key(b); });
+    }
 
-// Temporary implementation with fallback to std::sort
-template <typename C, typename K = IdentityFtor>
-void sort(C& container, K key = {}) {
-    using value_type = local::container_value_type_t<C>;
-    std::sort(container.begin(), container.end(), [&](value_type const& a, value_type const& b) {
-        return key(a) < key(b);
-    });
-}
+    // Temporary implementation with fallback to std::sort
+    template <typename C, typename K = IdentityFtor>
+    void sort(C& container, K key = {}) {
+        using value_type = local::container_value_type_t<C>;
+        std::sort(container.begin(),
+                  container.end(),
+                  [&](value_type const& a, value_type const& b) { return key(a) < key(b); });
+    }
 };
 
 }  // namespace cft

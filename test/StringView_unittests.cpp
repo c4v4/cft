@@ -1,7 +1,7 @@
 #include <catch2/catch.hpp>
 #include <cstring>
 
-#include "core/StringView.hpp"
+#include "utils/StringView.hpp"
 
 namespace cft {
 

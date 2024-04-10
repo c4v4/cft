@@ -20,11 +20,12 @@
 #include <cassert>
 #include <vector>
 
-#include "core/SparseBinMat.hpp"
 #include "core/cft.hpp"
+#include "utils/SparseBinMat.hpp"
 
 #ifndef NDEBUG
-#include "core/utility.hpp"
+#include "utils/coverage.hpp"
+#include "utils/utility.hpp"
 #endif
 
 namespace cft {
@@ -35,12 +36,6 @@ struct Instance {
     std::vector<std::vector<cidx_t>> rows;
     std::vector<real_t>              costs;
     std::vector<real_t>              solcosts;
-};
-
-// Generic mappings between instances of columns and rows indexes.
-struct IdxsMaps {
-    std::vector<cidx_t> col_map;
-    std::vector<ridx_t> row_map;
 };
 
 #ifndef NDEBUG
@@ -59,6 +54,24 @@ inline void col_and_rows_check(SparseBinMat<ridx_t> const&             cols,
         for (cidx_t j : rows[i])
             assert("Row not in col" && any(cols[j], [i](cidx_t ci) { return ci == i; }));
     }
+}
+
+// TODO(any): find a better place for this function.
+inline void check_solution(Instance const& inst, Solution const& sol) {
+    ridx_t nrows = inst.rows.size();
+
+    // check coverage
+    ridx_t covered_rows = 0;
+    auto   row_coverage = CoverCounters<>(nrows);
+    for (auto j : sol.idxs)
+        covered_rows += row_coverage.cover(inst.cols[j]);
+    assert(covered_rows == nrows);
+
+    // check cost
+    real_t total_cost = 0;
+    for (cidx_t j : sol.idxs)
+        total_cost += inst.costs[j];
+    assert(-1e-6 < total_cost - sol.cost && total_cost - sol.cost < 1e-6);
 }
 #endif
 
@@ -94,10 +107,31 @@ inline void clear_inst(Instance& inst) {
     inst.solcosts.clear();
 }
 
+// For core instance we only need column mappings, since the rows remain the same.
 struct InstAndMap {
     Instance            inst;
     std::vector<cidx_t> col_map;
 };
+
+// Generic mappings between instances of columns and rows indexes.
+struct IdxsMaps {
+    std::vector<cidx_t> col_map;
+    std::vector<ridx_t> row_map;
+};
+
+inline void apply_maps_to_lagr_mult(IdxsMaps const& old2new, std::vector<real_t>& lagr_mult) {
+
+    ridx_t old_nrows = old2new.row_map.size();
+    ridx_t new_i     = 0;
+    for (ridx_t old_i = 0; old_i < old_nrows; ++old_i)
+        if (old2new.row_map[old_i] != CFT_REMOVED_IDX) {
+            assert(new_i <= old_i);
+            assert(new_i == old2new.row_map[old_i]);
+            lagr_mult[new_i] = lagr_mult[old_i];
+            ++new_i;
+        }
+    lagr_mult.resize(new_i);
+}
 
 }  // namespace cft
 

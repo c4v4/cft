@@ -21,26 +21,28 @@
 
 #include <vector>
 
-#include "core/Chrono.hpp"
+#include "core/Instance.hpp"
 #include "core/cft.hpp"
-#include "core/coverage.hpp"
 #include "fixing/FixingData.hpp"
 #include "greedy/Greedy.hpp"
-#include "instance/Instance.hpp"
+#include "utils/Chrono.hpp"
+#include "utils/coverage.hpp"
 
 namespace cft {
 
 // 3phase column fixing step of the CFT algorithm.
-struct ColFixing {
-    static constexpr double col_fix_thresh = -0.001;
+class ColFixing {
 
     // Caches
-    Solution        cols_to_fix;
-    CoverCounters<> cover_counts;
-    IdxsMaps        old2new;  // Indexes mappings between before/after fixing instances
+    Solution            cols_to_fix;
+    CoverCounters<>     cover_counts;
+    IdxsMaps            old2new;  // Indexes mappings between before/after fixing
+    std::vector<real_t> reduced_costs;
 
+public:
     // Original Column Fixing
-    void operator()(Instance&            inst,       // inout
+    void operator()(ridx_t               orig_nrows,
+                    Instance&            inst,       // inout
                     FixingData&          fixing,     // inout
                     std::vector<real_t>& lagr_mult,  // inout
                     Greedy&              greedy      // cache
@@ -49,38 +51,42 @@ struct ColFixing {
         assert(inst.rows.size() == fixing.curr2orig.row_map.size());
         assert(inst.rows.size() == lagr_mult.size());
 
-        auto   timer = Chrono<>();
-        ridx_t nrows = inst.rows.size();
+        auto timer = Chrono<>();
+        _select_non_overlapping_cols(inst, lagr_mult, cover_counts, cols_to_fix, reduced_costs);
+        cidx_t no_overlap_ncols = cols_to_fix.idxs.size();
 
-        _select_non_overlapping_cols(inst, lagr_mult, cover_counts, cols_to_fix);
-        fmt::print("CFIX > Fixing {} non-overlapping columns \n", cols_to_fix.idxs.size());
-
-        auto fix_at_least = cols_to_fix.idxs.size() + max<cidx_t>(nrows / 200, 1);
-        greedy(inst, lagr_mult, cols_to_fix, limits<real_t>::max(), fix_at_least);
+        auto fix_at_least = cols_to_fix.idxs.size() + max<cidx_t>(orig_nrows / 200, 1);
+        greedy(inst, lagr_mult, reduced_costs, cols_to_fix, limits<real_t>::max(), fix_at_least);
 
         fix_columns_and_compute_maps(cols_to_fix.idxs, inst, fixing, old2new);
-        _apply_maps_to_lagr_mult(old2new, lagr_mult);
+        apply_maps_to_lagr_mult(old2new, lagr_mult);
 
-        fmt::print("CFIX > Fixing ended in {:.2f}s\n", timer.elapsed<sec>());
+        fmt::print("CFIX   > Fixing {} columns ({} + {}), time {:.2f}s\n",
+                   cols_to_fix.idxs.size(),
+                   no_overlap_ncols,
+                   cols_to_fix.idxs.size() - no_overlap_ncols,
+                   timer.elapsed<sec>());
     }
-
 
 private:
     static void _select_non_overlapping_cols(Instance const&            inst,
                                              std::vector<real_t> const& lagr_mult,
                                              CoverCounters<>&           cover_counts,
-                                             Solution&                  cols_to_fix) {
+                                             Solution&                  cols_to_fix,
+                                             std::vector<real_t>&       reduced_costs) {
+        static constexpr double col_fix_thresh = -0.001;
 
+        reduced_costs.resize(inst.cols.size());
         cover_counts.reset(inst.rows.size());
         cols_to_fix.idxs.clear();
         cols_to_fix.cost = 0.0;
 
         for (cidx_t j = 0; j < inst.cols.size(); ++j) {
-            real_t j_red_cost = inst.costs[j];
+            reduced_costs[j] = inst.costs[j];
             for (ridx_t i : inst.cols[j])
-                j_red_cost -= lagr_mult[i];
+                reduced_costs[j] -= lagr_mult[i];
 
-            if (j_red_cost < col_fix_thresh) {
+            if (reduced_costs[j] < col_fix_thresh) {
                 cols_to_fix.cost += inst.costs[j];
                 cols_to_fix.idxs.push_back(j);
                 cover_counts.cover(inst.cols[j]);
@@ -97,20 +103,6 @@ private:
                 j = CFT_REMOVED_IDX;
             }
         remove_if(cols_to_fix.idxs, [](cidx_t j) { return j == CFT_REMOVED_IDX; });
-    }
-
-    static void _apply_maps_to_lagr_mult(IdxsMaps const& old2new, std::vector<real_t>& lagr_mult) {
-
-        ridx_t old_nrows = old2new.row_map.size();
-        ridx_t new_i     = 0;
-        for (ridx_t old_i = 0; old_i < old_nrows; ++old_i)
-            if (old2new.row_map[old_i] != CFT_REMOVED_IDX) {
-                assert(new_i <= old_i);
-                assert(new_i == old2new.row_map[old_i]);
-                lagr_mult[new_i] = lagr_mult[old_i];
-                ++new_i;
-            }
-        lagr_mult.resize(new_i);
     }
 };
 

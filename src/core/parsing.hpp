@@ -21,12 +21,12 @@
 #include <stdexcept>
 #include <vector>
 
-#include "core/SparseBinMat.hpp"
-#include "core/StringView.hpp"
+#include "core/Instance.hpp"
 #include "core/cft.hpp"
-#include "core/limits.hpp"
-#include "core/parse_utils.hpp"
-#include "instance/Instance.hpp"
+#include "utils/SparseBinMat.hpp"
+#include "utils/StringView.hpp"
+#include "utils/limits.hpp"
+#include "utils/parse_utils.hpp"
 
 namespace cft {
 

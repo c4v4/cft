@@ -23,8 +23,6 @@
 #include <cstddef>
 #include <iterator>
 
-#include "core/cft.hpp"
-
 namespace cft {
 
 // A simple non-owning span
@@ -41,28 +39,28 @@ struct Span {
     iterator start;
     iterator finish;
 
-    CFT_NODISCARD size_type size() const {
+    size_type size() const {
         return finish - start;
     }
 
-    CFT_NODISCARD bool empty() const {
+    bool empty() const {
         return start == finish;
     }
 
-    CFT_NODISCARD reference back() const {
+    reference back() const {
         assert(start != finish);
         return *(finish - 1);
     }
 
-    CFT_NODISCARD iterator begin() const {
+    iterator begin() const {
         return start;
     }
 
-    CFT_NODISCARD iterator end() const {
+    iterator end() const {
         return finish;
     }
 
-    CFT_NODISCARD ret_type operator[](size_type i) const {
+    ret_type operator[](size_type i) const {
         assert(finish > start);
         assert(i < static_cast<size_t>(finish - start));
         return start[i];
@@ -70,12 +68,12 @@ struct Span {
 };
 
 template <typename ItT>
-CFT_NODISCARD inline Span<ItT> make_span(ItT beg, ItT end) {
+inline Span<ItT> make_span(ItT beg, ItT end) {
     return {beg, end};
 }
 
 template <typename ItT>
-CFT_NODISCARD inline Span<ItT> make_span(ItT beg, size_t sz) {
+inline Span<ItT> make_span(ItT beg, size_t sz) {
     return {beg, beg + sz};
 }
 

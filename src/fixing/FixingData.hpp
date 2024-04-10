@@ -16,9 +16,9 @@
 #ifndef CAV_SRC_FIXING_FIXINGDATA_HPPCFT_
 #define CAV_SRC_FIXING_FIXINGDATA_HPPCFT_
 
+#include "core/Instance.hpp"
 #include "core/cft.hpp"
 #include "fixing/fix_columns.hpp"
-#include "instance/Instance.hpp"
 
 namespace cft {
 

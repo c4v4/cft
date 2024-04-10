@@ -18,76 +18,91 @@
 
 
 #include "algorithms/ThreePhase.hpp"
-#include "core/Chrono.hpp"
 #include "core/cft.hpp"
-#include "core/coverage.hpp"
 #include "fixing/fix_columns.hpp"
-#include "subgradient/utils.hpp"
+#include "utils/Chrono.hpp"
+#include "utils/coverage.hpp"
 
 namespace cft {
-struct RefinementFixManager {
-    static constexpr real_t alpha      = 1.1;
-    static constexpr real_t min_fixing = 0.3;
+namespace local { namespace {
 
-private:
-    real_t          fix_fraction = min_fixing;
-    real_t          prev_cost    = limits<real_t>::inf();
-    Sorter          sorter;
-    CoverCounters<> row_coverage;
-
-public:
-    inline std::vector<cidx_t> operator()(Instance const&            inst,
-                                          std::vector<real_t> const& best_lagr_mult,
-                                          Solution const&            best_sol) {
-
-        fix_fraction *= alpha;
-        if (best_sol.cost < prev_cost)
-            fix_fraction = min_fixing;
-        prev_cost = best_sol.cost;
-
-        auto nrows_real   = static_cast<real_t>(inst.rows.size());
-        auto nrows_to_fix = static_cast<ridx_t>(nrows_real * fix_fraction);
-
-        assert(best_lagr_mult.size() == inst.rows.size());
-        assert(nrows_to_fix <= inst.rows.size());
-
-        ridx_t nrows = inst.rows.size();
-        row_coverage.reset(nrows);
-        for (cidx_t j : best_sol.idxs)
-            row_coverage.cover(inst.cols[j]);
-
-        // TODO(any): matches the paper name, maybe we can find a better name tho
-        auto deltas = std::vector<CidxAndCost>();
-        deltas.reserve(best_sol.idxs.size());
-        for (cidx_t j : best_sol.idxs) {
-            real_t delta        = 0.0;
-            real_t reduced_cost = inst.costs[j];
-            auto   col          = inst.cols[j];
-            for (ridx_t i : col) {
-                real_t cov = row_coverage[i];
-                delta += best_lagr_mult[i] * (cov - 1.0F) / cov;
-                reduced_cost -= best_lagr_mult[i];
-            }
-            delta += max(reduced_cost, 0.0F);
-            deltas.push_back({j, delta});
-        }
-        sorter.sort(deltas, [](CidxAndCost c) { return c.cost; });
-
-        ridx_t covered_rows = 0;
-        row_coverage.reset(nrows);
-        auto cols_to_fix = std::vector<cidx_t>();
-        for (CidxAndCost c : deltas) {
-            cidx_t j = c.idx;
-            covered_rows += row_coverage.cover(inst.cols[j]);
-            cols_to_fix.push_back(j);
-            if (covered_rows > nrows_to_fix) {
-                cols_to_fix.pop_back();
-                break;
-            }
-        }
-        return cols_to_fix;
+    // Simply transform a solution of an instance with fixing, to a solution of the original
+    // instance without fixing
+    inline void from_fixed_to_unfixed_sol(Solution const&   sol,
+                                          FixingData const& fixing,
+                                          Solution&         best_sol) {
+        best_sol.cost = sol.cost + fixing.fixed_cost;
+        best_sol.idxs = fixing.fixed_cols;
+        for (cidx_t j : sol.idxs)
+            best_sol.idxs.push_back(fixing.curr2orig.col_map[j]);
     }
-};
+
+    class RefinementFixManager {
+        static constexpr real_t alpha      = 1.1;
+        static constexpr real_t min_fixing = 0.3;
+
+        real_t          fix_fraction = min_fixing;
+        real_t          prev_cost    = limits<real_t>::inf();
+        Sorter          sorter;
+        CoverCounters<> row_coverage;
+
+    public:
+        inline std::vector<cidx_t> operator()(Instance const&            inst,
+                                              std::vector<real_t> const& best_lagr_mult,
+                                              Solution const&            best_sol) {
+
+            fix_fraction *= alpha;
+            if (best_sol.cost < prev_cost)
+                fix_fraction = min_fixing;
+            prev_cost = best_sol.cost;
+
+            auto nrows_real   = static_cast<real_t>(inst.rows.size());
+            auto nrows_to_fix = static_cast<ridx_t>(nrows_real * fix_fraction);
+
+            assert(best_lagr_mult.size() == inst.rows.size());
+            assert(nrows_to_fix <= inst.rows.size());
+
+            ridx_t nrows = inst.rows.size();
+            row_coverage.reset(nrows);
+            for (cidx_t j : best_sol.idxs)
+                row_coverage.cover(inst.cols[j]);
+
+            // TODO(any): matches the paper name, maybe we can find a better name tho
+            auto deltas = std::vector<CidxAndCost>();
+            deltas.reserve(best_sol.idxs.size());
+            for (cidx_t j : best_sol.idxs) {
+                real_t delta        = 0.0;
+                real_t reduced_cost = inst.costs[j];
+                auto   col          = inst.cols[j];
+                for (ridx_t i : col) {
+                    real_t cov = row_coverage[i];
+                    delta += best_lagr_mult[i] * (cov - 1.0F) / cov;
+                    reduced_cost -= best_lagr_mult[i];
+                }
+                delta += max(reduced_cost, 0.0F);
+                deltas.push_back({j, delta});
+            }
+            sorter.sort(deltas, [](CidxAndCost c) { return c.cost; });
+
+            ridx_t covered_rows = 0;
+            row_coverage.reset(nrows);
+            auto cols_to_fix = std::vector<cidx_t>();
+            for (CidxAndCost c : deltas) {
+                // if (clock() % 128 == 0) //blink
+                //     continue;
+                cidx_t j = c.idx;
+                covered_rows += row_coverage.cover(inst.cols[j]);
+                cols_to_fix.push_back(j);
+                if (covered_rows > nrows_to_fix) {
+                    cols_to_fix.pop_back();
+                    break;
+                }
+            }
+            return cols_to_fix;
+        }
+    };
+}  // namespace
+}  // namespace local
 
 constexpr real_t beta = 1.0;
 
@@ -112,14 +127,13 @@ inline Solution run(Instance const& orig_inst,
     auto old2new            = IdxsMaps();
     auto max_cost           = limits<real_t>::max();
     auto fixing             = FixingData();
-    auto select_cols_to_fix = RefinementFixManager();
+    auto select_cols_to_fix = local::RefinementFixManager();
     make_identity_fixing_data(ncols, nrows, fixing);
-
     for (size_t iter_counter = 0;; ++iter_counter) {
 
         auto result_3p = three_phase(inst, rnd, tlim - timer.elapsed<sec>());
         if (result_3p.sol.cost + fixing.fixed_cost < best_sol.cost) {
-            from_fixed_to_unfixed_sol(result_3p.sol, fixing, best_sol);
+            local::from_fixed_to_unfixed_sol(result_3p.sol, fixing, best_sol);
             IF_DEBUG(check_solution(orig_inst, best_sol));
         }
 
@@ -128,8 +142,13 @@ inline Solution run(Instance const& orig_inst,
             max_cost        = beta * result_3p.unfixed_lb + CFT_EPSILON;
         }
 
-        if (best_sol.cost <= max_cost || inst.rows.empty() || timer.elapsed<sec>() > tlim)
+        if (best_sol.cost <= max_cost || timer.elapsed<sec>() > tlim) {
+            // select_cols_to_fix = local::RefinementFixManager(); // restart
+            // fixing             = FixingData();
+            // inst               = orig_inst;
+            // continue;
             break;
+        }
 
         inst             = orig_inst;
         auto cols_to_fix = select_cols_to_fix(inst, nofix_lagr_mult, best_sol);
@@ -144,6 +163,14 @@ inline Solution run(Instance const& orig_inst,
                    best_sol.cost,
                    fixing.fixed_cost,
                    timer.elapsed<sec>());
+
+        if (inst.rows.empty() || timer.elapsed<sec>() > tlim) {
+            // select_cols_to_fix = local::RefinementFixManager(); // restart
+            // fixing             = FixingData();
+            // inst               = orig_inst;
+            // continue;
+            break;
+        }
     }
 
     return best_sol;

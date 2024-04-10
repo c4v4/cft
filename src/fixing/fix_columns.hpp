@@ -22,10 +22,9 @@
 #include <algorithm>
 #endif
 
-
+#include "core/Instance.hpp"
 #include "core/cft.hpp"
-#include "core/utility.hpp"
-#include "instance/Instance.hpp"
+#include "utils/utility.hpp"
 
 namespace cft {
 namespace local { namespace {
@@ -162,17 +161,17 @@ inline void remove_fixed_cols_from_inst(std::vector<cidx_t> const& cols_to_fix, 
                                         IdxsMaps&                  old2new       // out
 ) {
 
-IF_DEBUG(auto old_inst = inst);
+    IF_DEBUG(auto old_inst = inst);
 
-ridx_t removed_rows = local::compute_maps_from_cols_to_fix(inst, cols_to_fix, old2new);
-if (removed_rows == inst.rows.size())
-    return clear_inst(inst);
+    ridx_t removed_rows = local::compute_maps_from_cols_to_fix(inst, cols_to_fix, old2new);
+    if (removed_rows == inst.rows.size())
+        return clear_inst(inst);
 
-local::inplace_apply_col_map(old2new, inst);
-local::inplace_apply_row_map(old2new, inst);
+    local::inplace_apply_col_map(old2new, inst);
+    local::inplace_apply_row_map(old2new, inst);
 
-IF_DEBUG(col_and_rows_check(inst.cols, inst.rows));        // coherent instance
-IF_DEBUG(local::mappings_check(old_inst, inst, old2new));  // coherent mappings
+    IF_DEBUG(col_and_rows_check(inst.cols, inst.rows));        // coherent instance
+    IF_DEBUG(local::mappings_check(old_inst, inst, old2new));  // coherent mappings
 }
 
 }  // namespace cft

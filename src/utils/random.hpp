@@ -20,7 +20,7 @@
 #include <cassert>
 
 #include "core/cft.hpp"
-#include "core/xoshiro_prng.hpp"
+#include "utils/xoshiro_prng.hpp"
 
 namespace cft {
 template <typename TargetT = uint64_t>

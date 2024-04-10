@@ -19,51 +19,49 @@
 
 #include <cstddef>
 
-#include "core/cft.hpp"
-
 namespace cft {
 
 template <typename T, typename LT, typename UT>
-CFT_NODISCARD T clamp(T const& v, LT const& lb, UT const& ub) noexcept {
+T clamp(T const& v, LT const& lb, UT const& ub) noexcept {
     return (v < lb) ? static_cast<T>(lb) : (v > ub) ? static_cast<T>(ub) : v;
 }
 
 template <typename T>
-CFT_NODISCARD T abs(T val) noexcept {
+T abs(T val) noexcept {
     return val < T{} ? -val : val;
 }
 
 /// Multi-arg max
 template <typename T>
-CFT_NODISCARD T max(T v) noexcept {
+T max(T v) noexcept {
     return v;
 }
 
 template <typename T1, typename T2, typename... Ts>
-CFT_NODISCARD T1 max(T1 v1, T2 v2, Ts... tail) noexcept {
+T1 max(T1 v1, T2 v2, Ts... tail) noexcept {
     T1 mtail = max<T1>(v2, tail...);
     return (v1 >= mtail ? v1 : mtail);
 }
 
 template <typename... Ts>
-CFT_NODISCARD bool max(bool b1, bool b2, Ts... tail) noexcept {
+bool max(bool b1, bool b2, Ts... tail) noexcept {
     return b1 || max(b2, tail...);
 }
 
 /// Multi-arg min
 template <typename T>
-CFT_NODISCARD T min(T v) noexcept {
+T min(T v) noexcept {
     return v;
 }
 
 template <typename T1, typename T2, typename... Ts>
-CFT_NODISCARD T1 min(T1 v1, T2 v2, Ts... tail) noexcept {
+T1 min(T1 v1, T2 v2, Ts... tail) noexcept {
     T1 mtail = min<T1>(v2, tail...);
     return v1 <= mtail ? v1 : mtail;
 }
 
 template <typename... Ts>
-CFT_NODISCARD bool min(bool b1, bool b2, Ts... tail) noexcept {
+bool min(bool b1, bool b2, Ts... tail) noexcept {
     return b1 && min(b2, tail...);
 }
 

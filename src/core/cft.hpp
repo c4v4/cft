@@ -20,7 +20,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "core/limits.hpp"
+#include "utils/limits.hpp"
 
 #ifdef VERBOSE
 #define IF_VERBOSE(...) __VA_ARGS__
@@ -57,13 +57,6 @@ struct Solution {
 };
 
 }  // namespace cft
-
-// Nodiscard attribute to warn if the return value is not used
-#ifdef __GNUC__
-#define CFT_NODISCARD __attribute__((warn_unused_result))
-#elif defined(_MSC_VER) && _MSC_VER >= 1700
-#define CFT_NODISCARD _Check_return_
-#endif
 
 // Noinline attribute to help profiling specific functions
 #if defined(__GNUC__) || defined(__clang__)
