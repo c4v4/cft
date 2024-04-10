@@ -27,6 +27,7 @@ namespace cft {
 #define CFT_RAIL_PARSER    "RAIL"
 #define CFT_SCP_PARSER     "SCP"
 #define CFT_CVRP_PARSER    "CVRP"
+#define CFT_MPS_PARSER     "MPS"
 #define CFT_DEFAULT_PARSER CFT_RAIL_PARSER
 
 #define CFT_HELP_FLAG      "-h"
@@ -41,7 +42,7 @@ namespace cft {
 #define CFT_PARSER_LONG_FLAG "--parser"
 #define CFT_PARSER_HELP                                                            \
     "Available parsers: " CFT_RAIL_PARSER ", " CFT_SCP_PARSER ", " CFT_CVRP_PARSER \
-    ". Default: " CFT_DEFAULT_PARSER "."
+    ", " CFT_MPS_PARSER ". Default: " CFT_DEFAULT_PARSER "."
 
 #define CFT_SEED_FLAG      "-s"
 #define CFT_SEED_LONG_FLAG "--seed"

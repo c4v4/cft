@@ -19,6 +19,7 @@
 
 #include <cassert>
 #include <stdexcept>
+#include <unordered_map>
 #include <vector>
 
 #include "core/Instance.hpp"
@@ -139,6 +140,84 @@ inline FileData parse_cvrp_instance(std::string const& path) {
 
     fill_rows_from_cols(fdata.inst.cols, nrows, fdata.inst.rows);
     return fdata;
+}
+
+inline Instance parse_mps_instance(std::string const& path) {
+    auto file_iter = FileLineIterator(path);
+    auto inst      = Instance();
+
+    auto line_view = file_iter.next();
+    while (line_view != "ROWS")
+        line_view = file_iter.next();
+
+    ridx_t nrows    = 0;
+    auto   rows_map = std::unordered_map<std::string, ridx_t>();
+    auto   obj_name = std::string();
+    while (line_view != "COLUMNS") {
+        auto tokens = split(line_view);
+        if (!tokens.empty() && tokens[0] == "N")
+            obj_name = tokens[1].to_cpp_string();
+        if (!tokens.empty() && (tokens[0] == "G" || tokens[0] == "E" || tokens[0] == "L"))
+            rows_map[tokens[1].to_cpp_string()] = nrows++;
+        line_view = file_iter.next();
+    }
+
+    auto prev_col_name = std::string();
+    line_view          = file_iter.next();
+    inst.cols.begs.clear();
+    while (line_view != "RHS") {
+        auto tokens = split(line_view);
+        // Best effort to detect columns header line
+        if (tokens.size() < 3 || (std::isdigit(tokens[2][0]) == 0 && tokens[2][0] != '-')) {
+            line_view = file_iter.next();
+            continue;
+        }
+
+        if (tokens[0] != prev_col_name) {  // new column
+            prev_col_name = tokens[0].to_cpp_string();
+            inst.cols.begs.push_back(inst.cols.idxs.size());
+            inst.solcosts.push_back(limits<real_t>::max());
+            inst.costs.push_back(limits<real_t>::max());
+        }
+
+        for (size_t t = 1; t < tokens.size(); t += 2) {
+            if (tokens[t] == obj_name)
+                inst.costs.back() = string_to<real_t>::parse(tokens[t + 1]);
+            else {
+                auto row_name = tokens[t];
+                assert(rows_map.find(row_name.to_cpp_string()) != rows_map.end());
+                assert(tokens[t + 1] == "1" || tokens[t + 1] == "-1");
+                inst.cols.idxs.push_back(rows_map[row_name.to_cpp_string()]);
+            }
+        }
+
+        line_view = file_iter.next();
+    }
+    inst.cols.begs.push_back(inst.cols.idxs.size());
+
+
+#ifndef NDEBUG
+    // Check RHSs
+    line_view = file_iter.next();
+    while (line_view != "BOUNDS") {
+        line_view   = trim(line_view);
+        auto tokens = split(line_view);
+        assert(tokens[0] == "rhs" || tokens[0] == "RHS");
+
+        for (size_t t = 1; t < tokens.size(); t += 2) {
+            auto row_name = tokens[t];
+            assert(rows_map.find(row_name.to_cpp_string()) != rows_map.end());
+            assert(tokens[t + 1] == "1" || tokens[t + 1] == "-1");
+        }
+
+        line_view = file_iter.next();
+    }
+
+    // TODO(any): check bounds
+#endif
+
+    fill_rows_from_cols(inst.cols, nrows, inst.rows);
+    return inst;
 }
 
 }  // namespace cft

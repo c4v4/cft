@@ -47,6 +47,7 @@ instances/cvrp/F2_z4664483_cplex4664283.scp
 instances/cvrp/F2_z4676117_cplex4666387.scp
 instances/cvrp/G2_z273519_cplex273287.scp
 instances/cvrp/L2_z115772_cplex115714.scp
+instances/mps*
 TODO.md
 perf.data*
 bench.sh
