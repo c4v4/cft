@@ -62,13 +62,13 @@ private:
     }
 
 public:
-    real_t operator()(Instance const&      orig_inst,
-                      InstAndMap&          core,
-                      Sorter&              sorter,
-                      real_t               cutoff,
-                      real_t               best_ub,
-                      real_t&              step_size,
-                      std::vector<real_t>& best_lagr_mult) {
+    real_t operator()(Instance const&      orig_inst,      // in
+                      real_t               cutoff,         // in
+                      Sorter&              sorter,         // cache
+                      InstAndMap&          core,           // inout
+                      real_t&              step_size,      // inout
+                      std::vector<real_t>& best_lagr_mult  // inout
+    ) {
 
         size_t const nrows       = orig_inst.rows.size();
         real_t const max_real_lb = cutoff - CFT_EPSILON;
@@ -86,7 +86,7 @@ public:
 
         fmt::print("SUBG > Starting subgradient, LB {:.2f}, UB {:.2f}, cutoff {:.2f}\n",
                    lb_sol.cost,
-                   best_ub,
+                   cutoff,
                    max_real_lb);
 
         size_t max_iters = 10 * nrows;
@@ -114,12 +114,12 @@ public:
                 break;
 
             step_size          = next_step_size(iter, lb_sol.cost);
-            real_t step_factor = step_size * (best_ub - lb_sol.cost) / norm;
+            real_t step_factor = step_size * (cutoff - lb_sol.cost) / norm;
             update_lagr_mult(row_coverage, step_factor, lagr_mult);
 
             if (should_price(iter) && iter < max_iters - 1) {
                 real_t real_lb = price(orig_inst, lagr_mult, core);
-                should_price.update(best_core_lb, real_lb, best_ub);
+                should_price.update(best_core_lb, real_lb, cutoff);
 
                 fmt::print("SUBG > {:4}: Core LB: {:10.2f}  Real LB: {:10.2f}  Step size: {:.1}\n",
                            iter,
@@ -142,12 +142,12 @@ public:
     // associated to the best greedy solution. (But this might be due to the different column fixing
     // we are using).
     // TODO(acco): Consider implementing it as a functor.
-    void heuristic(Instance const&      inst,
-                   Greedy&              greedy,
-                   real_t               cutoff,
-                   real_t               step_size,
-                   Solution&            best_sol,
-                   std::vector<real_t>& best_lagr_mult) {
+    void heuristic(Instance const&      inst,           // in
+                   real_t               step_size,      // in
+                   Greedy&              greedy,         // cache
+                   Solution&            best_sol,       // inout
+                   std::vector<real_t>& best_lagr_mult  // inout
+    ) {
 
         auto timer        = Chrono<>();
         auto greedy_sol   = Solution();
@@ -165,20 +165,19 @@ public:
             }
 
             assert(best_core_lb <= best_sol.cost && "Inconsistent lower bound");
-            if (best_core_lb >= cutoff - CFT_EPSILON)
+            if (best_core_lb >= best_sol.cost - CFT_EPSILON)
                 return;
 
             greedy_sol.idxs.clear();
-            greedy(inst, lagr_mult, reduced_costs, greedy_sol, cutoff);
-            if (greedy_sol.cost <= cutoff - CFT_EPSILON) {
-                cutoff   = greedy_sol.cost;
+            greedy(inst, lagr_mult, reduced_costs, greedy_sol, best_sol.cost);
+            if (greedy_sol.cost <= best_sol.cost - CFT_EPSILON) {
                 best_sol = greedy_sol;
                 fmt::print("HEUR > Improved current solution {:.2f}\n", best_sol.cost);
                 IF_DEBUG(check_solution(inst, best_sol));
             }
 
             if (norm == 0.0) {
-                assert(best_core_lb < cutoff && "Optimum is above cutoff");
+                assert(best_core_lb < best_sol.cost && "Optimum is above cutoff");
                 fmt::print("HEUR > Found optimal solution.\n");
                 best_lagr_mult = lagr_mult;
                 return;

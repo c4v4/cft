@@ -56,7 +56,7 @@ public:
         for (cidx_t j : best_sol.idxs)
             row_coverage.cover(inst.cols[j]);
 
-        // TODO(any): matches the paper name, maybe there exist a better name tho
+        // TODO(any): matches the paper name, maybe we can find a better name tho
         auto deltas = std::vector<CidxAndCost>();
         deltas.reserve(best_sol.idxs.size());
         for (cidx_t j : best_sol.idxs) {
@@ -77,7 +77,7 @@ public:
         row_coverage.reset(nrows);
         auto cols_to_fix = std::vector<cidx_t>();
         for (CidxAndCost c : deltas) {
-            cidx_t j = c.col;
+            cidx_t j = c.idx;
             covered_rows += row_coverage.cover(inst.cols[j]);
             cols_to_fix.push_back(j);
             if (covered_rows > nrows_to_fix) {
@@ -109,7 +109,7 @@ inline Solution run(Instance const& orig_inst,
 
     auto three_phase        = ThreePhase();
     auto nofix_lagr_mult    = std::vector<real_t>();
-    auto prev2curr          = IdxsMaps();
+    auto old2new            = IdxsMaps();
     auto max_cost           = limits<real_t>::max();
     auto fixing             = FixingData();
     auto select_cols_to_fix = RefinementFixManager();
@@ -134,7 +134,7 @@ inline Solution run(Instance const& orig_inst,
         inst             = orig_inst;
         auto cols_to_fix = select_cols_to_fix(inst, nofix_lagr_mult, best_sol);
         make_identity_fixing_data(ncols, nrows, fixing);
-        fix_columns(inst, cols_to_fix, fixing, prev2curr);
+        fix_columns_and_compute_maps(cols_to_fix, inst, fixing, old2new);
 
         auto nrows_real  = static_cast<real_t>(orig_inst.rows.size());
         auto fixing_perc = static_cast<real_t>(inst.rows.size()) * 100.0F / nrows_real;

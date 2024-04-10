@@ -152,7 +152,7 @@ private:
 
         // Complete sol
         for (CidxAndCost x : redund_info.redund_set)
-            redund_info.cols_to_remove.push_back(x.col);
+            redund_info.cols_to_remove.push_back(x.idx);
 
         // TODO(cava): profile and see if sort + bin-search is faster
         remove_if(sol.idxs, [&](cidx_t j) {

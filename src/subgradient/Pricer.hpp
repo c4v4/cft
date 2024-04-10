@@ -27,7 +27,7 @@
 constexpr int mincov = 5;
 
 namespace cft {
-namespace {
+namespace local { namespace {
     inline real_t compute_col_reduced_costs(Instance const&            inst,
                                             std::vector<real_t> const& lagr_mult,
                                             std::vector<real_t>&       reduced_costs) {
@@ -36,8 +36,8 @@ namespace {
         for (real_t u : lagr_mult)
             real_lower_bound += u;
 
-        reduced_costs = inst.costs;
         for (cidx_t j = 0; j < inst.cols.size(); ++j) {
+            reduced_costs[j] = inst.costs[j];
             for (ridx_t i : inst.cols[j])
                 reduced_costs[j] -= lagr_mult[i];
 
@@ -105,42 +105,41 @@ namespace {
     }
 
 }  // namespace
+}  // namespace local
 
 struct Pricer {
 
-    // Caches.
-    Sorter              sorter;
-    std::vector<real_t> reduced_costs;
-    std::vector<bool>   taken_idxs;
+// Caches.
+Sorter              sorter;
+std::vector<real_t> reduced_costs;
+std::vector<bool>   taken_idxs;
 
-    real_t operator()(Instance const&            inst,
-                      std::vector<real_t> const& lagr_mult,
-                      InstAndMap&                core) {
+real_t operator()(Instance const& inst, std::vector<real_t> const& lagr_mult, InstAndMap& core) {
 
-        assert(!inst.cols.empty());
-        assert(!core.inst.cols.empty());
+    assert(!inst.cols.empty());
+    assert(!core.inst.cols.empty());
 
-        ridx_t nrows = inst.rows.size();
-        cidx_t ncols = inst.cols.size();
+    ridx_t nrows = inst.rows.size();
+    cidx_t ncols = inst.cols.size();
 
-        core.col_map.clear();
-        _prepare_caches(ncols);
+    core.col_map.clear();
+    _prepare_caches(ncols);
 
-        auto real_lower_bound = compute_col_reduced_costs(inst, lagr_mult, reduced_costs);
-        select_c1_col_idxs(inst, sorter, reduced_costs, 5ULL * nrows, core.col_map, taken_idxs);
-        select_c2_col_idxs(inst, reduced_costs, core.col_map, taken_idxs);
+    auto real_lower_bound = local::compute_col_reduced_costs(inst, lagr_mult, reduced_costs);
+    local::select_c1_col_idxs(inst, sorter, reduced_costs, 5ULL * nrows, core.col_map, taken_idxs);
+    local::select_c2_col_idxs(inst, reduced_costs, core.col_map, taken_idxs);
 
-        init_partial_instance(inst, core.col_map, core.inst);
-        fill_rows_from_cols(core.inst.cols, nrows, core.inst.rows);
+    local::init_partial_instance(inst, core.col_map, core.inst);
+    fill_rows_from_cols(core.inst.cols, nrows, core.inst.rows);
 
-        return real_lower_bound;
-    }
+    return real_lower_bound;
+}
 
 private:
-    void _prepare_caches(ridx_t ncols) {
-        reduced_costs.resize(ncols);
-        taken_idxs.assign(ncols, false);
-    }
+void _prepare_caches(ridx_t ncols) {
+    reduced_costs.resize(ncols);
+    taken_idxs.assign(ncols, false);
+}
 };
 
 
