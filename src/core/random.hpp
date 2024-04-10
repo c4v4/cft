@@ -46,8 +46,7 @@ struct prng_picker<double> {
 // Default PRNG for our project
 using prng_t = prng_picker<real_t>::type;  // default
 
-//////////////////////////////////// UTILITY RANDOM FUNCTIONS
-//////////////////////////////////////
+////////////////////////////////// UTILITY RANDOM FUNCTIONS //////////////////////////////////
 
 // Generate a canonical uniform distribution in the [0,1) range (unbiased)
 template <typename FlT = real_t, typename RndT = prng_t>

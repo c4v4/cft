@@ -134,9 +134,7 @@ inline Solution run(Instance const& orig_inst,
         inst             = orig_inst;
         auto cols_to_fix = select_cols_to_fix(inst, nofix_lagr_mult, best_sol);
         make_identity_fixing_data(ncols, nrows, fixing);
-        add_cols_to_fixing_data(inst, cols_to_fix, fixing);
-        remove_fixed_cols_from_inst(cols_to_fix, inst, old2new);
-        apply_maps_to_fixing_data(inst, old2new, fixing);
+        fix_columns_and_compute_maps(cols_to_fix, inst, fixing, old2new);
 
         auto nrows_real  = static_cast<real_t>(orig_inst.rows.size());
         auto fixing_perc = static_cast<real_t>(inst.rows.size()) * 100.0F / nrows_real;

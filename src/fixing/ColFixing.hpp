@@ -25,7 +25,6 @@
 #include "core/cft.hpp"
 #include "core/coverage.hpp"
 #include "fixing/FixingData.hpp"
-#include "fixing/fix_columns.hpp"
 #include "greedy/Greedy.hpp"
 #include "instance/Instance.hpp"
 
@@ -59,9 +58,7 @@ struct ColFixing {
         auto fix_at_least = cols_to_fix.idxs.size() + max<cidx_t>(nrows / 200, 1);
         greedy(inst, lagr_mult, cols_to_fix, limits<real_t>::max(), fix_at_least);
 
-        add_cols_to_fixing_data(inst, cols_to_fix.idxs, fixing);
-        remove_fixed_cols_from_inst(cols_to_fix.idxs, inst, old2new);
-        apply_maps_to_fixing_data(inst, old2new, fixing);
+        fix_columns_and_compute_maps(cols_to_fix.idxs, inst, fixing, old2new);
         _apply_maps_to_lagr_mult(old2new, lagr_mult);
 
         fmt::print("CFIX > Fixing ended in {:.2f}s\n", timer.elapsed<sec>());
