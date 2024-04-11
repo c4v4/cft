@@ -30,7 +30,6 @@ namespace cft {
 
 class Pricer {
     // Caches.
-    Sorter              sorter;
     std::vector<real_t> reduced_costs;
     std::vector<bool>   taken_idxs;
 
@@ -49,7 +48,7 @@ public:
         _prepare_caches(ncols, reduced_costs, taken_idxs);
 
         auto real_lower_bound = _compute_col_reduced_costs(inst, lagr_mult, reduced_costs);
-        _select_c1_col_idxs(inst, sorter, reduced_costs, 5ULL * nrows, core.col_map, taken_idxs);
+        _select_c1_col_idxs(inst, reduced_costs, 5ULL * nrows, core.col_map, taken_idxs);
         _select_c2_col_idxs(inst, reduced_costs, core.col_map, taken_idxs);
 
         _init_partial_instance(inst, core.col_map, core.inst);
@@ -86,7 +85,6 @@ private:
     }
 
     static void _select_c1_col_idxs(Instance const&            inst,
-                                    Sorter&                    sorter,
                                     std::vector<real_t> const& reduced_costs,
                                     size_t                     maxsize,
                                     std::vector<cidx_t>&       idxs,
@@ -98,7 +96,7 @@ private:
                 idxs.push_back(j);
 
         if (idxs.size() > maxsize) {
-            sorter.nth_element(idxs, maxsize - 1, [&](cidx_t i) { return reduced_costs[i]; });
+            cft::nth_element(idxs, maxsize - 1, [&](cidx_t i) { return reduced_costs[i]; });
             idxs.resize(maxsize);
         }
 

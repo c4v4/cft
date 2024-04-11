@@ -23,7 +23,6 @@
 #include "greedy/redundancy.hpp"
 #include "utils/coverage.hpp"
 #include "utils/limits.hpp"
-#include "utils/sort.hpp"
 #include "utils/utility.hpp"
 
 namespace cft {
@@ -36,7 +35,6 @@ namespace cft {
 // though, it can be mentally thought of as a function.
 class Greedy {
     // Caches
-    Sorter         sorter;
     Scores         score_info;
     RedundancyData redund_info;
 
@@ -68,7 +66,7 @@ public:
             nrows_to_cover -= update_covered(inst, sol, lagr_mult, score_info, total_cover);
 
         auto   smaller_size         = min(nrows_to_cover, inst.cols.size());
-        auto   good_scores          = get_good_scores(sorter, score_info, smaller_size);
+        auto   good_scores          = get_good_scores(score_info, smaller_size);
         real_t score_update_trigger = good_scores.back().score;
 
         // Fill solution
@@ -78,7 +76,7 @@ public:
             real_t min_score = good_scores[s_min].score;
             if (min_score >= score_update_trigger) {
                 smaller_size         = min(nrows_to_cover, inst.cols.size() - sol.idxs.size());
-                good_scores          = get_good_scores(sorter, score_info, smaller_size);
+                good_scores          = get_good_scores(score_info, smaller_size);
                 score_update_trigger = good_scores.back().score;
                 s_min                = argmin(good_scores, ScoreKey{});
             }
@@ -93,18 +91,17 @@ public:
             nrows_to_cover -= total_cover.cover(inst.cols[jstar]);
         }
 
-        _remove_redundant_cols(inst, cutoff_cost, sorter, redund_info, sol);
+        _remove_redundant_cols(inst, cutoff_cost, redund_info, sol);
     }
 
 private:
     static void _remove_redundant_cols(Instance const& inst,         // in
                                        real_t          cutoff_cost,  // in
-                                       Sorter&         sorter,       // cache
                                        RedundancyData& redund_info,  // inout
                                        Solution&       sol           // inout
     ) {
 
-        complete_init_redund_set(redund_info, inst, sol.idxs, sorter, cutoff_cost);
+        complete_init_redund_set(redund_info, inst, sol.idxs, cutoff_cost);
         if (_try_early_exit(redund_info, sol))
             return;
         IF_DEBUG(check_redundancy_data(inst, sol.idxs, redund_info));

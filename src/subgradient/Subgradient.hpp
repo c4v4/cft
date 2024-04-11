@@ -46,7 +46,6 @@ class Subgradient {
 public:
     real_t operator()(Instance const&      orig_inst,      // in
                       real_t               cutoff,         // in
-                      Sorter&              sorter,         // cache
                       InstAndMap&          core,           // inout
                       real_t&              step_size,      // inout
                       std::vector<real_t>& best_lagr_mult  // inout
@@ -76,7 +75,7 @@ public:
         for (size_t iter = 0; iter < max_iters && best_real_lb < max_real_lb; ++iter) {
 
             _update_lbsol_and_reduced_costs(core.inst, lagr_mult, lb_sol, reduced_costs);
-            _compute_reduced_row_coverage(core.inst, reduced_costs, sorter, row_coverage, lb_sol);
+            _compute_reduced_row_coverage(core.inst, reduced_costs, row_coverage, lb_sol);
             real_t norm = _compute_subgrad_sqr_norm(row_coverage);
 
             if (lb_sol.cost > best_core_lb) {
@@ -234,12 +233,11 @@ private:
     // Computes the row coverage of the given solution by including the best non-redundant columns.
     static void _compute_reduced_row_coverage(Instance const&            inst,
                                               std::vector<real_t> const& reduced_costs,
-                                              Sorter&                    sorter,
                                               CoverCounters<>&           row_coverage,
                                               Solution&                  lb_sol) {
 
         row_coverage.reset(inst.rows.size());
-        sorter.sort(lb_sol.idxs, [&](cidx_t j) { return reduced_costs[j]; });
+        cft::sort(lb_sol.idxs, [&](cidx_t j) { return reduced_costs[j]; });
 
         for (cidx_t j : lb_sol.idxs) {
             auto col = inst.cols[j];
