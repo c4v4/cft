@@ -18,8 +18,18 @@
 
 
 #include <cstddef>
+#include <type_traits>
 
 namespace cft {
+
+template <typename ResT, typename T>
+constexpr ResT narrow_cast(T val) {
+    // C++11 allows only return statements in constexpr functions (hence this hack)
+    return assert(static_cast<T>(static_cast<ResT>(val)) == val),
+           assert(std::is_signed<T>::value == std::is_signed<ResT>::value ||
+                  (static_cast<ResT>(val) < ResT{}) == (val < T{})),
+           static_cast<ResT>(val);
+}
 
 template <typename T, typename LT, typename UT>
 T clamp(T const& v, LT const& lb, UT const& ub) noexcept {

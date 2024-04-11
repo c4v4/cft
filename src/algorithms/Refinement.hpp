@@ -37,8 +37,8 @@ namespace local { namespace {
     }
 
     class RefinementFixManager {
-        static constexpr real_t alpha      = 1.1;
-        static constexpr real_t min_fixing = 0.3;
+        static constexpr real_t alpha      = 1.1_F;
+        static constexpr real_t min_fixing = 0.3_F;
 
         real_t          fix_fraction = min_fixing;
         real_t          prev_cost    = limits<real_t>::inf();
@@ -54,42 +54,42 @@ namespace local { namespace {
                 fix_fraction = min_fixing;
             prev_cost = best_sol.cost;
 
-            auto nrows_real   = static_cast<real_t>(inst.rows.size());
+            auto nrows_real   = static_cast<real_t>(rsize(inst.rows));
             auto nrows_to_fix = static_cast<ridx_t>(nrows_real * fix_fraction);
 
-            assert(best_lagr_mult.size() == inst.rows.size());
-            assert(nrows_to_fix <= inst.rows.size());
+            assert(rsize(best_lagr_mult) == rsize(inst.rows));
+            assert(nrows_to_fix <= rsize(inst.rows));
 
-            ridx_t nrows = inst.rows.size();
+            ridx_t nrows = rsize(inst.rows);
             row_coverage.reset(nrows);
             for (cidx_t j : best_sol.idxs)
                 row_coverage.cover(inst.cols[j]);
 
             // TODO(any): matches the paper name, maybe we can find a better name tho
             auto deltas = std::vector<CidxAndCost>();
-            deltas.reserve(best_sol.idxs.size());
+            deltas.reserve(csize(best_sol.idxs));
             for (cidx_t j : best_sol.idxs) {
-                real_t delta        = 0.0;
+                real_t delta        = 0.0_F;
                 real_t reduced_cost = inst.costs[j];
                 auto   col          = inst.cols[j];
                 for (ridx_t i : col) {
                     real_t cov = row_coverage[i];
-                    delta += best_lagr_mult[i] * (cov - 1.0F) / cov;
+                    delta += best_lagr_mult[i] * (cov - 1.0_F) / cov;
                     reduced_cost -= best_lagr_mult[i];
                 }
-                delta += max(reduced_cost, 0.0F);
+                delta += max(reduced_cost, 0.0_F);
                 deltas.push_back({j, delta});
             }
             cft::sort(deltas, [](CidxAndCost c) { return c.cost; });
 
-            ridx_t covered_rows = 0;
+            ridx_t covered_rows = 0_R;
             row_coverage.reset(nrows);
             auto cols_to_fix = std::vector<cidx_t>();
             for (CidxAndCost c : deltas) {
                 // if (clock() % 128 == 0) //blink
                 //     continue;
                 cidx_t j = c.idx;
-                covered_rows += row_coverage.cover(inst.cols[j]);
+                covered_rows += as_ridx(row_coverage.cover(inst.cols[j]));
                 cols_to_fix.push_back(j);
                 if (covered_rows > nrows_to_fix) {
                     cols_to_fix.pop_back();
@@ -102,7 +102,7 @@ namespace local { namespace {
 }  // namespace
 }  // namespace local
 
-constexpr real_t beta = 1.0;
+constexpr real_t beta = 1.0_F;
 
 // Complete CFT algorithm (Refinement + call to 3-phase)
 inline Solution run(Instance const& orig_inst,
@@ -111,8 +111,8 @@ inline Solution run(Instance const& orig_inst,
                     Solution const& warmstart_sol = {}) {
 
     auto   timer = Chrono<>();
-    cidx_t ncols = orig_inst.cols.size();
-    ridx_t nrows = orig_inst.rows.size();
+    cidx_t ncols = csize(orig_inst.cols);
+    ridx_t nrows = rsize(orig_inst.rows);
 
     auto inst     = orig_inst;
     auto best_sol = Solution();
@@ -153,10 +153,10 @@ inline Solution run(Instance const& orig_inst,
         make_identity_fixing_data(ncols, nrows, fixing);
         fix_columns_and_compute_maps(cols_to_fix, inst, fixing, old2new);
 
-        auto nrows_real  = static_cast<real_t>(orig_inst.rows.size());
-        auto fixing_perc = static_cast<real_t>(inst.rows.size()) * 100.0F / nrows_real;
+        auto nrows_real  = static_cast<real_t>(rsize(orig_inst.rows));
+        auto fixing_perc = static_cast<real_t>(rsize(inst.rows)) * 100.0_F / nrows_real;
         fmt::print("REFN > Free rows {} ({:.1f}%), best sol {} fixed cost {} time {:.2f}\n",
-                   inst.rows.size(),
+                   rsize(inst.rows),
                    fixing_perc,
                    best_sol.cost,
                    fixing.fixed_cost,

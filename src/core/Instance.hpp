@@ -41,37 +41,37 @@ struct Instance {
 #ifndef NDEBUG
 inline void col_and_rows_check(SparseBinMat<ridx_t> const&             cols,
                                std::vector<std::vector<cidx_t>> const& rows) {
-    for (cidx_t j = 0; j < cols.size(); ++j) {
+    for (cidx_t j = 0_C; j < csize(cols); ++j) {
         assert("Col is empty" && !cols[j].empty());
-        assert("Col does not exist" && j < cols.size());
+        assert("Col does not exist" && j < csize(cols));
         for (ridx_t i : cols[j])
             assert("Col not in row" && any(rows[i], [j](cidx_t rj) { return rj == j; }));
     }
 
-    for (ridx_t i = 0; i < rows.size(); ++i) {
+    for (ridx_t i = 0_R; i < rsize(rows); ++i) {
         assert("Row is empty" && !rows[i].empty());
-        assert("Row does not exist" && i < rows.size());
+        assert("Row does not exist" && i < rsize(rows));
         for (cidx_t j : rows[i])
-            assert("Row not in col" && any(cols[j], [i](cidx_t ci) { return ci == i; }));
+            assert("Row not in col" && any(cols[j], [i](ridx_t ci) { return ci == i; }));
     }
 }
 
 // TODO(any): find a better place for this function.
 inline void check_solution(Instance const& inst, Solution const& sol) {
-    ridx_t nrows = inst.rows.size();
+    ridx_t nrows = rsize(inst.rows);
 
     // check coverage
-    ridx_t covered_rows = 0;
+    ridx_t covered_rows = 0_R;
     auto   row_coverage = CoverCounters<>(nrows);
     for (auto j : sol.idxs)
-        covered_rows += row_coverage.cover(inst.cols[j]);
+        covered_rows += as_ridx(row_coverage.cover(inst.cols[j]));
     assert(covered_rows == nrows);
 
     // check cost
-    real_t total_cost = 0;
+    real_t total_cost = 0.0_F;
     for (cidx_t j : sol.idxs)
         total_cost += inst.costs[j];
-    assert(-1e-6 < total_cost - sol.cost && total_cost - sol.cost < 1e-6);
+    assert(-1e-6_F < total_cost - sol.cost && total_cost - sol.cost < 1e-6_F);
 }
 #endif
 
@@ -82,10 +82,10 @@ inline void fill_rows_from_cols(SparseBinMat<ridx_t> const&       cols,
     rows.resize(nrows);
     for (auto& row : rows) {
         row.clear();
-        row.reserve(cols.idxs.size() / nrows);
+        row.reserve(csize(cols.idxs) / nrows);
     }
 
-    for (cidx_t j = 0; j < cols.size(); ++j)
+    for (cidx_t j = 0_C; j < csize(cols); ++j)
         for (ridx_t i : cols[j])
             rows[i].push_back(j);
     // IF_DEBUG(col_and_rows_check(cols, rows));
@@ -121,10 +121,10 @@ struct IdxsMaps {
 
 inline void apply_maps_to_lagr_mult(IdxsMaps const& old2new, std::vector<real_t>& lagr_mult) {
 
-    ridx_t old_nrows = old2new.row_map.size();
-    ridx_t new_i     = 0;
-    for (ridx_t old_i = 0; old_i < old_nrows; ++old_i)
-        if (old2new.row_map[old_i] != CFT_REMOVED_IDX) {
+    ridx_t old_nrows = rsize(old2new.row_map);
+    ridx_t new_i     = 0_R;
+    for (ridx_t old_i = 0_R; old_i < old_nrows; ++old_i)
+        if (old2new.row_map[old_i] != removed_idx) {
             assert(new_i <= old_i);
             assert(new_i == old2new.row_map[old_i]);
             lagr_mult[new_i] = lagr_mult[old_i];

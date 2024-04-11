@@ -11,8 +11,8 @@
 
 void print_inst_summary(cft::Instance const& inst, cft::Solution const& warmstart = {}) {
     fmt::print("CFT > Instance summary:\n");
-    fmt::print("CFT >   nrows:     {}\n", inst.rows.size());
-    fmt::print("CFT >   ncols:     {}\n", inst.cols.size());
+    fmt::print("CFT >   nrows:     {}\n", cft::rsize(inst.rows));
+    fmt::print("CFT >   ncols:     {}\n", cft::csize(inst.cols));
     fmt::print("CFT >   costs:     {} {} {} {} ...\n",
                inst.costs[0],
                inst.costs[1],

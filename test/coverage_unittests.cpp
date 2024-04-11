@@ -2,6 +2,7 @@
 #include <catch2/catch.hpp>
 #include <cstring>
 
+#include "core/cft.hpp"
 #include "utils/SparseBinMat.hpp"
 #include "utils/coverage.hpp"
 
@@ -9,8 +10,8 @@ namespace cft {
 
 TEST_CASE("test_single_row_cover_set_coverage") {
 
-    cidx_t nrows = 99;
-    ridx_t ncols = 6;
+    ridx_t nrows = 99;
+    cidx_t ncols = 6;
 
     auto cols = SparseBinMat<ridx_t>();
     cols.push_back({81, 97, 12, 84, 88, 50, 62, 46, 25, 4, 40, 16, 98, 63});
@@ -21,7 +22,7 @@ TEST_CASE("test_single_row_cover_set_coverage") {
     cols.push_back({5, 91, 34, 55, 0, 23, 36, 56, 80, 68, 67, 59, 94, 76, 52, 89});
 
     auto cs = CoverCounters<>(nrows);
-    REQUIRE(cs.cover(cols.idxs) == nrows);
+    REQUIRE(cs.cover(cols.idxs) == static_cast<size_t>(nrows));
 
     cs.reset(nrows);
     for (ridx_t i = 0; i < nrows; ++i)
@@ -32,8 +33,8 @@ TEST_CASE("test_single_row_cover_set_coverage") {
 
 TEST_CASE("test_multiples_rows_cover_set_coverage") {
 
-    cidx_t nrows = 40;
-    ridx_t ncols = 7;
+    ridx_t nrows = 40;
+    cidx_t ncols = 7;
 
     auto cols = SparseBinMat<ridx_t>();
     cols.push_back({1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
@@ -45,14 +46,14 @@ TEST_CASE("test_multiples_rows_cover_set_coverage") {
     cols.push_back({5, 15, 25, 35, 6, 16, 26, 36});
 
     auto cs = CoverCounters<>(nrows);
-    REQUIRE(cs.cover(cols.idxs) == nrows);
+    REQUIRE(cs.cover(cols.idxs) == static_cast<size_t>(nrows));
 
     cs.reset(nrows);
-    for (ridx_t i = 0; i < cs.size(); ++i)
+    for (ridx_t i = 0; i < rsize(cs); ++i)
         REQUIRE(cs[i] == 0);
     for (cidx_t j = 0; j < 4; ++j)
         REQUIRE(cs.cover(cols[j]) == cols[j].size());
-    for (cidx_t j = 4; j < cols.size(); ++j) {
+    for (cidx_t j = 4; j < csize(cols); ++j) {
         REQUIRE(cs.is_redundant_cover(cols[j]));
         REQUIRE(!cs.is_redundant_uncover(cols[j]));
         REQUIRE(cs.cover(cols[j]) == 0);
@@ -69,11 +70,11 @@ TEST_CASE("test_multiples_rows_cover_set_coverage") {
     }
 
     cs.reset(nrows);
-    REQUIRE(cs.cover(cols.idxs) == nrows);
+    REQUIRE(cs.cover(cols.idxs) == static_cast<size_t>(nrows));
 
     size_t cover_count = 0;
     size_t nnz         = 0;
-    for (ridx_t i = 0; i < cs.size(); ++i)
+    for (ridx_t i = 0; i < rsize(cs); ++i)
         cover_count += cs[i];
     for (cidx_t j = 0; j < ncols; ++j)
         nnz += cols[j].size();

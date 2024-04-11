@@ -47,24 +47,24 @@ public:
                     std::vector<real_t>& lagr_mult,  // inout
                     Greedy&              greedy      // cache
     ) {
-        // assert(inst.rows.size() == core.inst.rows.size());
-        assert(inst.rows.size() == fixing.curr2orig.row_map.size());
-        assert(inst.rows.size() == lagr_mult.size());
+        // assert(rsize(inst.rows) == rsize(core.inst.rows));
+        assert(rsize(inst.rows) == rsize(fixing.curr2orig.row_map));
+        assert(rsize(inst.rows) == rsize(lagr_mult));
 
         auto timer = Chrono<>();
         _select_non_overlapping_cols(inst, lagr_mult, cover_counts, cols_to_fix, reduced_costs);
-        cidx_t no_overlap_ncols = cols_to_fix.idxs.size();
+        cidx_t no_overlap_ncols = csize(cols_to_fix.idxs);
 
-        auto fix_at_least = cols_to_fix.idxs.size() + max<cidx_t>(orig_nrows / 200, 1);
+        auto fix_at_least = csize(cols_to_fix.idxs) + max<cidx_t>(1_C, orig_nrows / 200);
         greedy(inst, lagr_mult, reduced_costs, cols_to_fix, limits<real_t>::max(), fix_at_least);
 
         fix_columns_and_compute_maps(cols_to_fix.idxs, inst, fixing, old2new);
         apply_maps_to_lagr_mult(old2new, lagr_mult);
 
         fmt::print("CFIX   > Fixing {} columns ({} + {}), time {:.2f}s\n",
-                   cols_to_fix.idxs.size(),
+                   csize(cols_to_fix.idxs),
                    no_overlap_ncols,
-                   cols_to_fix.idxs.size() - no_overlap_ncols,
+                   csize(cols_to_fix.idxs) - no_overlap_ncols,
                    timer.elapsed<sec>());
     }
 
@@ -74,14 +74,14 @@ private:
                                              CoverCounters<>&           cover_counts,
                                              Solution&                  cols_to_fix,
                                              std::vector<real_t>&       reduced_costs) {
-        static constexpr double col_fix_thresh = -0.001;
+        static constexpr real_t col_fix_thresh = -0.001_F;
 
-        reduced_costs.resize(inst.cols.size());
-        cover_counts.reset(inst.rows.size());
+        reduced_costs.resize(csize(inst.cols));
+        cover_counts.reset(rsize(inst.rows));
         cols_to_fix.idxs.clear();
-        cols_to_fix.cost = 0.0;
+        cols_to_fix.cost = 0.0_F;
 
-        for (cidx_t j = 0; j < inst.cols.size(); ++j) {
+        for (cidx_t j = 0_C; j < csize(inst.cols); ++j) {
             reduced_costs[j] = inst.costs[j];
             for (ridx_t i : inst.cols[j])
                 reduced_costs[j] -= lagr_mult[i];
@@ -100,9 +100,9 @@ private:
             // Fixing only non-overlapping instead, fixes way less and performs better.
             if (any(inst.cols[j], [&](ridx_t i) { return cover_counts[i] > 1; })) {
                 cols_to_fix.cost -= inst.costs[j];
-                j = CFT_REMOVED_IDX;
+                j = removed_idx;
             }
-        remove_if(cols_to_fix.idxs, [](cidx_t j) { return j == CFT_REMOVED_IDX; });
+        remove_if(cols_to_fix.idxs, [](cidx_t j) { return j == removed_idx; });
     }
 };
 
