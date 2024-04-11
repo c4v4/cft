@@ -84,6 +84,9 @@ namespace cft { namespace local { namespace {
                 real_t relative_improvement = abs_improvement / lower_bound;
                 prev_lower_bound            = lower_bound;
                 return abs_improvement < 1.0 && relative_improvement < 0.001;
+
+                // TODO(cava): test this, seems often better
+                // return abs_improvement < 50.0 && relative_improvement < 0.05;
             }
             return false;
         }

@@ -64,6 +64,10 @@ int main(int argc, char const** argv) {
             for (cft::cidx_t j : warmstart.idxs)
                 warmstart.cost += inst.costs[j];
 
+        } else if (cli_args.parser == CFT_MPS_PARSER) {
+            fmt::print("CFT > Parsing MPS instance from {}\n", cli_args.inst_path);
+            inst = cft::parse_mps_instance(cli_args.inst_path);
+
         } else {
             fmt::print("CFT > Parser {} does not exists.\n", cli_args.parser);
             cft::print_cli_help_msg();

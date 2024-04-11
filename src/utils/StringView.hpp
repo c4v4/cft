@@ -57,6 +57,10 @@ struct StringView {
         , finish(str + std::strlen(str)) {
     }
 
+    std::string to_cpp_string() const {
+        return {start, finish};
+    }
+
     size_type size() const noexcept {
         return finish - start;
     }
@@ -109,6 +113,8 @@ struct StringView {
 
     template <typename T>
     size_t find_last_if(T cond) const noexcept {
+        if (empty())
+            return size();
         for (size_t i = size() - 1; i > 0; --i)
             if (cond((*this)[i]))
                 return i;

@@ -52,6 +52,8 @@ inline StringView ltrim(StringView str) {
 }
 
 inline StringView rtrim(StringView str) {
+    if (str.empty())
+        return str;
     size_t suffix = str.find_last_if(NotSpace{});
     return str.remove_suffix(suffix + 1);
 }
@@ -64,7 +66,7 @@ inline std::vector<StringView> split(StringView str) {
     auto trimmed = trim(str);
     auto elems   = std::vector<StringView>{};
     while (!trimmed.empty()) {
-        size_t end = str.find_first_if(IsSpace{});
+        size_t end = trimmed.find_first_if(IsSpace{});
         elems.push_back(trimmed.get_substr(0, end));
         trimmed = ltrim(trimmed.remove_prefix(end));
     }

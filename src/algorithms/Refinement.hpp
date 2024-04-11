@@ -19,7 +19,6 @@
 
 #include "algorithms/ThreePhase.hpp"
 #include "core/cft.hpp"
-#include "fixing/fix_columns.hpp"
 #include "utils/Chrono.hpp"
 #include "utils/coverage.hpp"
 
