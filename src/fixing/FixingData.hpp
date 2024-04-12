@@ -27,7 +27,7 @@ namespace cft {
 struct FixingData {
     IdxsMaps            curr2orig;
     std::vector<cidx_t> fixed_cols;
-    real_t              fixed_cost = 0.0;
+    real_t              fixed_cost = 0.0_F;
 };
 
 namespace local { namespace {
@@ -39,14 +39,14 @@ namespace local { namespace {
                                         FixingData&                fixing        // inout
     ) {
         assert("Size mismatch between fixing data and inst columns" &&
-               fixing.curr2orig.col_map.size() == inst.cols.size());
+               csize(fixing.curr2orig.col_map) == csize(inst.cols));
 
         // Use old fixing data to insert fixed columns and costs
         for (cidx_t j : cols_to_fix) {
-            assert("Column not in instance" && j < inst.cols.size());
+            assert("Column not in instance" && j < csize(inst.cols));
             cidx_t orig_j = fixing.curr2orig
                                 .col_map[j];  // Use old fixing to store original indexes
-            assert(orig_j != CFT_REMOVED_IDX);
+            assert(orig_j != removed_idx);
             fixing.fixed_cols.push_back(orig_j);
             fixing.fixed_cost += inst.costs[j];
         }
@@ -58,26 +58,26 @@ namespace local { namespace {
                                           IdxsMaps const& old2new,  // in
                                           FixingData&     fixing    // inout
     ) {
-        cidx_t old_ncols = old2new.col_map.size();
-        ridx_t old_nrows = old2new.row_map.size();
-        cidx_t new_ncols = inst.cols.size();
-        ridx_t new_nrows = inst.rows.size();
+        cidx_t old_ncols = csize(old2new.col_map);
+        ridx_t old_nrows = rsize(old2new.row_map);
+        cidx_t new_ncols = csize(inst.cols);
+        ridx_t new_nrows = rsize(inst.rows);
 
         assert("Instance wit fixing has more columns than before" && new_ncols <= old_ncols);
         assert("Instance wit fixing has more rows than before" && new_nrows <= old_nrows);
 
         // Update original col mappings
-        for (cidx_t old_j = 0; old_j < old_ncols; ++old_j) {
+        for (cidx_t old_j = 0_C; old_j < old_ncols; ++old_j) {
             cidx_t new_j = old2new.col_map[old_j];
-            if (new_j != CFT_REMOVED_IDX)
+            if (new_j != removed_idx)
                 fixing.curr2orig.col_map[new_j] = fixing.curr2orig.col_map[old_j];
         }
         fixing.curr2orig.col_map.resize(new_ncols);
 
         // Update original row mappings
-        for (ridx_t old_i = 0; old_i < old_nrows; ++old_i) {
+        for (ridx_t old_i = 0_R; old_i < old_nrows; ++old_i) {
             ridx_t new_i = old2new.row_map[old_i];
-            if (new_i != CFT_REMOVED_IDX)
+            if (new_i != removed_idx)
                 fixing.curr2orig.row_map[new_i] = fixing.curr2orig.row_map[old_i];
         }
         fixing.curr2orig.row_map.resize(new_nrows);
@@ -90,11 +90,11 @@ inline void make_identity_fixing_data(cidx_t ncols, ridx_t nrows, FixingData& fi
     fixing.curr2orig.col_map.resize(ncols);
     fixing.curr2orig.row_map.resize(nrows);
     fixing.fixed_cols.clear();
-    fixing.fixed_cost = 0.0;
+    fixing.fixed_cost = 0.0_F;
 
-    for (cidx_t j = 0; j < ncols; ++j)
+    for (cidx_t j = 0_C; j < ncols; ++j)
         fixing.curr2orig.col_map[j] = j;
-    for (ridx_t i = 0; i < nrows; ++i)
+    for (ridx_t i = 0_R; i < nrows; ++i)
         fixing.curr2orig.row_map[i] = i;
 }
 

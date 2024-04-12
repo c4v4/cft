@@ -29,7 +29,7 @@ namespace cft {
 
 class ThreePhase {
     static constexpr size_t heur_iters     = 250;  // TODO(any): make it a cli parameter
-    static constexpr real_t init_step_size = 0.1;
+    static constexpr real_t init_step_size = 0.1_F;
 
     Subgradient subgrad;
     Greedy      greedy;
@@ -49,7 +49,7 @@ public:
     };
 
     ThreePhaseResult operator()(Instance& inst, prng_t& rnd, double tlim) {
-        constexpr ridx_t min_row_coverage = 5;
+        constexpr ridx_t min_row_coverage = 5_R;
 
         auto tot_timer = Chrono<>();
 
@@ -58,18 +58,18 @@ public:
         // First iter data (without fixing) needed by Refinement
         auto   unfixed_lagr_mult = std::vector<real_t>();
         real_t unfixed_lb        = limits<real_t>::min();
-        ridx_t orig_nrows        = inst.rows.size();  // Save original number of rows
+        ridx_t orig_nrows        = rsize(inst.rows);  // Save original number of rows
 
         auto fixing    = FixingData();
         auto pricer    = Pricer();
-        auto lagr_mult = std::vector<real_t>(core.inst.rows.size(), 0.0);
+        auto lagr_mult = std::vector<real_t>(rsize(core.inst.rows), 0.0_F);
         auto sol       = Solution();
         greedy(core.inst, lagr_mult, core.inst.costs, sol);
         auto best_sol = sol;
         _compute_greedy_multipliers(core.inst, lagr_mult);
 
         IF_DEBUG(auto inst_copy = inst);
-        make_identity_fixing_data(inst.cols.size(), inst.rows.size(), fixing);
+        make_identity_fixing_data(csize(inst.cols), rsize(inst.rows), fixing);
 
         for (size_t iter_counter = 0; !inst.rows.empty(); ++iter_counter) {
             auto timer = Chrono<>();
@@ -102,9 +102,9 @@ public:
             _perturb_lagr_multipliers(lagr_mult, rnd);  // Multipliers +-10% perturbation
 
             fmt::print("3PHS  > Ending iteration    {}:\n", iter_counter);
-            fmt::print("3PHS  > Remaining rows:     {}\n", inst.rows.size());
-            fmt::print("3PHS  > Remaining columns:  {}\n", inst.cols.size());
-            fmt::print("3PHS  > Core instance cols: {}\n", core.inst.cols.size());
+            fmt::print("3PHS  > Remaining rows:     {}\n", rsize(inst.rows));
+            fmt::print("3PHS  > Remaining columns:  {}\n", csize(inst.cols));
+            fmt::print("3PHS  > Core instance cols: {}\n", csize(core.inst.cols));
             fmt::print("3PHS  > Fixed cost:         {:.2f}\n", fixing.fixed_cost);
             fmt::print("3PHS  > Best solution:      {:.2f}\n", best_sol.cost);
             fmt::print("3PHS  > Current LB:         {:.2f}\n", real_lb + fixing.fixed_cost);
@@ -141,8 +141,8 @@ private:
     // Greedily creates lagrangian multipliers for the given instance.
     static void _compute_greedy_multipliers(Instance const& inst, std::vector<real_t>& lagr_mult) {
 
-        lagr_mult.assign(inst.rows.size(), limits<real_t>::max());
-        for (size_t i = 0; i < inst.rows.size(); ++i)
+        lagr_mult.assign(rsize(inst.rows), limits<real_t>::max());
+        for (ridx_t i = 0_R; i < rsize(inst.rows); ++i)
             for (cidx_t j : inst.rows[i]) {
                 real_t candidate = inst.costs[j] / static_cast<real_t>(inst.cols[j].size());
                 lagr_mult[i]     = cft::min(lagr_mult[i], candidate);
@@ -152,14 +152,14 @@ private:
     // Defines lagrangian multipliers as a perturbation of the given ones.
     static void _perturb_lagr_multipliers(std::vector<real_t>& lagr_mult, prng_t& rnd) {
         for (real_t& u : lagr_mult) {
-            u *= rnd_real(rnd, 0.9F, 1.1F);
+            u *= rnd_real(rnd, 0.9_F, 1.1_F);
             assert(std::isfinite(u) && "Multiplier is not finite");
         }
     }
 
     static InstAndMap _build_tentative_core_instance(Instance const& inst,
                                                      size_t          min_row_coverage) {
-        ridx_t nrows         = inst.rows.size();
+        ridx_t nrows         = rsize(inst.rows);
         auto   core_inst     = Instance{};
         auto   selected_cols = std::vector<cidx_t>();
 
@@ -173,8 +173,8 @@ private:
 
         // There might be duplicates, so let's sort the column list to detect them
         cft::sort(selected_cols);
-        cidx_t w     = 0;
-        cidx_t old_j = CFT_REMOVED_IDX;  // To detect duplicates
+        cidx_t w     = 0_C;
+        cidx_t old_j = removed_idx;  // To detect duplicates
         for (cidx_t j : selected_cols) {
             if (j == old_j)
                 continue;  // Skip duplicate

@@ -50,11 +50,11 @@ namespace cft { namespace local { namespace {
             if (iter == next_update_iter) {
                 next_update_iter += period;
                 real_t diff = (max_lower_bound - min_lower_bound) / abs(max_lower_bound);
-                assert(diff >= 0.0 && "Negative difference in lower bounds");
-                if (diff > 0.01)
-                    curr_step_size /= 2.0;
-                if (diff <= 0.001)
-                    curr_step_size *= 1.5;
+                assert(diff >= 0.0_F && "Negative difference in lower bounds");
+                if (diff > 0.01_F)
+                    curr_step_size /= 2.0_F;
+                if (diff <= 0.001_F)
+                    curr_step_size *= 1.5_F;
                 min_lower_bound = limits<real_t>::max();
                 max_lower_bound = limits<real_t>::min();
             }
@@ -83,10 +83,10 @@ namespace cft { namespace local { namespace {
                 real_t abs_improvement      = lower_bound - prev_lower_bound;
                 real_t relative_improvement = abs_improvement / lower_bound;
                 prev_lower_bound            = lower_bound;
-                return abs_improvement < 1.0 && relative_improvement < 0.001;
+                return abs_improvement < 1.0_F && relative_improvement < 0.001_F;
 
                 // TODO(cava): test this, seems often better
-                // return abs_improvement < 50.0 && relative_improvement < 0.05;
+                // return abs_improvement < 50.0_F && relative_improvement < 0.05_F;
             }
             return false;
         }
@@ -111,12 +111,12 @@ namespace cft { namespace local { namespace {
 
         void update(real_t core_lb, real_t real_lb, real_t ub) {
             real_t const delta = (core_lb - real_lb) / ub;
-            if (delta <= 1e-6)
-                period = std::min(max_period_increment, 10 * period);
-            else if (delta <= 0.02)
-                period = std::min(max_period_increment, 5 * period);
-            else if (delta <= 0.2)
-                period = std::min(max_period_increment, 2 * period);
+            if (delta <= 1e-6_F)
+                period = min(max_period_increment, 10 * period);
+            else if (delta <= 0.02_F)
+                period = min(max_period_increment, 5 * period);
+            else if (delta <= 0.2_F)
+                period = min(max_period_increment, 2 * period);
             else
                 period = 10;
 

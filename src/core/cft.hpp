@@ -17,10 +17,13 @@
 #define CFT_SRC_CORE_CFT_HPP
 
 
+#include <cassert>
 #include <cstdint>
 #include <vector>
 
 #include "utils/limits.hpp"
+#include "utils/random.hpp"
+#include "utils/utility.hpp"
 
 #ifdef VERBOSE
 #define IF_VERBOSE(...) __VA_ARGS__
@@ -34,17 +37,22 @@
 #define IF_DEBUG(...) __VA_ARGS__
 #endif
 
-// Reserve column index to mark removed/invalid columns
-#define CFT_REMOVED_IDX (cft::limits<cidx_t>::max())
-
-// Epsilon value for floating point comparisons of costs
-#define CFT_EPSILON cft::real_t(1 - 1e-6)  // 1-1e-6 for integer costs, 1e-6 for float costs
+// Noinline attribute to help profiling specific functions
+#if defined(__GNUC__) || defined(__clang__)
+#define CFT_NOINLINE __attribute__((noinline))
+#elif defined(_MSC_VER)
+#define CFT_NOINLINE __declspec(noinline)
+#endif
 
 namespace cft {
 
-using cidx_t = uint32_t;
-using ridx_t = uint32_t;
-using real_t = float;
+// Epsilon value for floating point comparisons of costs
+#define CFT_EPSILON real_t(1 - 1e-6)  // 1-1e-6 for integer costs, 1e-6 for float costs
+
+using cidx_t = int32_t;                    // Type for column indexes
+using ridx_t = int16_t;                    // Type for row indexes
+using real_t = float;                      // Type for real values
+using prng_t = prng_picker<real_t>::type;  // default pseudo-random number generator type
 
 struct CidxAndCost {
     cidx_t idx;
@@ -52,18 +60,84 @@ struct CidxAndCost {
 };
 
 struct Solution {
-    std::vector<cft::cidx_t> idxs = {};
-    cft::real_t              cost = cft::limits<cft::real_t>::inf();
+    std::vector<cidx_t> idxs = {};
+    real_t              cost = limits<real_t>::inf();
 };
 
-}  // namespace cft
+// Helper struct to represent a removed index, only defines ==/!= comparison to avoid misuse
+// The type maximum value is used as reserved value to represent invalid indexes.
+struct RemovedIdx {
+    template <typename T>
+    constexpr operator T() const {
+        return limits<T>::max();
+    }
+};
 
-// Noinline attribute to help profiling specific functions
-#if defined(__GNUC__) || defined(__clang__)
-#define CFT_NOINLINE __attribute__((noinline))
-#elif defined(_MSC_VER)
-#define CFT_NOINLINE __declspec(noinline)
-#endif
+template <typename T>
+constexpr bool operator==(RemovedIdx /*r*/, T j) {
+    return j == limits<T>::max();
+}
+
+template <typename T>
+constexpr bool operator==(T j, RemovedIdx /*r*/) {
+    return j == limits<T>::max();
+}
+
+template <typename T>
+constexpr bool operator!=(RemovedIdx /*r*/, T j) {
+    return j != limits<T>::max();
+}
+
+template <typename T>
+constexpr bool operator!=(T j, RemovedIdx /*r*/) {
+    return j != limits<T>::max();
+}
+
+constexpr RemovedIdx removed_idx = {};
+
+// Debug checked narrow cast to cidx_t
+template <typename T>
+constexpr cidx_t as_cidx(T val) {
+    return narrow_cast<cidx_t>(val);
+}
+
+// Debug checked narrow cast to ridx_t
+template <typename T>
+constexpr ridx_t as_ridx(T val) {
+    return narrow_cast<ridx_t>(val);
+}
+
+// User-defined literals for cidx_t with debug and comptime checks)
+constexpr cidx_t operator""_C(unsigned long long j) {
+    return as_cidx(j);
+}
+
+// User-defined literals for ridx_t with debug and comptime checks)
+constexpr ridx_t operator""_R(unsigned long long i) {
+    return as_ridx(i);
+}
+
+// User-defined literals for real_t with debug and comptime checks)
+constexpr real_t operator""_F(long double f) {
+    // C++11 allows only return statements in constexpr functions (hence this hack)
+    return assert(limits<real_t>::min() <= f && f <= limits<real_t>::max()), static_cast<real_t>(f);
+}
+
+// Since cidx_t could be any integer type, csize provide a (debug) checked way to get the size of a
+// container as cidx_t. It also allows to avoid narrowing conversion warnings.
+template <typename Cont>
+inline cidx_t csize(Cont const& cont) {
+    return as_cidx(size(cont));
+}
+
+// Since ridx_t could be any integer type, rsize provide a (debug) checked way to get the size of a
+// container as ridx_t. It also allows to avoid narrowing conversion warnings.
+template <typename Cont>
+inline ridx_t rsize(Cont const& cont) {
+    return as_ridx(size(cont));
+}
+
+}  // namespace cft
 
 
 #endif /* CFT_SRC_CORE_CFT_HPP */

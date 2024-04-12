@@ -39,8 +39,8 @@ struct RedundancyData {
     CoverCounters<>          partial_cover;   // row-cov if we selected the current column
     std::vector<cidx_t>      cols_to_remove;  // list of columns to remove
     real_t                   best_cost         = limits<real_t>::max();  // current best upper bound
-    real_t                   partial_cost      = 0.0;                    // current solution cost
-    cidx_t                   partial_cov_count = 0;                      // number of covered rows
+    real_t                   partial_cost      = 0.0_F;                  // current solution cost
+    ridx_t                   partial_cov_count = 0_R;                    // number of covered rows
 };
 
 #ifndef NDEBUG
@@ -48,24 +48,24 @@ inline void check_redundancy_data(Instance const&            inst,
                                   std::vector<cidx_t> const& sol,
                                   RedundancyData const&      red_set) {
 
-    auto   total_check    = CoverCounters<>(inst.rows.size());
-    auto   part_check     = CoverCounters<>(inst.rows.size());
-    size_t part_cov_count = 0;
+    auto   total_check    = CoverCounters<>(rsize(inst.rows));
+    auto   part_check     = CoverCounters<>(rsize(inst.rows));
+    ridx_t part_cov_count = 0_R;
     for (cidx_t j : sol) {
-        cidx_t part_covered = part_check.cover(inst.cols[j]);
-        cidx_t tot_covered  = total_check.cover(inst.cols[j]);
+        auto part_covered = as_cidx(part_check.cover(inst.cols[j]));
+        auto tot_covered  = as_cidx(total_check.cover(inst.cols[j]));
         assert(tot_covered == part_covered);
-        part_cov_count += part_covered;
+        part_cov_count += as_ridx(part_covered);
     }
     for (cidx_t j : red_set.cols_to_remove) {
-        part_cov_count -= part_check.uncover(inst.cols[j]);
+        part_cov_count -= as_ridx(part_check.uncover(inst.cols[j]));
         total_check.uncover(inst.cols[j]);
     }
     for (CidxAndCost x : red_set.redund_set)
-        part_cov_count -= part_check.uncover(inst.cols[x.idx]);
+        part_cov_count -= as_ridx(part_check.uncover(inst.cols[x.idx]));
 
     assert(part_cov_count == red_set.partial_cov_count);
-    for (ridx_t i = 0; i < inst.rows.size(); ++i) {
+    for (ridx_t i = 0_R; i < rsize(inst.rows); ++i) {
         assert(red_set.total_cover[i] == total_check[i]);
         assert(red_set.partial_cover[i] == part_check[i]);
     }
@@ -93,12 +93,12 @@ namespace local { namespace {
 
             if (red_data.partial_cost < red_data.best_cost) {
                 red_data.best_cost = red_data.partial_cost;
-                for (cidx_t s = 0; s < CFT_ENUM_VARS; ++s)
+                for (cidx_t s = 0_C; s < CFT_ENUM_VARS; ++s)
                     sol[s] = vars[s];
             }
 
 #ifndef NDEBUG
-            for (ridx_t i = 0; i < red_data.partial_cover.size(); ++i) {
+            for (ridx_t i = 0_R; i < rsize(red_data.partial_cover); ++i) {
                 assert(red_data.total_cover[i] > 0);
                 assert(red_data.partial_cover[i] > 0);
                 assert(red_data.partial_cover[i] <= red_data.total_cover[i]);
@@ -120,15 +120,15 @@ namespace local { namespace {
             auto& total_cover   = red_data.total_cover;
 
 #ifndef NDEBUG
-            assert(red_data.partial_cov_count <= partial_cover.size());
-            for (ridx_t i = 0; i < partial_cover.size(); ++i) {
+            assert(red_data.partial_cov_count <= rsize(partial_cover));
+            for (ridx_t i = 0_R; i < rsize(partial_cover); ++i) {
                 assert(total_cover[i] > 0);
                 assert(partial_cover[i] <= total_cover[i]);
             }
 #endif
 
             if (Depth == red_data.redund_set.size() ||
-                red_data.partial_cov_count == partial_cover.size()) {
+                red_data.partial_cov_count == rsize(partial_cover)) {
                 Enumerator<CFT_ENUM_VARS>::invoke(inst, red_data, vars, sol);
                 return;
             }
@@ -142,13 +142,13 @@ namespace local { namespace {
                 !partial_cover.is_redundant_cover(col)) {
 
                 vars[Depth] = true;
-                red_data.partial_cov_count += partial_cover.cover(col);
+                red_data.partial_cov_count += as_ridx(partial_cover.cover(col));
                 red_data.partial_cost += red_data.redund_set[Depth].cost;
 
                 Enumerator<Depth + 1>::invoke(inst, red_data, vars, sol);
 
                 vars[Depth] = false;
-                red_data.partial_cov_count -= partial_cover.uncover(col);
+                red_data.partial_cov_count -= as_ridx(partial_cover.uncover(col));
                 red_data.partial_cost -= red_data.redund_set[Depth].cost;
             }
 
@@ -169,17 +169,18 @@ inline void complete_init_redund_set(RedundancyData&            red_data,
                                      real_t                     cutoff_cost) {
 
     red_data.redund_set.clear();
-    red_data.partial_cover.reset(inst.rows.size());
-    red_data.partial_cov_count = 0;
+    red_data.partial_cover.reset(rsize(inst.rows));
+    red_data.partial_cov_count = 0_R;
     red_data.cols_to_remove.clear();
     red_data.best_cost    = cutoff_cost;
-    red_data.partial_cost = 0.0;
+    red_data.partial_cost = 0.0_F;
 
     for (cidx_t j : sol)
         if (red_data.total_cover.is_redundant_uncover(inst.cols[j]))
             red_data.redund_set.push_back({j, inst.costs[j]});
         else {
-            red_data.partial_cov_count += red_data.partial_cover.cover(inst.cols[j]);
+            red_data.partial_cov_count += as_ridx(
+                red_data.partial_cover.cover(inst.cols[j]));
             red_data.partial_cost += inst.costs[j];
             if (red_data.partial_cost >= cutoff_cost)
                 return;
@@ -190,7 +191,7 @@ inline void complete_init_redund_set(RedundancyData&            red_data,
 // Remove redundant columns from the redundancy set using an implicit enumeration. NOTE: assumes
 // no more than CFT_ENUM_VARS columns are redundant.
 inline void enumeration_removal(RedundancyData& red_set, Instance const& inst) {
-    assert(red_set.redund_set.size() <= CFT_ENUM_VARS);
+    assert(csize(red_set.redund_set) <= CFT_ENUM_VARS);
     real_t old_ub = red_set.best_cost;
     if (red_set.partial_cost >= old_ub || red_set.redund_set.empty())
         return;
@@ -205,7 +206,7 @@ inline void enumeration_removal(RedundancyData& red_set, Instance const& inst) {
 
     if (red_set.best_cost < old_ub)
         // cols_to_keep is updated only if the upper bound is improved
-        for (cidx_t r = 0; r < red_set.redund_set.size(); ++r)
+        for (cidx_t r = 0_C; r < csize(red_set.redund_set); ++r)
             if (!cols_to_keep[r])
                 red_set.cols_to_remove.push_back(red_set.redund_set[r].idx);
 }
@@ -213,9 +214,9 @@ inline void enumeration_removal(RedundancyData& red_set, Instance const& inst) {
 // Remove redundant columns from the redundancy set using an heuristic greedy approach until
 // CFT_ENUM_VARS columns are left.
 inline void heuristic_removal(RedundancyData& red_set, Instance const& inst) {
-    while (red_set.partial_cost < red_set.best_cost && red_set.redund_set.size() > CFT_ENUM_VARS) {
+    while (red_set.partial_cost < red_set.best_cost && csize(red_set.redund_set) > CFT_ENUM_VARS) {
 
-        if (red_set.partial_cov_count == red_set.partial_cover.size())
+        if (red_set.partial_cov_count == rsize(red_set.partial_cover))
             return;
 
         cidx_t j = red_set.redund_set.back().idx;
@@ -230,7 +231,8 @@ inline void heuristic_removal(RedundancyData& red_set, Instance const& inst) {
             if (red_set.total_cover.is_redundant_uncover(inst.cols[x.idx]))
                 return false;
             red_set.partial_cost += inst.costs[x.idx];
-            red_set.partial_cov_count += red_set.partial_cover.cover(inst.cols[x.idx]);
+            red_set.partial_cov_count += as_ridx(
+                red_set.partial_cover.cover(inst.cols[x.idx]));
             return true;
         });
     }

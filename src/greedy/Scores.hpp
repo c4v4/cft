@@ -51,25 +51,25 @@ struct Scores {
 // that would be covered by the current column. Gamma represents the reduced cost of the column
 // minus the component of the lagrangian multiplier associated with already covered rows.
 inline real_t compute_score(real_t gamma, ridx_t mu) {
-    if (mu == 0)
+    if (mu == 0_R)
         return limits<real_t>::max();
-    if (gamma > 0)
+    if (gamma > 0.0_F)
         return gamma / static_cast<real_t>(mu);
     return gamma * static_cast<real_t>(mu);
 }
 
 // Initialize the scores for the greedy algorithm
 inline void complete_scores_init(Instance const& inst, Scores& score_info) {
-    assert(score_info.gammas.size() == inst.cols.size() && "Expected initialized gammas "
+    assert(csize(score_info.gammas) == csize(inst.cols) && "Expected initialized gammas "
                                                            "vector");
 
-    cidx_t ncols = inst.cols.size();
+    cidx_t ncols = csize(inst.cols);
     score_info.scores.clear();
     score_info.score_map.resize(ncols);
     score_info.covered_rows.resize(ncols);
 
-    for (cidx_t j = 0; j < inst.cols.size(); ++j) {
-        cidx_t cover_num           = inst.cols[j].size();
+    for (cidx_t j = 0_C; j < csize(inst.cols); ++j) {
+        ridx_t cover_num           = rsize(inst.cols[j]);
         real_t score               = compute_score(score_info.gammas[j], cover_num);
         score_info.score_map[j]    = j;
         score_info.covered_rows[j] = cover_num;
@@ -89,24 +89,24 @@ inline void update_row_scores(std::vector<cidx_t> const& row,
         score_info.gammas[j] += i_lagr_mult;
 
         cidx_t s = score_info.score_map[j];
-        assert(s != CFT_REMOVED_IDX && "Column is not in the score map");
+        assert(s != removed_idx && "Column is not in the score map");
         scores[s].score = compute_score(score_info.gammas[j], score_info.covered_rows[j]);
         assert(std::isfinite(score_info.gammas[j]) && "Gamma is not finite");
         assert(std::isfinite(scores[s].score) && "Score is not finite");
     }
 }
 
-inline cidx_t update_covered(Instance const&            inst,
+inline ridx_t update_covered(Instance const&            inst,
                              Solution const&            sol,
                              std::vector<real_t> const& lagr_mult,
                              Scores&                    score_info,
                              CoverCounters<>&           total_cover) {
 
-    cidx_t covered_rows = 0;
+    ridx_t covered_rows = 0_R;
     for (cidx_t j : sol.idxs)
-        covered_rows += total_cover.cover(inst.cols[j]);
+        covered_rows += as_ridx(total_cover.cover(inst.cols[j]));
 
-    for (ridx_t i = 0; i < total_cover.size(); i++)
+    for (ridx_t i = 0_R; i < rsize(total_cover); i++)
         if (total_cover[i] > 0)
             update_row_scores(inst.rows[i], lagr_mult[i], score_info);
 
@@ -133,13 +133,13 @@ inline score_subspan_t get_good_scores(Scores& score_info, size_t amount) {
     remove_if(scores, [&](ScoreData sd) {
         if (sd.score < limits<real_t>::max())
             return false;
-        score_info.score_map[sd.idx] = CFT_REMOVED_IDX;
+        score_info.score_map[sd.idx] = removed_idx;
         return true;
     });
 
     amount = std::min(amount, scores.size());
     cft::nth_element(scores, amount, ScoreKey{});
-    for (cidx_t s = 0; s < scores.size(); ++s)
+    for (cidx_t s = 0_C; s < csize(scores); ++s)
         score_info.score_map[scores[s].idx] = s;
 
     return make_span(scores.begin(), amount);

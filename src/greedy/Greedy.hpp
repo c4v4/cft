@@ -51,12 +51,12 @@ public:
                     real_t                     cutoff_cost  = limits<real_t>::max(),
                     cidx_t                     max_sol_size = limits<cidx_t>::max()) {
 
-        if (sol.idxs.size() >= max_sol_size)
+        if (csize(sol.idxs) >= max_sol_size)
             return;
 
         score_info.gammas = reduced_costs;
 
-        ridx_t nrows       = inst.rows.size();
+        ridx_t nrows       = rsize(inst.rows);
         auto&  total_cover = redund_info.total_cover;
         total_cover.reset(nrows);
 
@@ -65,20 +65,20 @@ public:
         if (!sol.idxs.empty())
             nrows_to_cover -= update_covered(inst, sol, lagr_mult, score_info, total_cover);
 
-        auto   smaller_size         = min(nrows_to_cover, inst.cols.size());
+        auto   smaller_size         = min(nrows_to_cover, csize(inst.cols));
         auto   good_scores          = get_good_scores(score_info, smaller_size);
         real_t score_update_trigger = good_scores.back().score;
 
         // Fill solution
-        while (nrows_to_cover > 0 && sol.idxs.size() < max_sol_size) {
+        while (nrows_to_cover > 0_R && csize(sol.idxs) < max_sol_size) {
 
-            cidx_t s_min     = argmin(good_scores, ScoreKey{});
+            auto   s_min     = as_cidx(argmin(good_scores, ScoreKey{}));
             real_t min_score = good_scores[s_min].score;
             if (min_score >= score_update_trigger) {
-                smaller_size         = min(nrows_to_cover, inst.cols.size() - sol.idxs.size());
+                smaller_size         = min(nrows_to_cover, csize(inst.cols) - csize(sol.idxs));
                 good_scores          = get_good_scores(score_info, smaller_size);
                 score_update_trigger = good_scores.back().score;
-                s_min                = argmin(good_scores, ScoreKey{});
+                s_min                = as_cidx(argmin(good_scores, ScoreKey{}));
             }
 
             cidx_t jstar = score_info.scores[s_min].idx;
@@ -88,7 +88,7 @@ public:
             sol.cost += inst.costs[jstar];
 
             update_changed_scores(inst, lagr_mult, total_cover, s_min, score_info);
-            nrows_to_cover -= total_cover.cover(inst.cols[jstar]);
+            nrows_to_cover -= as_ridx(total_cover.cover(inst.cols[jstar]));
         }
 
         _remove_redundant_cols(inst, cutoff_cost, redund_info, sol);
@@ -126,7 +126,7 @@ private:
         if (redund_info.partial_cost >= redund_info.best_cost || redund_info.redund_set.empty())
             return true;  // Discard sol
 
-        if (redund_info.partial_cov_count < redund_info.partial_cover.size())
+        if (redund_info.partial_cov_count < rsize(redund_info.partial_cover))
             return false;  // Continue with following step
 
         // Complete sol

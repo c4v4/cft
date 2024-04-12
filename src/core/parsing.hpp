@@ -47,7 +47,7 @@ inline Instance parse_scp_instance(std::string const& path) {
     if (!line_view.empty())
         throw std::invalid_argument("Invalid file format: not a SCP instance?");
 
-    for (cidx_t j = 0; j < ncols; ++j) {
+    for (cidx_t j = 0_C; j < ncols; ++j) {
         if (line_view.empty())
             line_view = file_iter.next();
         inst.costs.push_back(string_to<real_t>::consume(line_view));
@@ -56,18 +56,18 @@ inline Instance parse_scp_instance(std::string const& path) {
     // For each row: row_size
     //               list of row_size columns that cover the row
     auto cols = std::vector<std::vector<ridx_t>>(ncols);
-    for (size_t i = 0; i < nrows; ++i) {
+    for (ridx_t i = 0_R; i < nrows; ++i) {
         line_view    = file_iter.next();
         auto i_ncols = string_to<cidx_t>::consume(line_view);
         if (!line_view.empty())
             throw std::invalid_argument("Invalid file format: not a SCP instance?");
 
-        for (ridx_t n = 0; n < i_ncols; ++n) {
+        for (cidx_t n = 0_C; n < i_ncols; ++n) {
             if (line_view.empty())
                 line_view = file_iter.next();
             cidx_t cidx = string_to<cidx_t>::consume(line_view);
-            assert(0 < cidx && cidx <= ncols);
-            if (cidx <= 0 || ncols < cidx)
+            assert(0_C < cidx && cidx <= ncols);
+            if (cidx <= 0_C || ncols < cidx)
                 throw std::invalid_argument("Invalid column index: not a SCP instance?");
             cols[cidx - 1].push_back(i);
         }
@@ -76,7 +76,7 @@ inline Instance parse_scp_instance(std::string const& path) {
     for (auto const& col : cols) {
         for (ridx_t i : col)
             inst.cols.idxs.push_back(i);
-        inst.cols.begs.push_back(inst.cols.idxs.size());
+        inst.cols.begs.push_back(csize(inst.cols.idxs));
     }
 
     inst.solcosts = std::vector<real_t>(ncols, limits<real_t>::max());
@@ -98,14 +98,14 @@ inline Instance parse_rail_instance(std::string const& path) {
     cidx_t ncols = string_to<cidx_t>::consume(line_view);
     if (!line_view.empty())
         throw std::invalid_argument("Invalid file format: not a RAIL instance?");
-    for (cidx_t j = 0; j < ncols; j++) {
+    for (cidx_t j = 0_C; j < ncols; j++) {
         line_view = file_iter.next();
         inst.costs.push_back(string_to<real_t>::consume(line_view));
         auto j_nrows = string_to<ridx_t>::consume(line_view);
 
-        for (size_t n = 0; n < j_nrows; n++)
-            inst.cols.idxs.push_back(string_to<cidx_t>::consume(line_view) - 1);
-        inst.cols.begs.push_back(inst.cols.idxs.size());
+        for (ridx_t n = 0_R; n < j_nrows; n++)
+            inst.cols.idxs.push_back(string_to<ridx_t>::consume(line_view) - 1_R);
+        inst.cols.begs.push_back(csize(inst.cols.idxs));
     }
     inst.solcosts = std::vector<real_t>(ncols, limits<real_t>::max());
 
@@ -124,13 +124,13 @@ inline FileData parse_cvrp_instance(std::string const& path) {
     if (!line_view.empty())
         throw std::invalid_argument("Invalid file format: not a CVRP instance?");
 
-    for (cidx_t j = 0; j < ncols; j++) {
+    for (cidx_t j = 0_C; j < ncols; j++) {
         line_view = file_iter.next();
         fdata.inst.costs.push_back(string_to<real_t>::consume(line_view));
         fdata.inst.solcosts.push_back(string_to<real_t>::consume(line_view));
         while (!line_view.empty())
             fdata.inst.cols.idxs.push_back(string_to<ridx_t>::consume(line_view));
-        fdata.inst.cols.begs.push_back(fdata.inst.cols.idxs.size());
+        fdata.inst.cols.begs.push_back(csize(fdata.inst.cols.idxs));
     }
 
     auto warmstart = std::vector<cidx_t>();
@@ -150,7 +150,7 @@ inline Instance parse_mps_instance(std::string const& path) {
     while (line_view != "ROWS")
         line_view = file_iter.next();
 
-    ridx_t nrows    = 0;
+    ridx_t nrows    = 0_R;
     auto   rows_map = std::unordered_map<std::string, ridx_t>();
     auto   obj_name = std::string();
     while (line_view != "COLUMNS") {
@@ -175,7 +175,7 @@ inline Instance parse_mps_instance(std::string const& path) {
 
         if (tokens[0] != prev_col_name) {  // new column
             prev_col_name = tokens[0].to_cpp_string();
-            inst.cols.begs.push_back(inst.cols.idxs.size());
+            inst.cols.begs.push_back(csize(inst.cols.idxs));
             inst.solcosts.push_back(limits<real_t>::max());
             inst.costs.push_back(limits<real_t>::max());
         }
@@ -193,7 +193,7 @@ inline Instance parse_mps_instance(std::string const& path) {
 
         line_view = file_iter.next();
     }
-    inst.cols.begs.push_back(inst.cols.idxs.size());
+    inst.cols.begs.push_back(csize(inst.cols.idxs));
 
 
 #ifndef NDEBUG

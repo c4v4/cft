@@ -41,14 +41,18 @@ public:
         assert(!inst.cols.empty());
         assert(!core.inst.cols.empty());
 
-        ridx_t nrows = inst.rows.size();
-        cidx_t ncols = inst.cols.size();
+        ridx_t nrows = rsize(inst.rows);
+        cidx_t ncols = csize(inst.cols);
 
         core.col_map.clear();
         _prepare_caches(ncols, reduced_costs, taken_idxs);
 
         auto real_lower_bound = _compute_col_reduced_costs(inst, lagr_mult, reduced_costs);
-        _select_c1_col_idxs(inst, reduced_costs, 5ULL * nrows, core.col_map, taken_idxs);
+        _select_c1_col_idxs(inst,
+                            reduced_costs,
+                            as_cidx(5 * nrows),
+                            core.col_map,
+                            taken_idxs);
         _select_c2_col_idxs(inst, reduced_costs, core.col_map, taken_idxs);
 
         _init_partial_instance(inst, core.col_map, core.inst);
@@ -58,7 +62,7 @@ public:
     }
 
 private:
-    static void _prepare_caches(ridx_t               ncols,
+    static void _prepare_caches(cidx_t               ncols,
                                 std::vector<real_t>& reduced_costs,
                                 std::vector<bool>&   taken_idxs) {
         reduced_costs.resize(ncols);
@@ -69,16 +73,16 @@ private:
                                              std::vector<real_t> const& lagr_mult,
                                              std::vector<real_t>&       reduced_costs) {
 
-        real_t real_lower_bound = 0.0;
+        real_t real_lower_bound = 0.0_F;
         for (real_t u : lagr_mult)
             real_lower_bound += u;
 
-        for (cidx_t j = 0; j < inst.cols.size(); ++j) {
+        for (cidx_t j = 0_C; j < csize(inst.cols); ++j) {
             reduced_costs[j] = inst.costs[j];
             for (ridx_t i : inst.cols[j])
                 reduced_costs[j] -= lagr_mult[i];
 
-            if (reduced_costs[j] < 0.0)
+            if (reduced_costs[j] < 0.0_F)
                 real_lower_bound += reduced_costs[j];
         }
         return real_lower_bound;
@@ -86,16 +90,16 @@ private:
 
     static void _select_c1_col_idxs(Instance const&            inst,
                                     std::vector<real_t> const& reduced_costs,
-                                    size_t                     maxsize,
+                                    cidx_t                     maxsize,
                                     std::vector<cidx_t>&       idxs,
                                     std::vector<bool>&         taken_idxs) {
         assert(idxs.empty());
 
-        for (cidx_t j = 0; j < inst.cols.size(); ++j)
-            if (reduced_costs[j] < 0.1)
+        for (cidx_t j = 0_C; j < csize(inst.cols); ++j)
+            if (reduced_costs[j] < 0.1_F)
                 idxs.push_back(j);
 
-        if (idxs.size() > maxsize) {
+        if (csize(idxs) > maxsize) {
             cft::nth_element(idxs, maxsize - 1, [&](cidx_t i) { return reduced_costs[i]; });
             idxs.resize(maxsize);
         }
@@ -109,12 +113,12 @@ private:
                                     std::vector<cidx_t>&       idxs,
                                     std::vector<bool>&         taken_idxs) {
 
-        ridx_t const nrows = inst.rows.size();
+        ridx_t const nrows = rsize(inst.rows);
 
         auto heap = make_custom_compare_sorted_array<cidx_t, mincov>(
             [&](cidx_t i, cidx_t j) { return reduced_costs[i] < reduced_costs[j]; });
 
-        for (ridx_t i = 0; i < nrows; ++i) {
+        for (ridx_t i = 0_R; i < nrows; ++i) {
             heap.clear();
             for (cidx_t const j : inst.rows[i])
                 heap.try_insert(j);

@@ -51,17 +51,17 @@ public:
                       std::vector<real_t>& best_lagr_mult  // inout
     ) {
 
-        size_t const nrows       = orig_inst.rows.size();
+        ridx_t const nrows       = rsize(orig_inst.rows);
         real_t const max_real_lb = cutoff - CFT_EPSILON;
 
         assert(!orig_inst.cols.empty() && "Empty instance");
         assert(!core.inst.cols.empty() && "Empty core instance");
-        assert(nrows == core.inst.rows.size() && "Incompatible instances");
+        assert(nrows == rsize(core.inst.rows) && "Incompatible instances");
 
         auto timer          = Chrono<>();
         auto next_step_size = local::StepSizeManager(20, step_size);
         auto should_exit    = local::ExitConditionManager(300);
-        auto should_price   = local::PricingManager(10, std::min(1000UL, nrows / 3));
+        auto should_price   = local::PricingManager(10, std::min<size_t>(1000, nrows / 3));
         auto best_core_lb   = _reset_red_costs_and_lb(core.inst.costs, lb_sol, reduced_costs);
         auto best_real_lb   = limits<real_t>::min();
         lagr_mult           = best_lagr_mult;
@@ -71,7 +71,7 @@ public:
                    cutoff,
                    max_real_lb);
 
-        size_t max_iters = 10 * nrows;
+        size_t max_iters = 10ULL * nrows;
         for (size_t iter = 0; iter < max_iters && best_real_lb < max_real_lb; ++iter) {
 
             _update_lbsol_and_reduced_costs(core.inst, lagr_mult, lb_sol, reduced_costs);
@@ -84,9 +84,8 @@ public:
                 best_lagr_mult = lagr_mult;
             }
 
-            if (norm == 0.0) {
+            if (norm == 0.0_F) {
                 // TODO(cava): is this check correct with a reduced solution? I don't think so...
-                // assert(abs(best_core_lb - lb_sol.cost) / abs(best_core_lb) < 0.01);
                 fmt::print("SUBG   > Found optimal solution.\n");
                 best_lagr_mult = lagr_mult;
                 break;
@@ -141,7 +140,7 @@ public:
         for (size_t iter = 0; iter < max_iters; ++iter) {
 
             _update_lbsol_and_reduced_costs(inst, lagr_mult, lb_sol, reduced_costs);
-            row_coverage.reset(inst.rows.size());
+            row_coverage.reset(rsize(inst.rows));
             for (cidx_t j : lb_sol.idxs)
                 row_coverage.cover(inst.cols[j]);
             real_t norm = _compute_subgrad_sqr_norm(row_coverage);
@@ -163,7 +162,7 @@ public:
                 IF_DEBUG(check_solution(inst, best_sol));
             }
 
-            if (norm == 0.0) {
+            if (norm == 0.0_F) {
                 assert(best_core_lb < best_sol.cost && "Optimum is above cutoff");
                 fmt::print("HEUR   > Found optimal solution.\n");
                 best_lagr_mult = lagr_mult;
@@ -189,7 +188,7 @@ private:
 
         // Ready to be updated at the start of the loop
         reduced_costs = col_costs;
-        lb_sol.cost   = 0.0;
+        lb_sol.cost   = 0.0_F;
         lb_sol.idxs.clear();
         return limits<real_t>::min();  // NOTE: avoid 0.0, messes with the step size computation.
     }
@@ -198,12 +197,12 @@ private:
                                   real_t                 step_factor,
                                   std::vector<real_t>&   lagr_mult) {
 
-        for (size_t i = 0; i < row_coverage.size(); ++i) {
+        for (ridx_t i = 0_R; i < rsize(row_coverage); ++i) {
             auto violation = static_cast<real_t>(1 - row_coverage[i]);
 
             real_t old_mult   = lagr_mult[i];
             real_t delta_mult = step_factor * violation;
-            lagr_mult[i]      = max(0.0F, old_mult + delta_mult);
+            lagr_mult[i]      = max(0.0_F, old_mult + delta_mult);
             assert(std::isfinite(lagr_mult[i]) && "Multiplier is not finite");
         }
     }
@@ -213,17 +212,17 @@ private:
                                                 Solution&                  lb_sol,
                                                 std::vector<real_t>&       reduced_costs) {
         lb_sol.idxs.clear();
-        lb_sol.cost = 0.0;
+        lb_sol.cost = 0.0_F;
         for (real_t const value : lagr_mult)
             lb_sol.cost += value;
 
-        for (cidx_t j = 0; j < inst.cols.size(); ++j) {
+        for (cidx_t j = 0_C; j < csize(inst.cols); ++j) {
 
             reduced_costs[j] = inst.costs[j];
             for (ridx_t i : inst.cols[j])
                 reduced_costs[j] -= lagr_mult[i];
 
-            if (reduced_costs[j] < 0.0) {
+            if (reduced_costs[j] < 0.0_F) {
                 lb_sol.idxs.push_back(j);
                 lb_sol.cost += reduced_costs[j];
             }
@@ -236,7 +235,7 @@ private:
                                               CoverCounters<>&           row_coverage,
                                               Solution&                  lb_sol) {
 
-        row_coverage.reset(inst.rows.size());
+        row_coverage.reset(rsize(inst.rows));
         cft::sort(lb_sol.idxs, [&](cidx_t j) { return reduced_costs[j]; });
 
         for (cidx_t j : lb_sol.idxs) {
@@ -248,9 +247,9 @@ private:
 
     // Computes the subgradient squared norm according to the given row coverage.
     static real_t _compute_subgrad_sqr_norm(CoverCounters<> const& row_coverage) {
-        int32_t norm = 0;
-        for (size_t i = 0; i < row_coverage.size(); ++i) {
-            int32_t violation = 1 - row_coverage[i];
+        int64_t norm = 0;
+        for (ridx_t i = 0_R; i < rsize(row_coverage); ++i) {
+            int64_t violation = 1 - row_coverage[i];
             norm += violation * violation;
         }
         return static_cast<real_t>(norm);

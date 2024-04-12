@@ -134,14 +134,14 @@ TEST_CASE("test_coin_flip") {
     int total      = 0;
     for (int i = 0; i < 100000; i++) {
         {
-            double true_p = canonical_gen(rnd_float);
-            bool   res    = coin_flip(rnd_float, true_p);
+            auto true_p = canonical_gen<double>(rnd_float);
+            bool res    = coin_flip(rnd_float, true_p);
             true_count += res ? 1 : 0;
             ++total;
         }
         {
-            double true_p = canonical_gen(rnd_double);
-            bool   res    = coin_flip(rnd_double, true_p);
+            auto true_p = canonical_gen<double>(rnd_double);
+            bool res    = coin_flip(rnd_double, true_p);
             true_count += res ? 1 : 0;
             ++total;
         }
@@ -159,15 +159,15 @@ TEST_CASE("test_two_coin_flips") {
     int total      = 0;
     for (int i = 0; i < 100000; i++) {
         {
-            double true_p = canonical_gen(rnd_float);
-            auto   res    = two_coin_flips(rnd_float, true_p);
+            auto true_p = canonical_gen<double>(rnd_float);
+            auto res    = two_coin_flips(rnd_float, true_p);
             true_count += res[0] ? 1 : 0;
             true_count += res[1] ? 1 : 0;
             total += 2;
         }
         {
-            double true_p = canonical_gen(rnd_double);
-            auto   res    = two_coin_flips(rnd_double, true_p);
+            auto true_p = canonical_gen<double>(rnd_double);
+            auto res    = two_coin_flips(rnd_double, true_p);
             true_count += res[0] ? 1 : 0;
             true_count += res[1] ? 1 : 0;
             total += 2;
