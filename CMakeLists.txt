@@ -44,14 +44,17 @@ if (UNIT_TESTS)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}" )
 
-    set(SOURCES test/tests.cpp
-                test/parsing_unittests.cpp
-                test/instance_unittests.cpp
-                test/utility_unittests.cpp
+    set(SOURCES test/main.cpp
+                test/Chrono_unittests.cpp
                 test/StringView_unittests.cpp
+                test/parse_utils_unittests.cpp
+                test/sort_unittests.cpp
+                test/Span_unittests.cpp
                 test/coverage_unittests.cpp
+                test/parsing_unittests.cpp
                 test/random_unittests.cpp
-                test/SortedArray_unittests.cpp)
+                test/SortedArray_unittests.cpp
+                test/utility_unittests.cpp)
 
     add_executable(tests ${SOURCES})
     target_link_libraries(tests PUBLIC ${LIBRARIES})

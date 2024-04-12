@@ -1,5 +1,4 @@
 #include <catch2/catch.hpp>
-#include <cstring>
 
 #include "utils/StringView.hpp"
 
@@ -66,6 +65,19 @@ TEST_CASE("test_string_view_prefix_suffix") {
     REQUIRE(sv.find_last_if([](char c) { return c == '#'; }) == 13);
     REQUIRE(sv.remove_prefix(7) == StringView("World!"));
     REQUIRE(sv.remove_suffix(6) == StringView("Hello,"));
+}
+
+TEST_CASE("test_string_view_prefix_suffix_empty") {
+    auto sv = StringView();
+    REQUIRE(sv.empty());
+    REQUIRE(sv.size() == 0);
+    REQUIRE(sv.find_first_if([](char c) { return std::isspace(c); }) == 0);
+    REQUIRE(sv.find_last_if([](char c) { return c == ','; }) == 0);
+    REQUIRE(sv.find_last_if([](char c) { return c == 'H'; }) == 0);
+    REQUIRE(sv.find_first_if([](char c) { return c == '#'; }) == 0);
+    REQUIRE(sv.find_last_if([](char c) { return c == '#'; }) == 0);
+    REQUIRE(sv.remove_prefix(0) == StringView(""));
+    REQUIRE(sv.remove_suffix(0) == StringView(""));
 }
 
 TEST_CASE("test_string_view_comparison") {
