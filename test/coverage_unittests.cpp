@@ -1,6 +1,21 @@
-#include <array>
+// Copyright (c) 2024 Francesco Cavaliere
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
+
 #include <catch2/catch.hpp>
 #include <cstring>
+#include <stdexcept>
 
 #include "core/cft.hpp"
 #include "utils/SparseBinMat.hpp"
@@ -80,5 +95,35 @@ TEST_CASE("test_multiples_rows_cover_set_coverage") {
         nnz += cols[j].size();
     REQUIRE(cover_count == nnz);
 }
+
+#ifndef NDEBUG
+
+TEST_CASE("Test coverage assert fails") {
+    ridx_t nrows = 40;
+
+    auto cols = SparseBinMat<ridx_t>();
+    cols.push_back({40, 12, 13, 14, 15, 40, 17, 18, 19, 20});   // 40!
+    cols.push_back({131, 32, 33, 34, 35, 100, 37, 38, 39, 0});  // 131!
+    cols.push_back({-1, -11, -21, -31, -2, -12, -22, -32});     // all negative
+    cols.push_back({-5, 15, 25, 35, 6, 1, 26, 36});             // -5!
+
+    auto cs = CoverCounters<>(nrows);
+    for (cidx_t j = 0; j < 4; ++j) {
+        REQUIRE_THROWS_AS(cs.cover(cols[j]), std::runtime_error);
+        REQUIRE_THROWS_AS(cs.is_redundant_cover(cols[j]), std::runtime_error);
+    }
+
+    for (cidx_t j = 0; j < 4; ++j) {
+        REQUIRE_THROWS_AS(cs.uncover(cols[j]), std::runtime_error);
+        REQUIRE_THROWS_AS(cs.is_redundant_uncover(cols[j]), std::runtime_error);
+    }
+    REQUIRE_THROWS_AS(cs.uncover(std::vector<int>{0, 0, 0, 0, 0}), std::runtime_error);
+
+    REQUIRE(cs[0] >= 0);
+    REQUIRE_THROWS_AS(cs[40], std::runtime_error);
+    REQUIRE_THROWS_AS(cs[-1], std::runtime_error);
+}
+
+#endif
 
 }  // namespace cft

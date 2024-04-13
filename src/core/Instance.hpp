@@ -17,11 +17,11 @@
 #define CFT_SRC_INSTANCE_INSTANCE_HPP
 
 
-#include <cassert>
 #include <vector>
 
 #include "core/cft.hpp"
 #include "utils/SparseBinMat.hpp"
+#include "utils/assert.hpp" // IWYU pragma:  keep
 
 #ifndef NDEBUG
 #include "utils/coverage.hpp"
@@ -118,21 +118,6 @@ struct IdxsMaps {
     std::vector<cidx_t> col_map;
     std::vector<ridx_t> row_map;
 };
-
-inline void apply_maps_to_lagr_mult(IdxsMaps const& old2new, std::vector<real_t>& lagr_mult) {
-
-    ridx_t old_nrows = rsize(old2new.row_map);
-    ridx_t new_i     = 0_R;
-    for (ridx_t old_i = 0_R; old_i < old_nrows; ++old_i)
-        if (old2new.row_map[old_i] != removed_idx) {
-            assert(new_i <= old_i);
-            assert(new_i == old2new.row_map[old_i]);
-            lagr_mult[new_i] = lagr_mult[old_i];
-            ++new_i;
-        }
-    lagr_mult.resize(new_i);
-}
-
 }  // namespace cft
 
 

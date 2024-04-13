@@ -18,7 +18,6 @@
 
 #include <fmt/base.h>
 
-#include <cassert>
 #include <cstddef>
 #include <vector>
 
@@ -28,6 +27,7 @@
 #include "subgradient/Pricer.hpp"
 #include "subgradient/utils.hpp"
 #include "utils/Chrono.hpp"
+#include "utils/assert.hpp" // IWYU pragma:  keep
 #include "utils/coverage.hpp"
 #include "utils/limits.hpp"
 #include "utils/utility.hpp"
@@ -198,7 +198,7 @@ private:
                                   std::vector<real_t>&   lagr_mult) {
 
         for (ridx_t i = 0_R; i < rsize(row_coverage); ++i) {
-            auto violation = static_cast<real_t>(1 - row_coverage[i]);
+            auto violation = as_real(1 - row_coverage[i]);
 
             real_t old_mult   = lagr_mult[i];
             real_t delta_mult = step_factor * violation;
@@ -252,7 +252,7 @@ private:
             int64_t violation = 1 - row_coverage[i];
             norm += violation * violation;
         }
-        return static_cast<real_t>(norm);
+        return as_real(norm);
     }
 };
 }  // namespace cft

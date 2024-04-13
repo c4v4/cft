@@ -144,7 +144,7 @@ private:
         lagr_mult.assign(rsize(inst.rows), limits<real_t>::max());
         for (ridx_t i = 0_R; i < rsize(inst.rows); ++i)
             for (cidx_t j : inst.rows[i]) {
-                real_t candidate = inst.costs[j] / static_cast<real_t>(inst.cols[j].size());
+                real_t candidate = inst.costs[j] / as_real(inst.cols[j].size());
                 lagr_mult[i]     = cft::min(lagr_mult[i], candidate);
             }
     }

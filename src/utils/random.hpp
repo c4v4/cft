@@ -17,8 +17,7 @@
 #define CFT_SRC_CORE_RANDOM_HPP
 
 
-#include <cassert>
-
+#include "utils/assert.hpp"  // IWYU pragma:  keep
 #include "utils/xoshiro_prng.hpp"
 
 namespace cft {
@@ -46,7 +45,7 @@ struct prng_picker<double> {
 
 // Generate a canonical uniform distribution in the [0,1) range (unbiased)
 template <typename FlT, typename RndT>
-inline FlT canonical_gen(RndT& rnd) noexcept {
+inline FlT canonical_gen(RndT& rnd) {
     using gen_type               = typename RndT::result_type;
     static constexpr bool is_u32 = std::is_same<gen_type, uint32_t>::value;
     static constexpr bool is_u64 = std::is_unsigned<gen_type>::value && sizeof(gen_type) == 8;
@@ -72,7 +71,7 @@ inline FlT canonical_gen(RndT& rnd) noexcept {
 
 // Generate a random real number in the [min, max) range
 template <typename FlT, typename RndT>
-inline FlT rnd_real(RndT& rnd, FlT min, FlT max) noexcept {
+inline FlT rnd_real(RndT& rnd, FlT min, FlT max) {
     static constexpr auto prng_range = static_cast<double>(RndT::max() - RndT::min());
     double                scale      = (max - min) / prng_range;
     return min + scale * static_cast<double>(rnd() - RndT::min());
@@ -80,7 +79,7 @@ inline FlT rnd_real(RndT& rnd, FlT min, FlT max) noexcept {
 
 // Generate a random integer in the [min, max] range
 template <typename IntT, typename RndT>
-inline IntT roll_dice(RndT& rnd, IntT min, IntT max) noexcept {
+inline IntT roll_dice(RndT& rnd, IntT min, IntT max) {
     static_assert(std::is_unsigned<typename RndT::result_type>::value,
                   "PRNG result is not unsigned.");
     assert(double(max - min) <= double(RndT::max() - RndT::min()) && "Range too large.");
@@ -93,7 +92,7 @@ inline IntT roll_dice(RndT& rnd, IntT min, IntT max) noexcept {
 
 // Return true with probability `true_prob`
 template <typename RndT>
-inline bool coin_flip(RndT& rnd, double true_prob = 0.5) noexcept {
+inline bool coin_flip(RndT& rnd, double true_prob = 0.5) {
     assert(0 <= true_prob && true_prob <= 1);
     return canonical_gen<double>(rnd) <= true_prob;
 }
@@ -116,7 +115,7 @@ inline bool coin_flip(RndT& rnd, double true_prob = 0.5) noexcept {
 // Splitting the [0,1] range into 4 subranges with the proper sizes.
 ///
 template <typename RndT>
-inline std::array<bool, 2> two_coin_flips(RndT& rnd, double true_p = 0.5) noexcept {
+inline std::array<bool, 2> two_coin_flips(RndT& rnd, double true_p = 0.5) {
     static_assert(RndT::min() == 0, "PRNG min value is not 0.");
 
     assert(0 <= true_p && true_p <= 1);

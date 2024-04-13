@@ -36,7 +36,7 @@ namespace local { namespace {
 
 struct IdentityFtor {
     template <typename T>
-    T&& operator()(T&& t) const noexcept {
+    T&& operator()(T&& t) const {
         return std::forward<T>(t);
     }
 };

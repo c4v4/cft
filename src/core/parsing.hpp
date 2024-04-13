@@ -17,7 +17,6 @@
 #define CFT_SRC_INSTANCE_PARSING_HPP
 
 
-#include <cassert>
 #include <stdexcept>
 #include <unordered_map>
 #include <vector>
@@ -26,6 +25,7 @@
 #include "core/cft.hpp"
 #include "utils/SparseBinMat.hpp"
 #include "utils/StringView.hpp"
+#include "utils/assert.hpp" // IWYU pragma:  keep
 #include "utils/limits.hpp"
 #include "utils/parse_utils.hpp"
 

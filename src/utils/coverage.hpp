@@ -17,10 +17,11 @@
 #define CFT_SRC_CORE_COVERAGE_HPP
 
 
-#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
+
+#include "utils/assert.hpp"  // IWYU pragma:  keep
 
 namespace cft {
 
@@ -44,7 +45,7 @@ struct CoverCounters {
     size_t cover(IterableT const& subset) {
         size_t covered = 0;
         for (auto i : subset) {
-            assert(0 <= static_cast<size_t>(i) && static_cast<size_t>(i) < cov_counters.size());
+            assert(static_cast<size_t>(i) < cov_counters.size());
             covered += cov_counters[i] == 0 ? 1 : 0;
             ++cov_counters[i];
         }
@@ -55,7 +56,7 @@ struct CoverCounters {
     size_t uncover(IterableT const& subset) {
         size_t uncovered = 0;
         for (auto i : subset) {
-            assert(0 <= static_cast<size_t>(i) && static_cast<size_t>(i) < cov_counters.size());
+            assert(static_cast<size_t>(i) < cov_counters.size());
             assert(cov_counters[i] > 0);
             --cov_counters[i];
             uncovered += cov_counters[i] == 0 ? 1 : 0;
@@ -67,7 +68,7 @@ struct CoverCounters {
     template <typename IterableT>
     bool is_redundant_cover(IterableT const& subset) const {
         for (auto i : subset) {
-            assert(0 <= static_cast<size_t>(i) && static_cast<size_t>(i) < cov_counters.size());
+            assert(static_cast<size_t>(i) < cov_counters.size());
             if (cov_counters[i] == 0)
                 return false;
         }
@@ -78,7 +79,7 @@ struct CoverCounters {
     template <typename IterableT>
     bool is_redundant_uncover(IterableT const& subset) const {
         for (auto i : subset) {
-            assert(0 <= static_cast<size_t>(i) && static_cast<size_t>(i) < cov_counters.size());
+            assert(static_cast<size_t>(i) < cov_counters.size());
             if (cov_counters[i] <= 1)
                 return false;
         }

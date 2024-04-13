@@ -20,58 +20,85 @@
 #include <cstddef>
 #include <type_traits>
 
+#include "utils/assert.hpp"  // IWYU pragma: keep
+#include "utils/limits.hpp"
+
 namespace cft {
 
-template <typename ResT, typename T>
-constexpr ResT narrow_cast(T val) {
-    // C++11 allows only return statements in constexpr functions (hence this hack)
-    return assert(static_cast<T>(static_cast<ResT>(val)) == val),
-           assert(std::is_signed<T>::value == std::is_signed<ResT>::value ||
+
+////////////////////////////////////// CHECKED CAST //////////////////////////////////////
+// We want to wrap static_cast for numeric values, checking that some properties are satisfied:
+// 1. If we start from an integral type, the round-trip is lossless.
+// 2. The sign is preserved between integrals casts.
+// 3. The value is in range for the target type for floating point casts.
+//
+// NOTE: this is NOT a `narrow-cast`, we might lose information with floating point values.
+
+// SFINAE helpers, activate overload if T is integral or floating point
+template <typename T>
+using requires_integral = typename std::enable_if<std::is_integral<T>::value, bool>::type;
+template <typename T>
+using requires_floating_point = typename std::enable_if<std::is_floating_point<T>::value,
+                                                        bool>::type;
+
+// NOTE: integral -> floating point must be in the range where the floating point can represent the
+// integral with precision at least 1
+template <typename ResT, typename T, requires_integral<T> = true>
+constexpr ResT checked_cast(T val) {
+    return assert(static_cast<T>(static_cast<ResT>(val)) == val),             // Lossless round-trip
+           assert(std::is_signed<T>::value == std::is_signed<ResT>::value ||  // Sign match
                   (static_cast<ResT>(val) < ResT{}) == (val < T{})),
            static_cast<ResT>(val);
 }
 
+template <typename ResT, typename T, requires_floating_point<T> = true>
+constexpr ResT checked_cast(T val) {
+    // Here ResT can be integral, if val in in range, then any floating point can be casted to it
+    return assert(limits<ResT>::min() <= val && val <= limits<ResT>::max()),  // Range check
+           static_cast<ResT>(val);
+}
+
 template <typename T, typename LT, typename UT>
-T clamp(T const& v, LT const& lb, UT const& ub) noexcept {
+T clamp(T const& v, LT const& lb, UT const& ub) {
     return (v < lb) ? static_cast<T>(lb) : (v > ub) ? static_cast<T>(ub) : v;
 }
 
 template <typename T>
-T abs(T val) noexcept {
+T abs(T val) {
     return val < T{} ? -val : val;
 }
 
 /// Multi-arg max
 template <typename T>
-T max(T v) noexcept {
+T max(T v) {
     return v;
 }
 
 template <typename T1, typename T2, typename... Ts>
-T1 max(T1 v1, T2 v2, Ts... tail) noexcept {
+T1 max(T1 v1, T2 v2, Ts... tail) {
     T1 mtail = max<T1>(v2, tail...);
     return (v1 >= mtail ? v1 : mtail);
 }
 
 template <typename... Ts>
-bool max(bool b1, bool b2, Ts... tail) noexcept {
+bool max(bool b1, bool b2, Ts... tail) {
     return b1 || max(b2, tail...);
 }
 
 /// Multi-arg min
 template <typename T>
-T min(T v) noexcept {
+T min(T v) {
     return v;
 }
 
 template <typename T1, typename T2, typename... Ts>
-T1 min(T1 v1, T2 v2, Ts... tail) noexcept {
+T1 min(T1 v1, T2 v2, Ts... tail) {
     T1 mtail = min<T1>(v2, tail...);
     return v1 <= mtail ? v1 : mtail;
 }
 
 template <typename... Ts>
-bool min(bool b1, bool b2, Ts... tail) noexcept {
+bool min(bool b1, bool b2, Ts... tail) {
     return b1 && min(b2, tail...);
 }
 

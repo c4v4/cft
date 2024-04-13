@@ -17,10 +17,10 @@
 #define CFT_SRC_CORE_CFT_HPP
 
 
-#include <cassert>
 #include <cstdint>
 #include <vector>
 
+#include "utils/assert.hpp"  // IWYU pragma:  keep
 #include "utils/limits.hpp"
 #include "utils/random.hpp"
 #include "utils/utility.hpp"
@@ -47,7 +47,7 @@
 namespace cft {
 
 // Epsilon value for floating point comparisons of costs
-#define CFT_EPSILON real_t(1 - 1e-6)  // 1-1e-6 for integer costs, 1e-6 for float costs
+#define CFT_EPSILON 0.999999_F  // 1-1e-6 for integer costs, 1e-6 for float costs
 
 using cidx_t = int32_t;                    // Type for column indexes
 using ridx_t = int16_t;                    // Type for row indexes
@@ -98,13 +98,20 @@ constexpr RemovedIdx removed_idx = {};
 // Debug checked narrow cast to cidx_t
 template <typename T>
 constexpr cidx_t as_cidx(T val) {
-    return narrow_cast<cidx_t>(val);
+    return checked_cast<cidx_t>(val);
 }
 
 // Debug checked narrow cast to ridx_t
 template <typename T>
 constexpr ridx_t as_ridx(T val) {
-    return narrow_cast<ridx_t>(val);
+    return checked_cast<ridx_t>(val);
+}
+
+// Debug checked narrow cast to ridx_t
+template <typename T>
+constexpr real_t as_real(T val) {
+    return assert(limits<real_t>::min() <= val && val <= limits<real_t>::max()),
+           checked_cast<real_t>(val);
 }
 
 // User-defined literals for cidx_t with debug and comptime checks)
@@ -119,8 +126,7 @@ constexpr ridx_t operator""_R(unsigned long long i) {
 
 // User-defined literals for real_t with debug and comptime checks)
 constexpr real_t operator""_F(long double f) {
-    // C++11 allows only return statements in constexpr functions (hence this hack)
-    return assert(limits<real_t>::min() <= f && f <= limits<real_t>::max()), static_cast<real_t>(f);
+    return as_real(f);
 }
 
 // Since cidx_t could be any integer type, csize provide a (debug) checked way to get the size of a
