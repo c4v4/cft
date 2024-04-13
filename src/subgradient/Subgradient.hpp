@@ -44,7 +44,8 @@ class Subgradient {
     std::vector<real_t> lagr_mult;
 
 public:
-    real_t operator()(Instance const&      orig_inst,      // in
+    real_t operator()(Environment const&   env,            // in
+                      Instance const&      orig_inst,      // in
                       real_t               cutoff,         // in
                       InstAndMap&          core,           // inout
                       real_t&              step_size,      // inout
@@ -52,7 +53,7 @@ public:
     ) {
 
         ridx_t const nrows       = rsize(orig_inst.rows);
-        real_t const max_real_lb = cutoff - epsilon;
+        real_t const max_real_lb = cutoff - env.epsilon;
 
         assert(!orig_inst.cols.empty() && "Empty instance");
         assert(!core.inst.cols.empty() && "Empty core instance");
@@ -60,7 +61,7 @@ public:
 
         auto timer          = Chrono<>();
         auto next_step_size = local::StepSizeManager(20, step_size);
-        auto should_exit    = local::ExitConditionManager(300);
+        auto should_exit    = local::ExitConditionManager(env, 300);
         auto should_price   = local::PricingManager(10, std::min<size_t>(1000, nrows / 3));
         auto best_core_lb   = _reset_red_costs_and_lb(core.inst.costs, lb_sol, reduced_costs);
         auto best_real_lb   = limits<real_t>::min();
@@ -111,6 +112,9 @@ public:
 
                 best_real_lb = max(best_real_lb, real_lb);
                 best_core_lb = _reset_red_costs_and_lb(core.inst.costs, lb_sol, reduced_costs);
+
+                if (env.timer.elapsed<sec>() > env.time_limit)
+                    break;
             }
         }
 
@@ -124,9 +128,9 @@ public:
     // associated to the best greedy solution. (But this might be due to the different column fixing
     // we are using).
     // TODO(acco): Consider implementing it as a functor.
-    void heuristic(Instance const&      inst,           // in
+    void heuristic(Environment const&   env,            // in
+                   Instance const&      inst,           // in
                    real_t               step_size,      // in
-                   size_t               max_iters,      // in
                    Greedy&              greedy,         // cache
                    Solution&            best_sol,       // inout
                    std::vector<real_t>& best_lagr_mult  // inout
@@ -137,7 +141,7 @@ public:
         auto best_core_lb = _reset_red_costs_and_lb(inst.costs, lb_sol, reduced_costs);
         lagr_mult         = best_lagr_mult;
 
-        for (size_t iter = 0; iter < max_iters; ++iter) {
+        for (size_t iter = 0; iter < env.heur_iters; ++iter) {
 
             _update_lbsol_and_reduced_costs(inst, lagr_mult, lb_sol, reduced_costs);
             row_coverage.reset(rsize(inst.rows));
@@ -151,12 +155,12 @@ public:
             }
 
             assert(best_core_lb <= best_sol.cost && "Inconsistent lower bound");
-            if (best_core_lb >= best_sol.cost - epsilon)
+            if (best_core_lb >= best_sol.cost - env.epsilon)
                 return;
 
             greedy_sol.idxs.clear();
             greedy(inst, lagr_mult, reduced_costs, greedy_sol, best_sol.cost);
-            if (greedy_sol.cost <= best_sol.cost - epsilon) {
+            if (greedy_sol.cost <= best_sol.cost - env.epsilon) {
                 best_sol = greedy_sol;
                 fmt::print("HEUR   > Improved current solution {:.2f}\n", best_sol.cost);
                 CFT_IF_DEBUG(check_solution(inst, best_sol));
@@ -171,6 +175,9 @@ public:
 
             real_t step_factor = step_size * (best_sol.cost - lb_sol.cost) / norm;
             _update_lagr_mult(row_coverage, step_factor, lagr_mult);
+
+            if (env.timer.elapsed<sec>() > env.time_limit)
+                break;
         }
 
         fmt::print("HEUR   > Heuristic phase ended in {:.2f}s\n", timer.elapsed<sec>());

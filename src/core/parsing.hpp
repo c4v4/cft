@@ -17,6 +17,8 @@
 #define CFT_SRC_INSTANCE_PARSING_HPP
 
 
+#include <fmt/ostream.h>
+
 #include <stdexcept>
 #include <unordered_map>
 #include <vector>
@@ -32,8 +34,8 @@
 namespace cft {
 
 struct FileData {
-    Instance            inst;
-    std::vector<cidx_t> warmstart;
+    Instance inst;
+    Solution init_sol;
 };
 
 inline Instance parse_scp_instance(std::string const& path) {
@@ -133,10 +135,12 @@ inline FileData parse_cvrp_instance(std::string const& path) {
         fdata.inst.cols.begs.push_back(csize(fdata.inst.cols.idxs));
     }
 
-    auto warmstart = std::vector<cidx_t>();
-    line_view      = file_iter.next();
-    while (!line_view.empty())
-        warmstart.push_back(string_to<cidx_t>::consume(line_view));
+    line_view = file_iter.next();
+    while (!line_view.empty()) {
+        cidx_t j = string_to<cidx_t>::consume(line_view);
+        fdata.init_sol.idxs.push_back(j);
+        fdata.init_sol.cost += fdata.inst.costs[j];
+    }
 
     fill_rows_from_cols(fdata.inst.cols, nrows, fdata.inst.rows);
     return fdata;
@@ -219,6 +223,29 @@ inline Instance parse_mps_instance(std::string const& path) {
     fill_rows_from_cols(inst.cols, nrows, inst.rows);
     return inst;
 }
+
+inline Solution parse_solution(std::string const& path) {
+    auto file_iter = FileLineIterator(path);
+    auto line_view = file_iter.next();
+    auto sol       = Solution();
+
+    sol.cost = string_to<real_t>::consume(line_view);
+    while (!line_view.empty())
+        sol.idxs.push_back(string_to<cidx_t>::consume(line_view));
+
+    return sol;
+}
+
+inline void write_solution(std::string const& path, Solution const& sol) {
+    auto file = std::ofstream(path);
+    if (!file.is_open())
+        throw std::runtime_error("Failed to open file for writing: " + path);
+    fmt::print(file, "{}", sol.cost);
+    for (cidx_t j : sol.idxs)
+        fmt::print(file, " {}", j);
+    file.close();
+}
+
 
 }  // namespace cft
 

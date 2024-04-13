@@ -87,7 +87,7 @@ TEST_CASE("test_parse_cvrp_instance") {
     REQUIRE(csize(inst.cols) == csize(inst.solcosts));
     REQUIRE(std::fabs(inst.solcosts[0] - 96162.0) < 0.01);
 
-    REQUIRE(fdata.warmstart.empty());
+    REQUIRE(!fdata.init_sol.idxs.empty());
 }
 
 TEST_CASE("test_parse_mps_instance") {

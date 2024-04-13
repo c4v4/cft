@@ -19,10 +19,10 @@
 #include <cstdio>
 
 #include "algorithms/Refinement.hpp"
+#include "core/CliArgs.hpp"
 #include "core/Instance.hpp"
 #include "core/cft.hpp"
 #include "core/parsing.hpp"
-#include "utils/CliArgs.hpp"
 
 void print_inst_summary(cft::Instance const& inst, cft::Solution const& warmstart = {}) {
     fmt::print("CFT > Instance summary:\n");
@@ -50,50 +50,55 @@ void print_inst_summary(cft::Instance const& inst, cft::Solution const& warmstar
         fmt::print("CFT >   col[{}]: {}\n", i, fmt::join(inst.cols[i], ", "));
 }
 
+cft::FileData parse_inst_and_initsol(cft::Environment const& env) {
+    auto fdata = cft::FileData();
+
+    if (env.parser == CFT_RAIL_PARSER) {
+        fmt::print("CFT > Parsing RAIL instance from {}\n", env.inst_path);
+        fdata.inst = cft::parse_rail_instance(env.inst_path);
+
+    } else if (env.parser == CFT_SCP_PARSER) {
+        fmt::print("CFT > Parsing SCP instance from {}\n", env.inst_path);
+        fdata.inst = cft::parse_scp_instance(env.inst_path);
+
+    } else if (env.parser == CFT_CVRP_PARSER) {
+        fmt::print("CFT > Parsing CVRP instance from {}\n", env.inst_path);
+        fdata = cft::parse_cvrp_instance(env.inst_path);
+
+    } else if (env.parser == CFT_MPS_PARSER) {
+        fmt::print("CFT > Parsing MPS instance from {}\n", env.inst_path);
+        fdata.inst = cft::parse_mps_instance(env.inst_path);
+
+    } else {
+        fmt::print("CFT > Parser {} does not exists.\n", env.parser);
+        cft::print_cli_help_msg();
+        throw std::runtime_error("Parser does not exists.");
+    }
+
+    if (!env.initsol_path.empty()) {
+        fdata.init_sol = cft::parse_solution(env.initsol_path);
+        CFT_IF_DEBUG(check_solution(fdata.inst, fdata.init_sol));
+    }
+
+    CFT_IF_DEBUG(print_inst_summary(fdata.inst, fdata.init_sol));
+
+    return fdata;
+}
+
 int main(int argc, char const** argv) {
     fmt::print("CFT implementation by Luca Accorsi and Francesco Cavaliere.\n");
     fmt::print("Compiled on " __DATE__ " at " __TIME__ ".\n\n");
 
     try {
-        auto timer    = cft::Chrono<>();
-        auto cli_args = cft::parse_cli_args(argc, argv);
-        cft::print_arg_values(cli_args);
+        auto env = cft::parse_cli_args(argc, argv);
+        cft::print_arg_values(env);
 
-        auto inst      = cft::Instance{};
-        auto warmstart = cft::Solution{};
-
-        if (cli_args.parser == CFT_RAIL_PARSER) {
-            fmt::print("CFT > Parsing RAIL instance from {}\n", cli_args.inst_path);
-            inst = cft::parse_rail_instance(cli_args.inst_path);
-
-        } else if (cli_args.parser == CFT_SCP_PARSER) {
-            fmt::print("CFT > Parsing SCP instance from {}\n", cli_args.inst_path);
-            inst = cft::parse_scp_instance(cli_args.inst_path);
-
-        } else if (cli_args.parser == CFT_CVRP_PARSER) {
-            fmt::print("CFT > Parsing CVRP instance from {}\n", cli_args.inst_path);
-            auto file_data = cft::parse_cvrp_instance(cli_args.inst_path);
-            inst           = std::move(file_data.inst);
-            warmstart.idxs = std::move(file_data.warmstart);
-            warmstart.cost = 0.0;
-            for (cft::cidx_t j : warmstart.idxs)
-                warmstart.cost += inst.costs[j];
-
-        } else if (cli_args.parser == CFT_MPS_PARSER) {
-            fmt::print("CFT > Parsing MPS instance from {}\n", cli_args.inst_path);
-            inst = cft::parse_mps_instance(cli_args.inst_path);
-
-        } else {
-            fmt::print("CFT > Parser {} does not exists.\n", cli_args.parser);
-            cft::print_cli_help_msg();
-            throw std::runtime_error("Parser does not exists.");
-        }
-
-        CFT_IF_DEBUG(print_inst_summary(inst, warmstart));
-        auto tlim = cli_args.time_limit;
-        auto rnd  = cft::prng_t{cli_args.seed};
-        auto sol  = cft::run(inst, rnd, tlim, warmstart);
-        fmt::print("CFT > Best solution {:.2f} time {:.2f}\n", sol.cost, timer.elapsed<cft::sec>());
+        auto fdata = parse_inst_and_initsol(env);
+        auto sol   = cft::run(env, fdata.inst, fdata.init_sol);
+        write_solution(env.sol_path, sol);
+        fmt::print("CFT > Best solution {:.2f} time {:.2f}\n",
+                   sol.cost,
+                   env.timer.elapsed<cft::sec>());
 
     } catch (std::exception const& e) {
         fmt::print("\nCFT  > ERROR: {}\n", e.what());
