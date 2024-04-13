@@ -126,7 +126,6 @@ struct Environment {
     uint64_t    verbose          = 0;                      // Verbosity level
     real_t      epsilon          = 0.999999;  // Epsilon value for objective comparisons
     uint64_t    heur_iters       = 250;       // Number of iterations for the heuristic phase
-    real_t      min_pi           = 0.3;       // Minimum fixing fraction
     real_t      alpha            = 1.1;       // Relative fixing fraction increment
     real_t      beta             = 1.0;       // Relative cutoff value to terminate Refinement
     real_t      abs_subgrad_exit = 1.0;       // Minimum LBs delta to trigger subradient termination

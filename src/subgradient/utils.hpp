@@ -66,29 +66,25 @@ namespace cft { namespace local { namespace {
         size_t period;
         size_t next_update_iter;
         real_t prev_lower_bound;
-        real_t min_abs_improvement;
-        real_t min_rel_improvement;
 
     public:
-        ExitConditionManager(Environment const& env, size_t c_period)
+        ExitConditionManager(size_t c_period)
             : period(c_period)
             , next_update_iter(c_period)
-            , prev_lower_bound(limits<real_t>::min())
-            , min_abs_improvement(env.abs_subgrad_exit)
-            , min_rel_improvement(env.rel_subgrad_exit) {
+            , prev_lower_bound(limits<real_t>::min()) {
         }
 
         // Evaluates the exit condition by comparing the current best lower-bound with the
         // previous period's best lower-bound. Returns the original CFT exit condition based on the
         // absolute and relative improvement in the lower-bound.
-        bool operator()(size_t iter, real_t lower_bound) {
+        bool operator()(Environment const& env, size_t iter, real_t lower_bound) {
             if (iter == next_update_iter) {
                 next_update_iter += period;
                 real_t abs_improvement      = lower_bound - prev_lower_bound;
                 real_t relative_improvement = abs_improvement / lower_bound;
                 prev_lower_bound            = lower_bound;
-                return abs_improvement < min_abs_improvement &&
-                       relative_improvement < min_rel_improvement;
+                return abs_improvement < env.abs_subgrad_exit &&
+                       relative_improvement < env.rel_subgrad_exit;
             }
             return false;
         }

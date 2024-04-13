@@ -61,7 +61,7 @@ public:
 
         auto timer          = Chrono<>();
         auto next_step_size = local::StepSizeManager(20, step_size);
-        auto should_exit    = local::ExitConditionManager(env, 300);
+        auto should_exit    = local::ExitConditionManager(300);
         auto should_price   = local::PricingManager(10, std::min<size_t>(1000, nrows / 3));
         auto best_core_lb   = _reset_red_costs_and_lb(core.inst.costs, lb_sol, reduced_costs);
         auto best_real_lb   = limits<real_t>::min();
@@ -92,7 +92,7 @@ public:
                 break;
             }
 
-            if (should_exit(iter, best_core_lb))
+            if (should_exit(env, iter, best_core_lb))
                 break;
 
             step_size          = next_step_size(iter, lb_sol.cost);

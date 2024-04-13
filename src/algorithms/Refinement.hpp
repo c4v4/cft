@@ -37,24 +37,19 @@ namespace local { namespace {
     }
 
     class RefinementFixManager {
-        real_t alpha      = 1.1_F;
-        real_t min_fixing = 0.3_F;
+        static constexpr real_t min_fixing = 0.3_F;
 
-        real_t          fix_fraction = min_fixing;
+        real_t          fix_fraction = 0;
         real_t          prev_cost    = limits<real_t>::inf();
         CoverCounters<> row_coverage;
 
     public:
-        RefinementFixManager(Environment const& env)
-            : alpha(env.alpha)
-            , min_fixing(env.min_pi) {
-        }
-
-        inline std::vector<cidx_t> operator()(Instance const&            inst,
+        inline std::vector<cidx_t> operator()(Environment const&         env,
+                                              Instance const&            inst,
                                               std::vector<real_t> const& best_lagr_mult,
                                               Solution const&            best_sol) {
 
-            fix_fraction *= alpha;
+            fix_fraction *= env.alpha;
             if (best_sol.cost < prev_cost)
                 fix_fraction = min_fixing;
             prev_cost = best_sol.cost;
@@ -125,7 +120,7 @@ inline Solution run(Environment const& env,
     auto old2new            = IdxsMaps();
     auto max_cost           = limits<real_t>::max();
     auto fixing             = FixingData();
-    auto select_cols_to_fix = local::RefinementFixManager(env);
+    auto select_cols_to_fix = local::RefinementFixManager();
     make_identity_fixing_data(ncols, nrows, fixing);
     for (size_t iter_counter = 0;; ++iter_counter) {
 
@@ -144,7 +139,7 @@ inline Solution run(Environment const& env,
             break;
 
         inst             = orig_inst;
-        auto cols_to_fix = select_cols_to_fix(inst, nofix_lagr_mult, best_sol);
+        auto cols_to_fix = select_cols_to_fix(env, inst, nofix_lagr_mult, best_sol);
         make_identity_fixing_data(ncols, nrows, fixing);
         fix_columns_and_compute_maps(cols_to_fix, inst, fixing, old2new);
 

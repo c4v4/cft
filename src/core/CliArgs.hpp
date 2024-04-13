@@ -80,23 +80,23 @@ namespace cft {
 #define CFT_RELSGEXIT_LONG_FLAG "--rel-subg-exit"
 #define CFT_RELSGEXIT_HELP      "Minimum LBs gap to trigger subradient termination."
 
-static inline void print_arg_values(Environment const& cli_args) {
-    fmt::print(" {:20} = {}\n", CFT_INST_FLAG "," CFT_INST_LONG_FLAG, cli_args.inst_path);
-    fmt::print(" {:20} = {}\n", CFT_PARSER_FLAG "," CFT_PARSER_LONG_FLAG, cli_args.parser);
-    fmt::print(" {:20} = {}\n", CFT_OUTSOL_FLAG "," CFT_OUTSOL_LONG_FLAG, cli_args.sol_path);
-    fmt::print(" {:20} = {}\n", CFT_INITSOL_FLAG "," CFT_INITSOL_LONG_FLAG, cli_args.initsol_path);
-    fmt::print(" {:20} = {}\n", CFT_SEED_FLAG "," CFT_SEED_LONG_FLAG, cli_args.seed);
-    fmt::print(" {:20} = {}\n", CFT_TLIM_FLAG "," CFT_TLIM_LONG_FLAG, cli_args.time_limit);
-    fmt::print(" {:20} = {}\n", CFT_VERBOSE_FLAG "," CFT_VERBOSE_LONG_FLAG, cli_args.verbose);
-    fmt::print(" {:20} = {}\n", CFT_EPSILON_FLAG "," CFT_EPSILON_LONG_FLAG, cli_args.epsilon);
-    fmt::print(" {:20} = {}\n", CFT_GITERS_FLAG "," CFT_GITERS_LONG_FLAG, cli_args.heur_iters);
-    fmt::print(" {:20} = {}\n", CFT_BETA_FLAG "," CFT_BETA_LONG_FLAG, cli_args.beta);
+static inline void print_arg_values(Environment const& env) {
+    fmt::print(" {:20} = {}\n", CFT_INST_FLAG "," CFT_INST_LONG_FLAG, env.inst_path);
+    fmt::print(" {:20} = {}\n", CFT_PARSER_FLAG "," CFT_PARSER_LONG_FLAG, env.parser);
+    fmt::print(" {:20} = {}\n", CFT_OUTSOL_FLAG "," CFT_OUTSOL_LONG_FLAG, env.sol_path);
+    fmt::print(" {:20} = {}\n", CFT_INITSOL_FLAG "," CFT_INITSOL_LONG_FLAG, env.initsol_path);
+    fmt::print(" {:20} = {}\n", CFT_SEED_FLAG "," CFT_SEED_LONG_FLAG, env.seed);
+    fmt::print(" {:20} = {}\n", CFT_TLIM_FLAG "," CFT_TLIM_LONG_FLAG, env.time_limit);
+    fmt::print(" {:20} = {}\n", CFT_VERBOSE_FLAG "," CFT_VERBOSE_LONG_FLAG, env.verbose);
+    fmt::print(" {:20} = {}\n", CFT_EPSILON_FLAG "," CFT_EPSILON_LONG_FLAG, env.epsilon);
+    fmt::print(" {:20} = {}\n", CFT_GITERS_FLAG "," CFT_GITERS_LONG_FLAG, env.heur_iters);
+    fmt::print(" {:20} = {}\n", CFT_BETA_FLAG "," CFT_BETA_LONG_FLAG, env.beta);
     fmt::print(" {:20} = {}\n",
                CFT_ABSSGEXIT_FLAG "," CFT_ABSSGEXIT_LONG_FLAG,
-               cli_args.abs_subgrad_exit);
+               env.abs_subgrad_exit);
     fmt::print(" {:20} = {}\n",
                CFT_RELSGEXIT_FLAG "," CFT_RELSGEXIT_LONG_FLAG,
-               cli_args.rel_subgrad_exit);
+               env.rel_subgrad_exit);
     fmt::print("\n");
     std::fflush(stdout);
 }
@@ -142,52 +142,52 @@ namespace local { namespace {
 }  // namespace local
 
 static inline Environment parse_cli_args(int argc, char const** argv) {
-    auto args     = cft::make_span(argv, argc);
-    auto cli_args = Environment{};
+    auto args = cft::make_span(argv, argc);
+    auto env  = Environment{};
 
     for (size_t a = 1; a < args.size(); ++a) {
         auto arg = StringView(args[a]);
         if (arg == CFT_HELP_FLAG || arg == CFT_HELP_LONG_FLAG)
             print_cli_help_msg();
         else if (arg == CFT_INST_FLAG || arg == CFT_INST_LONG_FLAG)
-            cli_args.inst_path = args[++a];
+            env.inst_path = args[++a];
         else if (arg == CFT_PARSER_FLAG || arg == CFT_PARSER_LONG_FLAG)
-            cli_args.parser = args[++a];
+            env.parser = args[++a];
         else if (arg == CFT_OUTSOL_FLAG || arg == CFT_OUTSOL_LONG_FLAG)
-            cli_args.sol_path = args[++a];
+            env.sol_path = args[++a];
         else if (arg == CFT_INITSOL_FLAG || arg == CFT_INITSOL_LONG_FLAG)
-            cli_args.initsol_path = args[++a];
+            env.initsol_path = args[++a];
         else if (arg == CFT_SEED_FLAG || arg == CFT_SEED_LONG_FLAG) {
-            cli_args.seed = string_to<uint64_t>::parse(args[++a]);
-            cli_args.rnd  = {cli_args.seed};
+            env.seed = string_to<uint64_t>::parse(args[++a]);
+            env.rnd  = {env.seed};
         } else if (arg == CFT_TLIM_FLAG || arg == CFT_TLIM_LONG_FLAG)
-            cli_args.time_limit = string_to<double>::parse(args[++a]);
+            env.time_limit = string_to<double>::parse(args[++a]);
         else if (arg == CFT_VERBOSE_FLAG || arg == CFT_VERBOSE_LONG_FLAG)
             if (a + 1 == args.size() || args[a + 1][0] == '-')
-                cli_args.verbose = 4;
+                env.verbose = 4;
             else
-                cli_args.verbose = string_to<uint64_t>::parse(args[++a]);
+                env.verbose = string_to<uint64_t>::parse(args[++a]);
         else if (arg == CFT_EPSILON_FLAG || arg == CFT_EPSILON_LONG_FLAG)
-            cli_args.epsilon = string_to<real_t>::parse(args[++a]);
+            env.epsilon = string_to<real_t>::parse(args[++a]);
         else if (arg == CFT_GITERS_FLAG || arg == CFT_GITERS_LONG_FLAG)
-            cli_args.heur_iters = string_to<uint64_t>::parse(args[++a]);
+            env.heur_iters = string_to<uint64_t>::parse(args[++a]);
         else if (arg == CFT_BETA_FLAG || arg == CFT_BETA_LONG_FLAG)
-            cli_args.beta = string_to<real_t>::parse(args[++a]);
+            env.beta = string_to<real_t>::parse(args[++a]);
         else if (arg == CFT_ABSSGEXIT_FLAG || arg == CFT_ABSSGEXIT_LONG_FLAG)
-            cli_args.abs_subgrad_exit = string_to<real_t>::parse(args[++a]);
+            env.abs_subgrad_exit = string_to<real_t>::parse(args[++a]);
         else if (arg == CFT_RELSGEXIT_FLAG || arg == CFT_RELSGEXIT_LONG_FLAG)
-            cli_args.rel_subgrad_exit = string_to<real_t>::parse(args[++a]);
+            env.rel_subgrad_exit = string_to<real_t>::parse(args[++a]);
         else
             fmt::print("Arg '{}' unrecognized, ignored.\n", arg.data());
     }
 
-    if (cli_args.inst_path.empty())
+    if (env.inst_path.empty())
         throw std::runtime_error("Instance file path not provided.");
 
-    if (cli_args.sol_path.empty())
-        cli_args.sol_path = local::make_sol_name(cli_args.inst_path);
+    if (env.sol_path.empty())
+        env.sol_path = local::make_sol_name(env.inst_path);
 
-    return cli_args;
+    return env;
 }
 }  // namespace cft
 

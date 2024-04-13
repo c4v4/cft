@@ -25,19 +25,19 @@ TEST_CASE("parse_cli_args parses command line arguments correctly", "[parse_cli_
     int argc = sizeof(argv) / sizeof(argv[0]);
 
     SECTION("parse_cli_args parses command line arguments correctly") {
-        auto cli_args = cft::parse_cli_args(argc, argv);
+        auto env = cft::parse_cli_args(argc, argv);
 
-        REQUIRE(cli_args.inst_path == "input.txt");
-        REQUIRE(cli_args.parser == "rail");
-        REQUIRE(cli_args.sol_path == "output.sol");
-        REQUIRE(cli_args.seed == 12345);
-        REQUIRE(cli_args.time_limit == 10.0);
-        REQUIRE(cli_args.verbose == 2);
-        REQUIRE(cli_args.epsilon == 0.001F);
-        REQUIRE(cli_args.heur_iters == 100);
-        REQUIRE(cli_args.beta == 0.5F);
-        REQUIRE(cli_args.abs_subgrad_exit == 0.01F);
-        REQUIRE(cli_args.rel_subgrad_exit == 0.1F);
+        REQUIRE(env.inst_path == "input.txt");
+        REQUIRE(env.parser == "rail");
+        REQUIRE(env.sol_path == "output.sol");
+        REQUIRE(env.seed == 12345);
+        REQUIRE(env.time_limit == 10.0);
+        REQUIRE(env.verbose == 2);
+        REQUIRE(env.epsilon == 0.001F);
+        REQUIRE(env.heur_iters == 100);
+        REQUIRE(env.beta == 0.5F);
+        REQUIRE(env.abs_subgrad_exit == 0.01F);
+        REQUIRE(env.rel_subgrad_exit == 0.1F);
     }
 }
 
@@ -81,18 +81,18 @@ TEST_CASE("parse_cli_args parses command line arguments correctly (long)", "[par
     int argc = sizeof(argv) / sizeof(argv[0]);
 
     SECTION("parse_cli_args parses command line arguments correctly") {
-        auto cli_args = cft::parse_cli_args(argc, argv);
+        auto env = cft::parse_cli_args(argc, argv);
 
-        REQUIRE(cli_args.inst_path == "input.txt");
-        REQUIRE(cli_args.parser == "rail");
-        REQUIRE(cli_args.sol_path == "output.sol");
-        REQUIRE(cli_args.seed == 12345);
-        REQUIRE(cli_args.time_limit == 10.0);
-        REQUIRE(cli_args.verbose == 2);
-        REQUIRE(cli_args.epsilon == 0.001F);
-        REQUIRE(cli_args.heur_iters == 100);
-        REQUIRE(cli_args.beta == 0.5F);
-        REQUIRE(cli_args.abs_subgrad_exit == 0.01F);
-        REQUIRE(cli_args.rel_subgrad_exit == 0.1F);
+        REQUIRE(env.inst_path == "input.txt");
+        REQUIRE(env.parser == "rail");
+        REQUIRE(env.sol_path == "output.sol");
+        REQUIRE(env.seed == 12345);
+        REQUIRE(env.time_limit == 10.0);
+        REQUIRE(env.verbose == 2);
+        REQUIRE(env.epsilon == 0.001F);
+        REQUIRE(env.heur_iters == 100);
+        REQUIRE(env.beta == 0.5F);
+        REQUIRE(env.abs_subgrad_exit == 0.01F);
+        REQUIRE(env.rel_subgrad_exit == 0.1F);
     }
 }
