@@ -17,10 +17,10 @@
 #define CFT_SRC_SUBGRADIENT_UTILS_HPP
 
 
-#include <cassert>
 #include <cstddef>
 
 #include "core/cft.hpp"
+#include "utils/assert.hpp" // IWYU pragma:  keep
 #include "utils/limits.hpp"
 #include "utils/utility.hpp"
 

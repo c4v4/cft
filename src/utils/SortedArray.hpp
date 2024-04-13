@@ -17,11 +17,12 @@
 #ifndef CFT_SRC_CORE_SORTED_ARRAY_HPP
 #define CFT_SRC_CORE_SORTED_ARRAY_HPP
 
-#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <utility>
+
+#include "utils/assert.hpp" // IWYU pragma:  keep
 
 namespace cft {
 template <typename T, std::size_t Nm, typename Comp = std::less<T>>

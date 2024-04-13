@@ -19,9 +19,10 @@
 
 #include <bits/iterator_concepts.h>
 
-#include <cassert>
 #include <cstddef>
 #include <iterator>
+
+#include "utils/assert.hpp"  // IWYU pragma:  keep
 
 namespace cft {
 
@@ -40,23 +41,27 @@ struct Span {
     iterator finish;
 
     size_type size() const {
+        assert(finish >= start);
         return finish - start;
     }
 
     bool empty() const {
+        assert(finish >= start);
         return start == finish;
     }
 
     reference back() const {
-        assert(start != finish);
+        assert(start < finish);
         return *(finish - 1);
     }
 
     iterator begin() const {
+        assert(finish >= start);
         return start;
     }
 
     iterator end() const {
+        assert(finish >= start);
         return finish;
     }
 
@@ -69,6 +74,7 @@ struct Span {
 
 template <typename ItT>
 inline Span<ItT> make_span(ItT beg, ItT end) {
+    assert(beg <= end);
     return {beg, end};
 }
 

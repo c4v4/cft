@@ -1,3 +1,18 @@
+// Copyright (c) 2024 Francesco Cavaliere
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
+
 #include <catch2/catch.hpp>
 
 #include "core/parsing.hpp"
@@ -16,7 +31,8 @@ namespace local { namespace {
 }  // namespace local
 
 TEST_CASE("test_parse_scp_instance") {
-    auto inst = parse_scp_instance("../instances/scp/scp41.txt");
+    auto inst = Instance();
+    REQUIRE_NOTHROW(inst = parse_scp_instance("../instances/scp/scp41.txt"));
 
     REQUIRE(rsize(inst.rows) == 200);
     REQUIRE(csize(inst.cols) == 1000);
@@ -35,7 +51,8 @@ TEST_CASE("test_parse_scp_instance") {
 }
 
 TEST_CASE("test_parse_rail_instance") {
-    auto inst = parse_rail_instance("../instances/rail/rail507");
+    auto inst = Instance();
+    REQUIRE_NOTHROW(inst = parse_rail_instance("../instances/rail/rail507"));
 
     REQUIRE(rsize(inst.rows) == 507);
     REQUIRE(csize(inst.cols) == 63009);
@@ -71,6 +88,26 @@ TEST_CASE("test_parse_cvrp_instance") {
     REQUIRE(std::fabs(inst.solcosts[0] - 96162.0) < 0.01);
 
     REQUIRE(fdata.warmstart.empty());
+}
+
+TEST_CASE("test_parse_mps_instance") {
+    auto inst = Instance();
+    REQUIRE_NOTHROW(inst = parse_mps_instance("../instances/mps/ex1010-pi.mps"));
+
+    REQUIRE(rsize(inst.rows) == 1468);
+    REQUIRE(csize(inst.cols) == 25200);
+
+    REQUIRE(inst.cols[0].size() == 4);
+    REQUIRE_THAT(
+        local::span_to_vector<ridx_t>(inst.cols[0]),
+        Catch::Matchers::UnorderedEquals(std::vector<ridx_t>{1, 31, 0, 2}));
+
+    REQUIRE(csize(inst.cols) == csize(inst.costs));
+    REQUIRE(std::fabs(inst.costs[0] - 1.0) < 0.01);
+
+    REQUIRE(csize(inst.cols) == csize(inst.solcosts));
+    for (real_t c : inst.solcosts)
+        REQUIRE(std::fabs(c - limits<real_t>::max()) < 0.01);
 }
 
 }  // namespace cft

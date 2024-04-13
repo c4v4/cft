@@ -179,8 +179,7 @@ inline void complete_init_redund_set(RedundancyData&            red_data,
         if (red_data.total_cover.is_redundant_uncover(inst.cols[j]))
             red_data.redund_set.push_back({j, inst.costs[j]});
         else {
-            red_data.partial_cov_count += as_ridx(
-                red_data.partial_cover.cover(inst.cols[j]));
+            red_data.partial_cov_count += as_ridx(red_data.partial_cover.cover(inst.cols[j]));
             red_data.partial_cost += inst.costs[j];
             if (red_data.partial_cost >= cutoff_cost)
                 return;
@@ -231,8 +230,7 @@ inline void heuristic_removal(RedundancyData& red_set, Instance const& inst) {
             if (red_set.total_cover.is_redundant_uncover(inst.cols[x.idx]))
                 return false;
             red_set.partial_cost += inst.costs[x.idx];
-            red_set.partial_cov_count += as_ridx(
-                red_set.partial_cover.cover(inst.cols[x.idx]));
+            red_set.partial_cov_count += as_ridx(red_set.partial_cover.cover(inst.cols[x.idx]));
             return true;
         });
     }

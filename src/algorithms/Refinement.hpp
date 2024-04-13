@@ -54,7 +54,7 @@ namespace local { namespace {
                 fix_fraction = min_fixing;
             prev_cost = best_sol.cost;
 
-            auto nrows_real   = static_cast<real_t>(rsize(inst.rows));
+            auto nrows_real   = as_real(rsize(inst.rows));
             auto nrows_to_fix = static_cast<ridx_t>(nrows_real * fix_fraction);
 
             assert(rsize(best_lagr_mult) == rsize(inst.rows));
@@ -153,8 +153,8 @@ inline Solution run(Instance const& orig_inst,
         make_identity_fixing_data(ncols, nrows, fixing);
         fix_columns_and_compute_maps(cols_to_fix, inst, fixing, old2new);
 
-        auto nrows_real  = static_cast<real_t>(rsize(orig_inst.rows));
-        auto fixing_perc = static_cast<real_t>(rsize(inst.rows)) * 100.0_F / nrows_real;
+        auto nrows_real  = as_real(rsize(orig_inst.rows));
+        auto fixing_perc = as_real(rsize(inst.rows)) * 100.0_F / nrows_real;
         fmt::print("REFN > Free rows {} ({:.1f}%), best sol {} fixed cost {} time {:.2f}\n",
                    rsize(inst.rows),
                    fixing_perc,

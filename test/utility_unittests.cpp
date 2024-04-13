@@ -1,10 +1,79 @@
+// Copyright (c) 2024 Francesco Cavaliere
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
+
 #include <array>
 #include <catch2/catch.hpp>
-#include <cstring>
+
+#ifndef NDEBUG
+#include <stdexcept>
+#endif
 
 #include "utils/utility.hpp"
 
 namespace cft {
+
+TEST_CASE("checked_cast - Test with integers") {
+    SECTION("checked_cast - Positive to smaller positive") {
+        auto result = checked_cast<int16_t>(42);
+        REQUIRE(result == 42);
+    }
+
+    SECTION("checked_cast - Negative to smaller negative") {
+        auto result = checked_cast<int16_t>(-42);
+        REQUIRE(result == -42);
+    }
+
+    SECTION("checked_cast - Float to int") {
+        float value = 3.14F;
+        REQUIRE(checked_cast<int16_t>(value) == 3);
+    }
+
+    SECTION("checked_cast - Double to int") {
+        double value = 1212.14;
+        REQUIRE(checked_cast<int16_t>(value) == 1212);
+    }
+}
+
+#ifndef NDEBUG
+
+TEST_CASE("Assert fails in narrow cast") {
+    SECTION("checked_cast - Positive to larger positive") {
+        REQUIRE_THROWS_AS(checked_cast<uint16_t>(100000), std::runtime_error);
+    }
+
+    SECTION("checked_cast - Negative to larger negative") {
+        REQUIRE_THROWS_AS(checked_cast<int16_t>(-100000), std::runtime_error);
+    }
+
+    SECTION("checked_cast - Positive to negative") {
+        REQUIRE_THROWS_AS(checked_cast<uint16_t>(-1), std::runtime_error);
+    }
+
+    SECTION("checked_cast - Double to int") {
+        uint64_t value = (1U << 24U) + 1;  // greater than 2^24, where float precision is 2
+        REQUIRE_THROWS_AS(checked_cast<float>(value), std::runtime_error);
+    }
+
+    SECTION("checked_cast - Double to int") {
+        uint64_t value = (1ULL << 53U) + 1;  // greater than 2^53  where double precision is 2
+        REQUIRE_THROWS_AS(checked_cast<double>(value), std::runtime_error);
+    }
+}
+
+#endif
+
 
 TEST_CASE("test_clamp") {
     SECTION("Value within range") {

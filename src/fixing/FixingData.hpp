@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-#ifndef CAV_SRC_FIXING_FIXINGDATA_HPPCFT_
-#define CAV_SRC_FIXING_FIXINGDATA_HPPCFT_
+#ifndef CFT_SRC_FIXING_FIXINGDATA_HPP
+#define CFT_SRC_FIXING_FIXINGDATA_HPP
 
 #include "core/Instance.hpp"
 #include "core/cft.hpp"
@@ -111,4 +111,4 @@ inline void fix_columns_and_compute_maps(std::vector<cidx_t> const& cols_to_fix,
 
 }  // namespace cft
 
-#endif /* CAV_SRC_FIXING_FIXINGDATA_HPPCFT_ */
+#endif /* CFT_SRC_FIXING_FIXINGDATA_HPP */

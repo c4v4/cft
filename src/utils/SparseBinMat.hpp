@@ -17,10 +17,10 @@
 #define CFT_SRC_CORE_SPARSEBINMAT_HPP
 
 
-#include <cassert>
 #include <vector>
 
 #include "utils/Span.hpp"
+#include "utils/assert.hpp" // IWYU pragma:  keep
 
 namespace cft {
 

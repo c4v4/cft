@@ -54,8 +54,8 @@ inline real_t compute_score(real_t gamma, ridx_t mu) {
     if (mu == 0_R)
         return limits<real_t>::max();
     if (gamma > 0.0_F)
-        return gamma / static_cast<real_t>(mu);
-    return gamma * static_cast<real_t>(mu);
+        return gamma / as_real(mu);
+    return gamma * as_real(mu);
 }
 
 // Initialize the scores for the greedy algorithm

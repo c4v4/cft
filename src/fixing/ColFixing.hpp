@@ -59,7 +59,7 @@ public:
         greedy(inst, lagr_mult, reduced_costs, cols_to_fix, limits<real_t>::max(), fix_at_least);
 
         fix_columns_and_compute_maps(cols_to_fix.idxs, inst, fixing, old2new);
-        apply_maps_to_lagr_mult(old2new, lagr_mult);
+        _apply_maps_to_lagr_mult(old2new, lagr_mult);
 
         fmt::print("CFIX   > Fixing {} columns ({} + {}), time {:.2f}s\n",
                    csize(cols_to_fix.idxs),
@@ -103,6 +103,20 @@ private:
                 j = removed_idx;
             }
         remove_if(cols_to_fix.idxs, [](cidx_t j) { return j == removed_idx; });
+    }
+
+    static void _apply_maps_to_lagr_mult(IdxsMaps const& old2new, std::vector<real_t>& lagr_mult) {
+
+        ridx_t old_nrows = rsize(old2new.row_map);
+        ridx_t new_i     = 0_R;
+        for (ridx_t old_i = 0_R; old_i < old_nrows; ++old_i)
+            if (old2new.row_map[old_i] != removed_idx) {
+                assert(new_i <= old_i);
+                assert(new_i == old2new.row_map[old_i]);
+                lagr_mult[new_i] = lagr_mult[old_i];
+                ++new_i;
+            }
+        lagr_mult.resize(new_i);
     }
 };
 

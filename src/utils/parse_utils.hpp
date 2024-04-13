@@ -35,13 +35,13 @@ template <bool C, typename T1, typename T2>
 using if_t = typename std::conditional<C, T1, T2>::type;
 
 struct IsSpace {
-    bool operator()(char c) const noexcept {
+    bool operator()(char c) const {
         return std::isspace(c) != 0;
     }
 };
 
 struct NotSpace {
-    bool operator()(char c) const noexcept {
+    bool operator()(char c) const {
         return std::isspace(c) == 0;
     }
 };

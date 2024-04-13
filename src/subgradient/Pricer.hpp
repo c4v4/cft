@@ -48,11 +48,7 @@ public:
         _prepare_caches(ncols, reduced_costs, taken_idxs);
 
         auto real_lower_bound = _compute_col_reduced_costs(inst, lagr_mult, reduced_costs);
-        _select_c1_col_idxs(inst,
-                            reduced_costs,
-                            as_cidx(5 * nrows),
-                            core.col_map,
-                            taken_idxs);
+        _select_c1_col_idxs(inst, reduced_costs, as_cidx(5 * nrows), core.col_map, taken_idxs);
         _select_c2_col_idxs(inst, reduced_costs, core.col_map, taken_idxs);
 
         _init_partial_instance(inst, core.col_map, core.inst);

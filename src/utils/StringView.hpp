@@ -17,10 +17,11 @@
 #define CFT_SRC_CORE_STRINGVIEW_HPP
 
 
-#include <cassert>
 #include <cstddef>
 #include <cstring>
 #include <string>
+
+#include "utils/assert.hpp"  // IWYU pragma:  keep
 
 namespace cft {
 
@@ -40,71 +41,79 @@ struct StringView {
     StringView(char const* beg, char const* end)
         : start(beg)
         , finish(end) {
+        assert(finish >= start);
     }
 
     StringView(char const* beg, size_t sz)
         : start(beg)
         , finish(beg + sz) {
+        assert(finish >= start);
     }
 
     StringView(std::string const& str)
         : start(str.data())
         , finish(str.data() + str.size()) {
+        assert(finish >= start);
     }
 
     StringView(char const* str)
         : start(str)
         , finish(str + std::strlen(str)) {
+        assert(finish >= start);
     }
 
     std::string to_cpp_string() const {
+        assert(finish >= start);
         return {start, finish};
     }
 
-    size_type size() const noexcept {
+    size_type size() const {
+        assert(finish >= start);
         return finish - start;
     }
 
-    bool empty() const noexcept {
+    bool empty() const {
+        assert(finish >= start);
         return start == finish;
     }
 
-    pointer data() const noexcept {
+    pointer data() const {
         return start;
     }
 
-    iterator begin() const noexcept {
+    iterator begin() const {
+        assert(finish >= start);
         return start;
     }
 
-    iterator end() const noexcept {
+    iterator end() const {
+        assert(finish >= start);
         return finish;
     }
 
-    value_type operator[](size_type i) const noexcept {
-        assert(finish > start);
-        assert(i < static_cast<size_t>(finish - start));
+    value_type operator[](size_type i) const {
+        assert(i < size());
         return start[i];
     }
 
-    StringView remove_prefix(size_type n) const noexcept {
+    StringView remove_prefix(size_type n) const {
         assert(n <= size());
         return {start + n, finish};
     }
 
-    StringView remove_suffix(size_type n) const noexcept {
+    StringView remove_suffix(size_type n) const {
         assert(n <= size());
         return {start, start + n};
     }
 
-    StringView get_substr(size_type b, size_type e) const noexcept {
+    StringView get_substr(size_type b, size_type e) const {
         assert(b <= size());
         assert(e <= size());
         return {start + b, start + e};
     }
 
     template <typename T>
-    size_t find_first_if(T cond) const noexcept {
+    size_t find_first_if(T cond) const {
         for (size_t i = 0; i < size(); ++i)
             if (cond((*this)[i]))
                 return i;
@@ -112,7 +121,7 @@ struct StringView {
     }
 
     template <typename T>
-    size_t find_last_if(T cond) const noexcept {
+    size_t find_last_if(T cond) const {
         if (empty())
             return size();
         for (size_t i = size() - 1; i > 0; --i)
@@ -123,7 +132,7 @@ struct StringView {
         return size();
     }
 
-    int compare(StringView other) const noexcept {
+    int compare(StringView other) const {
         size_t str_size = std::min(size(), other.size());
         int    res      = _compare_cstr(start, other.start, str_size);
         if (res != 0)
@@ -131,32 +140,32 @@ struct StringView {
         return size() == other.size() ? 0 : (size() < other.size() ? -1 : 1);
     }
 
-    bool operator==(StringView rhs) const noexcept {
+    bool operator==(StringView rhs) const {
         return compare(rhs) == 0;
     }
 
-    bool operator!=(StringView rhs) const noexcept {
+    bool operator!=(StringView rhs) const {
         return compare(rhs) != 0;
     }
 
-    bool operator<(StringView rhs) const noexcept {
+    bool operator<(StringView rhs) const {
         return compare(rhs) < 0;
     }
 
-    bool operator<=(StringView rhs) const noexcept {
+    bool operator<=(StringView rhs) const {
         return compare(rhs) <= 0;
     }
 
-    bool operator>(StringView rhs) const noexcept {
+    bool operator>(StringView rhs) const {
         return compare(rhs) > 0;
     }
 
-    bool operator>=(StringView rhs) const noexcept {
+    bool operator>=(StringView rhs) const {
         return compare(rhs) >= 0;
     }
 
 private:
-    static int _compare_cstr(char const* s1, char const* s2, size_t n) noexcept {
+    static int _compare_cstr(char const* s1, char const* s2, size_t n) {
         for (; n != 0; ++s1, ++s2, --n) {
             if (*s1 < *s2)
                 return -1;

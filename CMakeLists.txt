@@ -41,16 +41,18 @@ if (UNIT_TESTS)
     set(GCC_COVERAGE_COMPILE_FLAGS "-fprofile-arcs -ftest-coverage")
     set(GCC_COVERAGE_LINK_FLAGS    "-lgcov --coverage")
 
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
-    set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}" )
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS} -DCFT_ASSERT_FAIL_THROWS")
+    set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS} -DCFT_ASSERT_FAIL_THROWS" )
 
     set(SOURCES test/main.cpp
+                test/cft_unittests.cpp
                 test/Chrono_unittests.cpp
+                test/coverage_unittests.cpp
+                test/Instance_unittests.cpp
                 test/StringView_unittests.cpp
                 test/parse_utils_unittests.cpp
                 test/sort_unittests.cpp
                 test/Span_unittests.cpp
-                test/coverage_unittests.cpp
                 test/parsing_unittests.cpp
                 test/random_unittests.cpp
                 test/SortedArray_unittests.cpp
