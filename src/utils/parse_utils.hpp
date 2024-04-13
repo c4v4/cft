@@ -124,10 +124,14 @@ struct FileLineIterator {
 
     FileLineIterator(std::string const& path)
         : in(path) {
+        if (!in.is_open())
+            throw std::invalid_argument(fmt::format("Cannot open file {}", path));
     }
 
     FileLineIterator(char const* path)
         : in(path) {
+        if (!in.is_open())
+            throw std::invalid_argument(fmt::format("Cannot open file {}", path));
     }
 
     StringView next() {

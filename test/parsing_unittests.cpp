@@ -92,15 +92,16 @@ TEST_CASE("test_parse_cvrp_instance") {
 
 TEST_CASE("test_parse_mps_instance") {
     auto inst = Instance();
-    REQUIRE_NOTHROW(inst = parse_mps_instance("../instances/mps/ex1010-pi.mps"));
+    REQUIRE_NOTHROW(inst = parse_mps_instance("../instances/mps/ramos3.mps"));
 
-    REQUIRE(rsize(inst.rows) == 1468);
-    REQUIRE(csize(inst.cols) == 25200);
+    REQUIRE(rsize(inst.rows) == 2187);
+    REQUIRE(csize(inst.cols) == 2187);
 
-    REQUIRE(inst.cols[0].size() == 4);
+    REQUIRE(inst.cols[0].size() == 15);
     REQUIRE_THAT(
         local::span_to_vector<ridx_t>(inst.cols[0]),
-        Catch::Matchers::UnorderedEquals(std::vector<ridx_t>{1, 31, 0, 2}));
+        Catch::Matchers::UnorderedEquals(
+            std::vector<ridx_t>{0, 9, 10, 11, 12, 15, 18, 36, 63, 90, 171, 252, 495, 738, 1467}));
 
     REQUIRE(csize(inst.cols) == csize(inst.costs));
     REQUIRE(std::fabs(inst.costs[0] - 1.0) < 0.01);
