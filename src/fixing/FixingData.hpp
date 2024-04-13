@@ -46,7 +46,7 @@ namespace local { namespace {
             assert("Column not in instance" && j < csize(inst.cols));
             cidx_t orig_j = fixing.curr2orig
                                 .col_map[j];  // Use old fixing to store original indexes
-            assert(orig_j != removed_idx);
+            assert(orig_j != removed_cidx);
             fixing.fixed_cols.push_back(orig_j);
             fixing.fixed_cost += inst.costs[j];
         }
@@ -69,7 +69,7 @@ namespace local { namespace {
         // Update original col mappings
         for (cidx_t old_j = 0_C; old_j < old_ncols; ++old_j) {
             cidx_t new_j = old2new.col_map[old_j];
-            if (new_j != removed_idx)
+            if (new_j != removed_cidx)
                 fixing.curr2orig.col_map[new_j] = fixing.curr2orig.col_map[old_j];
         }
         fixing.curr2orig.col_map.resize(new_ncols);
@@ -77,7 +77,7 @@ namespace local { namespace {
         // Update original row mappings
         for (ridx_t old_i = 0_R; old_i < old_nrows; ++old_i) {
             ridx_t new_i = old2new.row_map[old_i];
-            if (new_i != removed_idx)
+            if (new_i != removed_ridx)
                 fixing.curr2orig.row_map[new_i] = fixing.curr2orig.row_map[old_i];
         }
         fixing.curr2orig.row_map.resize(new_nrows);

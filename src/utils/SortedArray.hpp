@@ -22,7 +22,7 @@
 #include <functional>
 #include <utility>
 
-#include "utils/assert.hpp" // IWYU pragma:  keep
+#include "utils/assert.hpp"  // IWYU pragma:  keep
 
 namespace cft {
 template <typename T, std::size_t Nm, typename Comp = std::less<T>>

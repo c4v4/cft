@@ -35,7 +35,7 @@ namespace local { namespace {
         for (cidx_t old_j = 0_C; old_j < csize(old_inst.cols); ++old_j) {
 
             cidx_t new_j = old2new.col_map[old_j];
-            if (new_j == removed_idx)
+            if (new_j == removed_cidx)
                 continue;
 
             assert(!new_inst.cols[new_j].empty());
@@ -43,9 +43,9 @@ namespace local { namespace {
             for (ridx_t r = 0_R; r < rsize(old_inst.cols[old_j]); ++r) {
                 ridx_t old_i = old_inst.cols[old_j][r];
                 ridx_t new_i = old2new.row_map[old_i];
-                if (new_i == removed_idx) {
+                if (new_i == removed_ridx) {
                     assert(any(old_inst.rows[old_i],
-                               [&](cidx_t j) { return old2new.col_map[j] == removed_idx; }));
+                               [&](cidx_t j) { return old2new.col_map[j] == removed_cidx; }));
                     continue;
                 }
                 assert(std::count(new_inst.cols[new_j].begin(),
@@ -73,10 +73,10 @@ namespace local { namespace {
         // Mark columns and rows to be removed
         ridx_t removed_rows = 0_R;
         for (cidx_t j : cols_to_fix) {
-            old2new.col_map[j] = removed_idx;
+            old2new.col_map[j] = removed_cidx;
             for (ridx_t i : inst.cols[j]) {
-                removed_rows += (old2new.row_map[i] != removed_idx ? 1_R : 0_R);
-                old2new.row_map[i] = removed_idx;
+                removed_rows += (old2new.row_map[i] != removed_ridx ? 1_R : 0_R);
+                old2new.row_map[i] = removed_ridx;
             }
         }
         if (removed_rows == rsize(inst.rows))  // If all rows were removed, return
@@ -85,18 +85,18 @@ namespace local { namespace {
         // Complete cols mappings for the remaining cols (and remove empty ones)
         cidx_t new_j = 0_C;
         for (cidx_t old_j = 0_C; old_j < csize(old2new.col_map); ++old_j) {
-            if (old2new.col_map[old_j] == removed_idx)
+            if (old2new.col_map[old_j] == removed_cidx)
                 continue;
-            if (any(inst.cols[old_j], [&](ridx_t i) { return old2new.row_map[i] != removed_idx; }))
+            if (any(inst.cols[old_j], [&](ridx_t i) { return old2new.row_map[i] != removed_ridx; }))
                 old2new.col_map[old_j] = new_j++;
             else
-                old2new.col_map[old_j] = removed_idx;  // Remove empty columns
+                old2new.col_map[old_j] = removed_cidx;  // Remove empty columns
         }
 
         // Complete rows mappings for the remaining rows
         ridx_t n = 0_R;
         for (ridx_t& new_i : old2new.row_map)
-            if (new_i != removed_idx)
+            if (new_i != removed_ridx)
                 new_i = n++;
         assert(rsize(old2new.row_map) - n == removed_rows);
 
@@ -107,14 +107,14 @@ namespace local { namespace {
         size_t n     = 0;
         cidx_t new_j = 0_C;
         for (cidx_t old_j = 0_C; old_j < csize(inst.cols); ++old_j) {
-            if (old2new.col_map[old_j] == removed_idx)
+            if (old2new.col_map[old_j] == removed_cidx)
                 continue;
 
             assert(new_j == old2new.col_map[old_j]);
             size_t new_beg_idx = n;  // save here to set cols.begs[new_j] later
             for (ridx_t old_i : inst.cols[old_j]) {
                 ridx_t new_i = old2new.row_map[old_i];
-                if (new_i != removed_idx)
+                if (new_i != removed_ridx)
                     inst.cols.idxs[n++] = new_i;
             }
 
@@ -134,7 +134,7 @@ namespace local { namespace {
     inline void inplace_apply_row_map(IdxsMaps const& old2new, Instance& inst) {
         ridx_t new_i = 0_R;
         for (ridx_t old_i = 0_R; old_i < rsize(inst.rows); ++old_i) {
-            if (old2new.row_map[old_i] == removed_idx)
+            if (old2new.row_map[old_i] == removed_ridx)
                 continue;
 
             auto& old_row = inst.rows[old_i];
@@ -144,7 +144,7 @@ namespace local { namespace {
             cidx_t w = 0_C;
             for (cidx_t old_j : old_row) {
                 cidx_t new_j = old2new.col_map[old_j];
-                if (new_j != removed_idx)
+                if (new_j != removed_cidx)
                     new_row[w++] = new_j;
             }
             new_row.resize(w);
@@ -160,7 +160,7 @@ inline void remove_fixed_cols_from_inst(std::vector<cidx_t> const& cols_to_fix, 
                                         IdxsMaps&                  old2new       // out
 ) {
 
-    IF_DEBUG(auto old_inst = inst);
+    CFT_IF_DEBUG(auto old_inst = inst);
 
     ridx_t removed_rows = local::compute_maps_from_cols_to_fix(inst, cols_to_fix, old2new);
     if (removed_rows == rsize(inst.rows))
@@ -169,8 +169,8 @@ inline void remove_fixed_cols_from_inst(std::vector<cidx_t> const& cols_to_fix, 
     local::inplace_apply_col_map(old2new, inst);
     local::inplace_apply_row_map(old2new, inst);
 
-    IF_DEBUG(col_and_rows_check(inst.cols, inst.rows));        // coherent instance
-    IF_DEBUG(local::mappings_check(old_inst, inst, old2new));  // coherent mappings
+    CFT_IF_DEBUG(col_and_rows_check(inst.cols, inst.rows));        // coherent instance
+    CFT_IF_DEBUG(local::mappings_check(old_inst, inst, old2new));  // coherent mappings
 }
 
 }  // namespace cft

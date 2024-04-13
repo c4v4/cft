@@ -25,7 +25,7 @@
 #include "core/cft.hpp"
 #include "utils/SparseBinMat.hpp"
 #include "utils/StringView.hpp"
-#include "utils/assert.hpp" // IWYU pragma:  keep
+#include "utils/assert.hpp"  // IWYU pragma:  keep
 #include "utils/limits.hpp"
 #include "utils/parse_utils.hpp"
 

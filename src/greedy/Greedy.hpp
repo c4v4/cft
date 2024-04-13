@@ -104,12 +104,12 @@ private:
         complete_init_redund_set(redund_info, inst, sol.idxs, cutoff_cost);
         if (_try_early_exit(redund_info, sol))
             return;
-        IF_DEBUG(check_redundancy_data(inst, sol.idxs, redund_info));
+        CFT_IF_DEBUG(check_redundancy_data(inst, sol.idxs, redund_info));
 
         heuristic_removal(redund_info, inst);
         if (_try_early_exit(redund_info, sol))
             return;
-        IF_DEBUG(check_redundancy_data(inst, sol.idxs, redund_info));
+        CFT_IF_DEBUG(check_redundancy_data(inst, sol.idxs, redund_info));
 
         enumeration_removal(redund_info, inst);
         sol.cost = redund_info.best_cost;

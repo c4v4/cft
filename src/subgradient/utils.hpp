@@ -20,7 +20,7 @@
 #include <cstddef>
 
 #include "core/cft.hpp"
-#include "utils/assert.hpp" // IWYU pragma:  keep
+#include "utils/assert.hpp"  // IWYU pragma:  keep
 #include "utils/limits.hpp"
 #include "utils/utility.hpp"
 

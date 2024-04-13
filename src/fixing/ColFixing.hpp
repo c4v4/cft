@@ -100,9 +100,9 @@ private:
             // Fixing only non-overlapping instead, fixes way less and performs better.
             if (any(inst.cols[j], [&](ridx_t i) { return cover_counts[i] > 1; })) {
                 cols_to_fix.cost -= inst.costs[j];
-                j = removed_idx;
+                j = removed_cidx;
             }
-        remove_if(cols_to_fix.idxs, [](cidx_t j) { return j == removed_idx; });
+        remove_if(cols_to_fix.idxs, [](cidx_t j) { return j == removed_cidx; });
     }
 
     static void _apply_maps_to_lagr_mult(IdxsMaps const& old2new, std::vector<real_t>& lagr_mult) {
@@ -110,7 +110,7 @@ private:
         ridx_t old_nrows = rsize(old2new.row_map);
         ridx_t new_i     = 0_R;
         for (ridx_t old_i = 0_R; old_i < old_nrows; ++old_i)
-            if (old2new.row_map[old_i] != removed_idx) {
+            if (old2new.row_map[old_i] != removed_ridx) {
                 assert(new_i <= old_i);
                 assert(new_i == old2new.row_map[old_i]);
                 lagr_mult[new_i] = lagr_mult[old_i];
