@@ -20,7 +20,7 @@
 #include <vector>
 
 #include "utils/Span.hpp"
-#include "utils/assert.hpp" // IWYU pragma:  keep
+#include "utils/assert.hpp"  // IWYU pragma:  keep
 
 namespace cft {
 

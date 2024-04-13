@@ -25,16 +25,10 @@
 #include "utils/random.hpp"
 #include "utils/utility.hpp"
 
-#ifdef VERBOSE
-#define IF_VERBOSE(...) __VA_ARGS__
-#else
-#define IF_VERBOSE(...)
-#endif
-
 #ifdef NDEBUG
-#define IF_DEBUG(...)
+#define CFT_IF_DEBUG(...)
 #else
-#define IF_DEBUG(...) __VA_ARGS__
+#define CFT_IF_DEBUG(...) __VA_ARGS__
 #endif
 
 // Noinline attribute to help profiling specific functions
@@ -45,9 +39,6 @@
 #endif
 
 namespace cft {
-
-// Epsilon value for floating point comparisons of costs
-#define CFT_EPSILON 0.999999_F  // 1-1e-6 for integer costs, 1e-6 for float costs
 
 using cidx_t = int32_t;                    // Type for column indexes
 using ridx_t = int16_t;                    // Type for row indexes
@@ -64,36 +55,12 @@ struct Solution {
     real_t              cost = limits<real_t>::inf();
 };
 
-// Helper struct to represent a removed index, only defines ==/!= comparison to avoid misuse
-// The type maximum value is used as reserved value to represent invalid indexes.
-struct RemovedIdx {
-    template <typename T>
-    constexpr operator T() const {
-        return limits<T>::max();
-    }
-};
+// Reserved values to mark removed indexes (tombstones)
+constexpr cidx_t removed_cidx = limits<cidx_t>::max();
+constexpr ridx_t removed_ridx = limits<ridx_t>::max();
 
-template <typename T>
-constexpr bool operator==(RemovedIdx /*r*/, T j) {
-    return j == limits<T>::max();
-}
-
-template <typename T>
-constexpr bool operator==(T j, RemovedIdx /*r*/) {
-    return j == limits<T>::max();
-}
-
-template <typename T>
-constexpr bool operator!=(RemovedIdx /*r*/, T j) {
-    return j != limits<T>::max();
-}
-
-template <typename T>
-constexpr bool operator!=(T j, RemovedIdx /*r*/) {
-    return j != limits<T>::max();
-}
-
-constexpr RemovedIdx removed_idx = {};
+// Epsilon value for objective comparisons, for integer costs, 1e-6 for float costs
+constexpr real_t epsilon = checked_cast<real_t>(1 - 1e-6);
 
 // Debug checked narrow cast to cidx_t
 template <typename T>

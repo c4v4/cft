@@ -89,7 +89,7 @@ int main(int argc, char const** argv) {
             throw std::runtime_error("Parser does not exists.");
         }
 
-        IF_DEBUG(print_inst_summary(inst, warmstart));
+        CFT_IF_DEBUG(print_inst_summary(inst, warmstart));
         auto tlim = cli_args.time_limit;
         auto rnd  = cft::prng_t{cli_args.seed};
         auto sol  = cft::run(inst, rnd, tlim, warmstart);

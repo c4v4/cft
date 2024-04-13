@@ -86,8 +86,6 @@ namespace local { namespace {
             row_coverage.reset(nrows);
             auto cols_to_fix = std::vector<cidx_t>();
             for (CidxAndCost c : deltas) {
-                // if (clock() % 128 == 0) //blink
-                //     continue;
                 cidx_t j = c.idx;
                 covered_rows += as_ridx(row_coverage.cover(inst.cols[j]));
                 cols_to_fix.push_back(j);
@@ -132,21 +130,16 @@ inline Solution run(Instance const& orig_inst,
         auto result_3p = three_phase(inst, rnd, tlim - timer.elapsed<sec>());
         if (result_3p.sol.cost + fixing.fixed_cost < best_sol.cost) {
             local::from_fixed_to_unfixed_sol(result_3p.sol, fixing, best_sol);
-            IF_DEBUG(check_solution(orig_inst, best_sol));
+            CFT_IF_DEBUG(check_solution(orig_inst, best_sol));
         }
 
         if (iter_counter == 0) {
             nofix_lagr_mult = std::move(result_3p.unfixed_lagr_mult);
-            max_cost        = beta * result_3p.unfixed_lb + CFT_EPSILON;
+            max_cost        = beta * result_3p.unfixed_lb + epsilon;
         }
 
-        if (best_sol.cost <= max_cost || timer.elapsed<sec>() > tlim) {
-            // select_cols_to_fix = local::RefinementFixManager(); // restart
-            // fixing             = FixingData();
-            // inst               = orig_inst;
-            // continue;
+        if (best_sol.cost <= max_cost || timer.elapsed<sec>() > tlim)
             break;
-        }
 
         inst             = orig_inst;
         auto cols_to_fix = select_cols_to_fix(inst, nofix_lagr_mult, best_sol);
@@ -162,13 +155,8 @@ inline Solution run(Instance const& orig_inst,
                    fixing.fixed_cost,
                    timer.elapsed<sec>());
 
-        if (inst.rows.empty() || timer.elapsed<sec>() > tlim) {
-            // select_cols_to_fix = local::RefinementFixManager(); // restart
-            // fixing             = FixingData();
-            // inst               = orig_inst;
-            // continue;
+        if (inst.rows.empty() || timer.elapsed<sec>() > tlim)
             break;
-        }
     }
 
     return best_sol;

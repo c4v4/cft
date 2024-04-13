@@ -68,7 +68,7 @@ public:
         auto best_sol = sol;
         _compute_greedy_multipliers(core.inst, lagr_mult);
 
-        IF_DEBUG(auto inst_copy = inst);
+        CFT_IF_DEBUG(auto inst_copy = inst);
         make_identity_fixing_data(csize(inst.cols), rsize(inst.rows), fixing);
 
         for (size_t iter_counter = 0; !inst.rows.empty(); ++iter_counter) {
@@ -84,7 +84,7 @@ public:
                 unfixed_lb        = real_lb;
             }
 
-            if (real_lb + fixing.fixed_cost >= best_sol.cost - CFT_EPSILON ||
+            if (real_lb + fixing.fixed_cost >= best_sol.cost - epsilon ||
                 tot_timer.elapsed<sec>() > tlim)
                 break;
 
@@ -94,7 +94,7 @@ public:
 
             if (sol.cost + fixing.fixed_cost < best_sol.cost) {
                 _from_core_to_unfixed_sol(sol, core, fixing, best_sol);
-                IF_DEBUG(check_solution(inst_copy, best_sol));
+                CFT_IF_DEBUG(check_solution(inst_copy, best_sol));
             }
 
             col_fixing(orig_nrows, inst, fixing, lagr_mult, greedy);  // Fix column in inst
@@ -111,7 +111,7 @@ public:
             fmt::print("3PHS  > Iteration time:     {:.2f}s\n", timer.elapsed<sec>());
 
             // For some reason, it seems that we get the tightest bound after the column fixing
-            if (real_lb + fixing.fixed_cost >= best_sol.cost - CFT_EPSILON)
+            if (real_lb + fixing.fixed_cost >= best_sol.cost - epsilon)
                 break;
         }
 
@@ -174,7 +174,7 @@ private:
         // There might be duplicates, so let's sort the column list to detect them
         cft::sort(selected_cols);
         cidx_t w     = 0_C;
-        cidx_t old_j = removed_idx;  // To detect duplicates
+        cidx_t old_j = removed_cidx;  // To detect duplicates
         for (cidx_t j : selected_cols) {
             if (j == old_j)
                 continue;  // Skip duplicate

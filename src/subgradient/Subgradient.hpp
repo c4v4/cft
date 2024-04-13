@@ -27,7 +27,7 @@
 #include "subgradient/Pricer.hpp"
 #include "subgradient/utils.hpp"
 #include "utils/Chrono.hpp"
-#include "utils/assert.hpp" // IWYU pragma:  keep
+#include "utils/assert.hpp"  // IWYU pragma:  keep
 #include "utils/coverage.hpp"
 #include "utils/limits.hpp"
 #include "utils/utility.hpp"
@@ -52,7 +52,7 @@ public:
     ) {
 
         ridx_t const nrows       = rsize(orig_inst.rows);
-        real_t const max_real_lb = cutoff - CFT_EPSILON;
+        real_t const max_real_lb = cutoff - epsilon;
 
         assert(!orig_inst.cols.empty() && "Empty instance");
         assert(!core.inst.cols.empty() && "Empty core instance");
@@ -79,7 +79,7 @@ public:
             real_t norm = _compute_subgrad_sqr_norm(row_coverage);
 
             if (lb_sol.cost > best_core_lb) {
-                IF_DEBUG(fmt::print("SUBG   > New best lower bound: {:.2f}\n", lb_sol.cost));
+                CFT_IF_DEBUG(fmt::print("SUBG   > New best lower bound: {:.2f}\n", lb_sol.cost));
                 best_core_lb   = lb_sol.cost;
                 best_lagr_mult = lagr_mult;
             }
@@ -151,15 +151,15 @@ public:
             }
 
             assert(best_core_lb <= best_sol.cost && "Inconsistent lower bound");
-            if (best_core_lb >= best_sol.cost - CFT_EPSILON)
+            if (best_core_lb >= best_sol.cost - epsilon)
                 return;
 
             greedy_sol.idxs.clear();
             greedy(inst, lagr_mult, reduced_costs, greedy_sol, best_sol.cost);
-            if (greedy_sol.cost <= best_sol.cost - CFT_EPSILON) {
+            if (greedy_sol.cost <= best_sol.cost - epsilon) {
                 best_sol = greedy_sol;
                 fmt::print("HEUR   > Improved current solution {:.2f}\n", best_sol.cost);
-                IF_DEBUG(check_solution(inst, best_sol));
+                CFT_IF_DEBUG(check_solution(inst, best_sol));
             }
 
             if (norm == 0.0_F) {

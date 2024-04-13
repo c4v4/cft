@@ -32,14 +32,6 @@ TEST_CASE("Test Solution struct", "[cft]") {
     REQUIRE(s.cost == limits<real_t>::inf());
 }
 
-TEST_CASE("Test RemovedIdx struct", "[cft]") {
-    auto   r = RemovedIdx();
-    cidx_t i = 5;
-
-    REQUIRE(r == limits<cidx_t>::max());
-    REQUIRE((i != r));
-}
-
 TEST_CASE("Test as_cidx function", "[cft]") {
     int    i = 10;
     cidx_t c = as_cidx(i);

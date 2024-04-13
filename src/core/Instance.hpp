@@ -21,7 +21,7 @@
 
 #include "core/cft.hpp"
 #include "utils/SparseBinMat.hpp"
-#include "utils/assert.hpp" // IWYU pragma:  keep
+#include "utils/assert.hpp"  // IWYU pragma:  keep
 
 #ifndef NDEBUG
 #include "utils/coverage.hpp"
@@ -88,7 +88,7 @@ inline void fill_rows_from_cols(SparseBinMat<ridx_t> const&       cols,
     for (cidx_t j = 0_C; j < csize(cols); ++j)
         for (ridx_t i : cols[j])
             rows[i].push_back(j);
-    // IF_DEBUG(col_and_rows_check(cols, rows));
+    // CFT_IF_DEBUG(col_and_rows_check(cols, rows));
 }
 
 // Copy a column from one instance to another pushing it back as last column.

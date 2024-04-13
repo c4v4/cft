@@ -89,7 +89,7 @@ inline void update_row_scores(std::vector<cidx_t> const& row,
         score_info.gammas[j] += i_lagr_mult;
 
         cidx_t s = score_info.score_map[j];
-        assert(s != removed_idx && "Column is not in the score map");
+        assert(s != removed_cidx && "Column is not in the score map");
         scores[s].score = compute_score(score_info.gammas[j], score_info.covered_rows[j]);
         assert(std::isfinite(score_info.gammas[j]) && "Gamma is not finite");
         assert(std::isfinite(scores[s].score) && "Score is not finite");
@@ -133,7 +133,7 @@ inline score_subspan_t get_good_scores(Scores& score_info, size_t amount) {
     remove_if(scores, [&](ScoreData sd) {
         if (sd.score < limits<real_t>::max())
             return false;
-        score_info.score_map[sd.idx] = removed_idx;
+        score_info.score_map[sd.idx] = removed_cidx;
         return true;
     });
 
