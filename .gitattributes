@@ -1,0 +1,5 @@
+*.mps linguist-vendored=false
+*.txt linguist-vendored=false
+*.dat linguist-vendored=false
+*.scp linguist-vendored=false
+*.out linguist-vendored=false
