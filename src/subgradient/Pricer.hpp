@@ -38,9 +38,13 @@ public:
                       std::vector<real_t> const& lagr_mult,
                       InstAndMap&                core) {
 
-        assert(!inst.cols.empty());
-        assert(!core.inst.cols.empty());
+        if (core.inst.cols.empty() || core.inst.rows.empty()) {
+            clear_inst(core.inst);
+            core.col_map.clear();
+            return 0.0_F;
+        }
 
+        assert(!core.inst.cols.empty());
         ridx_t nrows = rsize(inst.rows);
         cidx_t ncols = csize(inst.cols);
 

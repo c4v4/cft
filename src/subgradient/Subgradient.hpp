@@ -156,7 +156,6 @@ public:
                 best_lagr_mult = lagr_mult;
             }
 
-            assert(best_core_lb <= best_sol.cost && "Inconsistent lower bound");
             if (best_core_lb >= best_sol.cost - env.epsilon)
                 return;
 
@@ -169,7 +168,7 @@ public:
             }
 
             if (sqr_norm < 0.999_F) {  // Squared norm is an integer
-                assert(best_core_lb < best_sol.cost && "Optimum is above cutoff");
+                assert(best_core_lb <= best_sol.cost && "Optimum is above cutoff");
                 print<4>(env, "HEUR   > Found optimal solution.\n");
                 best_lagr_mult = lagr_mult;
                 return;

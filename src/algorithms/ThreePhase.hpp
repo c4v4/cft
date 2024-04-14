@@ -64,11 +64,14 @@ public:
         auto lagr_mult = std::vector<real_t>(rsize(core.inst.rows), 0.0_F);
         auto sol       = Solution();
         greedy(core.inst, lagr_mult, core.inst.costs, sol);
-        auto best_sol = sol;
-        _compute_greedy_multipliers(core.inst, lagr_mult);
 
-        CFT_IF_DEBUG(auto inst_copy = inst);
+        _compute_greedy_multipliers(core.inst, lagr_mult);
         make_identity_fixing_data(csize(inst.cols), rsize(inst.rows), fixing);
+
+        auto best_sol = Solution();
+        _from_core_to_unfixed_sol(sol, core, fixing, best_sol);
+        CFT_IF_DEBUG(check_solution(inst, best_sol));
+        CFT_IF_DEBUG(auto inst_copy = inst);
 
         for (size_t iter_counter = 0; !inst.rows.empty(); ++iter_counter) {
             auto timer = Chrono<>();
