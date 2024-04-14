@@ -39,12 +39,6 @@ namespace local { namespace {
                       inst.costs[1],
                       inst.costs[2],
                       inst.costs[3]);
-        cft::print<5>(env,
-                      "CFT >   solcosts:  {} {} {} {} ...\n",
-                      inst.solcosts[0],
-                      inst.solcosts[1],
-                      inst.solcosts[2],
-                      inst.solcosts[3]);
         if (!warmstart.idxs.empty())
             cft::print<5>(env,
                           "CFT >   warmstart: {} {} {} {} ...\n",

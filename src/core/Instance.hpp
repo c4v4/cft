@@ -35,7 +35,6 @@ struct Instance {
     SparseBinMat<ridx_t>             cols;
     std::vector<std::vector<cidx_t>> rows;
     std::vector<real_t>              costs;
-    std::vector<real_t>              solcosts;
 };
 
 #ifndef NDEBUG
@@ -96,7 +95,6 @@ inline void fill_rows_from_cols(SparseBinMat<ridx_t> const&       cols,
 inline void push_back_col_from(Instance const& src_inst, cidx_t j, Instance& dest_inst) {
     dest_inst.cols.push_back(src_inst.cols[j]);
     dest_inst.costs.push_back(src_inst.costs[j]);
-    dest_inst.solcosts.push_back(src_inst.solcosts[j]);
 }
 
 // Clear all data of an instance creating an empty instance inplace.
@@ -104,7 +102,6 @@ inline void clear_inst(Instance& inst) {
     inst.cols.clear();
     inst.rows.clear();
     inst.costs.clear();
-    inst.solcosts.clear();
 }
 
 // For core instance we only need column mappings, since the rows remain the same.

@@ -120,7 +120,6 @@ namespace local { namespace {
 
             inst.cols.begs[new_j] = new_beg_idx;  // here to not invalidate current column
             inst.costs[new_j]     = inst.costs[old_j];
-            inst.solcosts[new_j]  = inst.solcosts[old_j];
             ++new_j;
         }
         cidx_t new_ncols          = new_j;
@@ -128,7 +127,6 @@ namespace local { namespace {
         inst.cols.begs.resize(new_ncols + 1);
         inst.cols.idxs.resize(n);
         inst.costs.resize(new_ncols);
-        inst.solcosts.resize(new_ncols);
     }
 
     inline void inplace_apply_row_map(IdxsMaps const& old2new, Instance& inst) {
