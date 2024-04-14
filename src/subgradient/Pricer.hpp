@@ -139,7 +139,6 @@ private:
         core_inst.cols.clear();
         core_inst.rows.clear();
         core_inst.costs.clear();
-        core_inst.solcosts.clear();
         for (cidx_t j : idxs)
             push_back_col_from(inst, j, core_inst);  // Add column to core_inst
     }

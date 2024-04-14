@@ -34,12 +34,10 @@ namespace local { namespace {
         cols.push_back({5, 15, 25, 35, 6, 16, 26, 36});
 
         auto costs    = std::vector<real_t>{1, 2, 3, 4, 5, 6, 7};
-        auto solcosts = std::vector<real_t>{1, 2, 3, 4, 5, 6, 7};
 
         auto inst     = Instance();
         inst.cols     = std::move(cols);
         inst.costs    = std::move(costs);
-        inst.solcosts = std::move(solcosts);
         inst.rows.resize(nrows);
 
         return inst;
@@ -75,7 +73,6 @@ TEST_CASE("Test push_back_col_from") {
         REQUIRE(last_col[n] == inst1.cols[0][n]);
 
     REQUIRE(inst2.costs.size() == inst1.costs.size() + 1);
-    REQUIRE(inst2.solcosts.size() == inst1.solcosts.size() + 1);
 }
 
 TEST_CASE("Test clear inst") {
@@ -84,7 +81,6 @@ TEST_CASE("Test clear inst") {
     REQUIRE(inst.cols.empty());
     REQUIRE(inst.rows.empty());
     REQUIRE(inst.costs.empty());
-    REQUIRE(inst.solcosts.empty());
 }
 
 

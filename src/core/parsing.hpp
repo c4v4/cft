@@ -80,7 +80,6 @@ inline Instance parse_scp_instance(std::string const& path) {
         inst.cols.begs.push_back(csize(inst.cols.idxs));
     }
 
-    inst.solcosts = std::vector<real_t>(ncols, limits<real_t>::max());
     inst.cols     = SparseBinMat<ridx_t>();
     for (auto& col : cols)
         inst.cols.push_back(col);
@@ -108,7 +107,6 @@ inline Instance parse_rail_instance(std::string const& path) {
             inst.cols.idxs.push_back(string_to<ridx_t>::consume(line_view) - 1_R);
         inst.cols.begs.push_back(csize(inst.cols.idxs));
     }
-    inst.solcosts = std::vector<real_t>(ncols, limits<real_t>::max());
 
     fill_rows_from_cols(inst.cols, nrows, inst.rows);
     return inst;
@@ -128,7 +126,6 @@ inline FileData parse_cvrp_instance(std::string const& path) {
     for (cidx_t j = 0_C; j < ncols; j++) {
         line_view = file_iter.next();
         fdata.inst.costs.push_back(string_to<real_t>::consume(line_view));
-        fdata.inst.solcosts.push_back(string_to<real_t>::consume(line_view));
         while (!line_view.empty())
             fdata.inst.cols.idxs.push_back(string_to<ridx_t>::consume(line_view));
         fdata.inst.cols.begs.push_back(csize(fdata.inst.cols.idxs));
@@ -179,7 +176,6 @@ inline Instance parse_mps_instance(std::string const& path) {
         if (tokens[0] != prev_col_name) {  // new column
             prev_col_name = tokens[0].to_cpp_string();
             inst.cols.begs.push_back(csize(inst.cols.idxs));
-            inst.solcosts.push_back(limits<real_t>::max());
             inst.costs.push_back(limits<real_t>::max());
         }
 

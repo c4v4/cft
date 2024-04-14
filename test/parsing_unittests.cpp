@@ -44,10 +44,6 @@ TEST_CASE("test_parse_scp_instance") {
 
     REQUIRE(csize(inst.cols) == csize(inst.costs));
     REQUIRE(std::fabs(inst.costs[0] - 1.0_F) < 0.01_F);
-
-    REQUIRE(csize(inst.cols) == csize(inst.solcosts));
-    for (real_t c : inst.solcosts)
-        REQUIRE(std::fabs(c - limits<real_t>::max()) < 0.01_F);
 }
 
 TEST_CASE("test_parse_rail_instance") {
@@ -64,10 +60,6 @@ TEST_CASE("test_parse_rail_instance") {
 
     REQUIRE(csize(inst.cols) == csize(inst.costs));
     REQUIRE(std::fabs(inst.costs[0] - 2.0_F) < 0.01_F);
-
-    REQUIRE(csize(inst.cols) == csize(inst.solcosts));
-    for (real_t c : inst.solcosts)
-        REQUIRE(std::fabs(c - limits<real_t>::max()) < 0.01_F);
 }
 
 TEST_CASE("test_parse_cvrp_instance") {
@@ -83,9 +75,6 @@ TEST_CASE("test_parse_cvrp_instance") {
 
     REQUIRE(csize(inst.cols) == csize(inst.costs));
     REQUIRE(std::fabs(inst.costs[1] - 787.0_F) < 0.01_F);
-
-    REQUIRE(csize(inst.cols) == csize(inst.solcosts));
-    REQUIRE(std::fabs(inst.solcosts[0] - 96162.0_F) < 0.01_F);
 
     REQUIRE(!fdata.init_sol.idxs.empty());
 }
@@ -105,10 +94,6 @@ TEST_CASE("test_parse_mps_instance") {
 
     REQUIRE(csize(inst.cols) == csize(inst.costs));
     REQUIRE(std::fabs(inst.costs[0] - 1.0_F) < 0.01_F);
-
-    REQUIRE(csize(inst.cols) == csize(inst.solcosts));
-    for (real_t c : inst.solcosts)
-        REQUIRE(std::fabs(c - limits<real_t>::max()) < 0.01_F);
 }
 
 }  // namespace cft

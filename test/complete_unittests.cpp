@@ -30,7 +30,6 @@ namespace local { namespace {
         cols.push_back({11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
         cols.push_back({21, 22, 23, 24, 25, 26, 27, 28, 29, 0});
         auto costs    = std::vector<real_t>{100, 100, 100};
-        auto solcosts = std::vector<real_t>{300, 300, 300};
 
         auto rows = std::vector<ridx_t>{0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14,
                                         15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29};
@@ -41,13 +40,11 @@ namespace local { namespace {
             size_t c_size = rnd() % 10;
             cols.push_back(make_span(rows.data(), c_size));
             costs.push_back(checked_cast<real_t>(roll_dice(rnd, 1, 3)));
-            solcosts.push_back(1000);
         }
 
         auto inst     = Instance();
         inst.cols     = std::move(cols);
         inst.costs    = std::move(costs);
-        inst.solcosts = std::move(solcosts);
         ridx_t nrows  = 30;
         fill_rows_from_cols(inst.cols, nrows, inst.rows);
         return inst;
