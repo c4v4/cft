@@ -64,7 +64,7 @@ public:
         complete_scores_init(inst, score_info);
         if (!sol.idxs.empty())
             nrows_to_cover -= update_covered(inst, sol, lagr_mult, score_info, total_cover);
-        
+
         if (nrows_to_cover == 0_R)
             return;
 

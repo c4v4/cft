@@ -30,18 +30,6 @@ inline void print(Environment const& env, fmt::format_string<T...> fmt, T&&... a
         fmt::print(fmt, std::forward<T>(args)...);
 }
 
-template <uint64_t Level, typename... T>
-inline void print(Environment const& env, FILE* file, fmt::format_string<T...> fmt, T&&... args) {
-    if (env.verbose >= Level)
-        fmt::print(file, fmt, std::forward<T>(args)...);
-}
-
-template <typename... T>
-inline void eprint(fmt::format_string<T...> fmt, T&&... args) {
-    fmt::print(stderr, fmt, std::forward<T>(args)...);
-}
-
-
 }  // namespace cft
 
 #endif /* CAV_SRC_UTILS_PRINT_HPP */

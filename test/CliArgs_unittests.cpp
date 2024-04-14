@@ -20,9 +20,10 @@
 
 namespace cft {
 TEST_CASE("parse_cli_args parses command line arguments correctly", "[parse_cli_args]") {
-    char const* argv[] = {"program_name", "-i", "input.txt", "-p", "rail", "-o", "output.sol", "-s",
-                          "12345",        "-t", "10.0",      "-v", "2",    "-e", "1E-3",      "-g",
-                          "100",          "-b", "0.5",       "-a", "1e-2", "-r", "1E-1"};
+    char const* argv[] = {
+        "program_name", "-i",   "input.txt", "-p",   "rail", "-o", "output.sol", "-s", "12345",
+        "-t",           "10.0", "-v",        "-e",   "1E-3", "-g", "100",        "-b", "0.5",
+        "-a",           "1e-2", "-r",        "1E-1", "-h",   "-w", "test.sol"};
 
     int argc = sizeof(argv) / sizeof(argv[0]);
 
@@ -32,14 +33,17 @@ TEST_CASE("parse_cli_args parses command line arguments correctly", "[parse_cli_
         REQUIRE(env.inst_path == "input.txt");
         REQUIRE(env.parser == "rail");
         REQUIRE(env.sol_path == "output.sol");
+        REQUIRE(env.initsol_path == "test.sol");
         REQUIRE(env.seed == 12345);
         REQUIRE(env.time_limit == 10.0);
-        REQUIRE(env.verbose == 2);
+        REQUIRE(env.verbose == 5);
         REQUIRE(env.epsilon == 0.001_F);
         REQUIRE(env.heur_iters == 100);
         REQUIRE(env.beta == 0.5_F);
         REQUIRE(env.abs_subgrad_exit == 0.01_F);
         REQUIRE(env.rel_subgrad_exit == 0.1_F);
+        REQUIRE_NOTHROW(print_cli_help_msg());
+        REQUIRE_NOTHROW(print_arg_values(env));
     }
 }
 
@@ -66,7 +70,10 @@ TEST_CASE("parse_cli_args parses command line arguments correctly (long)", "[par
                           "--abs-subg-exit",
                           "0.01",
                           "--rel-subg-exit",
-                          "0.1"};
+                          "0.1",
+                          "--help",
+                          "--init-sol",
+                          "test.sol"};
 
     int argc = sizeof(argv) / sizeof(argv[0]);
 
@@ -76,6 +83,7 @@ TEST_CASE("parse_cli_args parses command line arguments correctly (long)", "[par
         REQUIRE(env.inst_path == "input.txt");
         REQUIRE(env.parser == CFT_RAIL_PARSER);
         REQUIRE(env.sol_path == "output.sol");
+        REQUIRE(env.initsol_path == "test.sol");
         REQUIRE(env.seed == 12345);
         REQUIRE(env.time_limit == 10.0);
         REQUIRE(env.verbose == 2);
@@ -84,6 +92,8 @@ TEST_CASE("parse_cli_args parses command line arguments correctly (long)", "[par
         REQUIRE(env.beta == 0.5_F);
         REQUIRE(env.abs_subgrad_exit == 0.01_F);
         REQUIRE(env.rel_subgrad_exit == 0.1_F);
+        REQUIRE_NOTHROW(print_cli_help_msg());
+        REQUIRE_NOTHROW(print_arg_values(env));
     }
 }
 }  // namespace cft

@@ -130,7 +130,7 @@ int main(int argc, char const** argv) {
                       env.timer.elapsed<cft::sec>());
 
     } catch (std::exception const& e) {
-        cft::eprint("\nCFT  > ERROR: {}\n", e.what());
+        fmt::print(stderr, "\nCFT  > ERROR: {}\n", e.what());
         std::fflush(stdout);
         std::fflush(stderr);
         return EXIT_FAILURE;

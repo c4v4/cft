@@ -17,9 +17,6 @@
 #define CFT_SRC_GREEDY_REDUNDANCY_HPP
 
 
-#ifndef NDEBUG
-#endif
-
 #include "core/Instance.hpp"
 #include "core/cft.hpp"
 #include "utils/coverage.hpp"
@@ -51,10 +48,8 @@ inline void check_redundancy_data(Instance const&            inst,
     auto   part_check     = CoverCounters<>(rsize(inst.rows));
     ridx_t part_cov_count = 0_R;
     for (cidx_t j : sol) {
-        auto part_covered = as_cidx(part_check.cover(inst.cols[j]));
-        auto tot_covered  = as_cidx(total_check.cover(inst.cols[j]));
-        assert(tot_covered == part_covered);
-        part_cov_count += as_ridx(part_covered);
+        part_check.cover(inst.cols[j]);
+        part_cov_count += as_ridx(total_check.cover(inst.cols[j]));
     }
     for (cidx_t j : red_set.cols_to_remove) {
         part_cov_count -= as_ridx(part_check.uncover(inst.cols[j]));
@@ -67,6 +62,7 @@ inline void check_redundancy_data(Instance const&            inst,
     for (ridx_t i = 0_R; i < rsize(inst.rows); ++i) {
         assert(red_set.total_cover[i] == total_check[i]);
         assert(red_set.partial_cover[i] == part_check[i]);
+        assert(red_set.partial_cover[i] <= red_set.total_cover[i]);
     }
 }
 #endif
@@ -174,7 +170,7 @@ inline void complete_init_redund_set(RedundancyData&            red_data,
             if (red_data.partial_cost >= cutoff_cost)
                 return;
         }
-    cft::sort(red_data.redund_set, [&](CidxAndCost x) { return inst.costs[x.idx]; });
+    cft::sort(red_data.redund_set, [](CidxAndCost x) { return x.cost; });
 }
 
 // Remove redundant columns from the redundancy set using an implicit enumeration. NOTE: assumes
