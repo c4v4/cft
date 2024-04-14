@@ -19,7 +19,6 @@
 #include "core/Instance.hpp"
 
 namespace cft {
-#ifndef NDEBUG
 
 namespace local { namespace {
     Instance make_partial_inst() {
@@ -48,6 +47,8 @@ namespace local { namespace {
 }  // namespace
 }  // namespace local
 
+#ifndef NDEBUG
+
 TEST_CASE("Test fill_rows_from_cols") {
     auto inst = local::make_partial_inst();
     REQUIRE_NOTHROW(fill_rows_from_cols(inst.cols, inst.rows.size(), inst.rows));
@@ -60,6 +61,7 @@ TEST_CASE("Test fill_rows_from_cols fail") {
     inst.rows.back().push_back(0);
     REQUIRE_THROWS_AS(col_and_rows_check(inst.cols, inst.rows), std::runtime_error);
 }
+#endif
 
 TEST_CASE("Test push_back_col_from") {
     auto inst1 = local::make_partial_inst();
@@ -85,6 +87,5 @@ TEST_CASE("Test clear inst") {
     REQUIRE(inst.solcosts.empty());
 }
 
-#endif
 
 }  // namespace cft

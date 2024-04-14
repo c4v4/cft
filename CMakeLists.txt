@@ -49,6 +49,7 @@ if (UNIT_TESTS)
                 test/cft_unittests.cpp
                 test/Chrono_unittests.cpp
                 test/CliArgs_unittests.cpp
+                test/complete_unittests.cpp
                 test/coverage_unittests.cpp
                 test/Instance_unittests.cpp
                 test/parse_utils_unittests.cpp

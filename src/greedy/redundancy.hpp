@@ -95,11 +95,8 @@ namespace local { namespace {
             }
 
 #ifndef NDEBUG
-            for (ridx_t i = 0_R; i < rsize(red_data.partial_cover); ++i) {
-                assert(red_data.total_cover[i] > 0);
-                assert(red_data.partial_cover[i] > 0);
+            for (ridx_t i = 0_R; i < rsize(red_data.partial_cover); ++i)
                 assert(red_data.partial_cover[i] <= red_data.total_cover[i]);
-            }
 #endif
         }
     };
@@ -116,10 +113,8 @@ namespace local { namespace {
 
 #ifndef NDEBUG
             assert(red_data.partial_cov_count <= rsize(partial_cover));
-            for (ridx_t i = 0_R; i < rsize(partial_cover); ++i) {
-                assert(total_cover[i] > 0);
+            for (ridx_t i = 0_R; i < rsize(partial_cover); ++i)
                 assert(partial_cover[i] <= total_cover[i]);
-            }
 #endif
 
             if (Depth == red_data.redund_set.size() ||

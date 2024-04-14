@@ -49,7 +49,7 @@ namespace local { namespace {
                                               std::vector<real_t> const& best_lagr_mult,
                                               Solution const&            best_sol) {
 
-            fix_fraction *= env.alpha;
+            fix_fraction = min(1.0_F, fix_fraction * env.alpha);
             if (best_sol.cost < prev_cost)
                 fix_fraction = min_fixing;
             prev_cost = best_sol.cost;
@@ -140,9 +140,10 @@ inline Solution run(Environment const& env,
 
         inst             = orig_inst;
         auto cols_to_fix = select_cols_to_fix(env, inst, nofix_lagr_mult, best_sol);
-        make_identity_fixing_data(ncols, nrows, fixing);
-        fix_columns_and_compute_maps(cols_to_fix, inst, fixing, old2new);
-
+        if (!cols_to_fix.empty()) {
+            make_identity_fixing_data(ncols, nrows, fixing);
+            fix_columns_and_compute_maps(cols_to_fix, inst, fixing, old2new);
+        }
         auto nrows_real  = as_real(rsize(orig_inst.rows));
         auto fixing_perc = as_real(rsize(inst.rows)) * 100.0_F / nrows_real;
         print<2>(env,
