@@ -77,16 +77,14 @@ namespace cft { namespace local { namespace {
         // Evaluates the exit condition by comparing the current best lower-bound with the
         // previous period's best lower-bound. Returns the original CFT exit condition based on the
         // absolute and relative improvement in the lower-bound.
-        bool operator()(size_t iter, real_t lower_bound) {
+        bool operator()(Environment const& env, size_t iter, real_t lower_bound) {
             if (iter == next_update_iter) {
                 next_update_iter += period;
                 real_t abs_improvement      = lower_bound - prev_lower_bound;
                 real_t relative_improvement = abs_improvement / lower_bound;
                 prev_lower_bound            = lower_bound;
-                return abs_improvement < 1.0_F && relative_improvement < 0.001_F;
-
-                // TODO(cava): test this, seems often better
-                // return abs_improvement < 50.0_F && relative_improvement < 0.05_F;
+                return abs_improvement < env.abs_subgrad_exit &&
+                       relative_improvement < env.rel_subgrad_exit;
             }
             return false;
         }

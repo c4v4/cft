@@ -34,14 +34,14 @@ struct SortedArray : Comp /*EBO*/ {
     using pointer         = T*;
     using difference_type = std::ptrdiff_t;
 
+    T        data[Nm];
+    uint32_t sz = 0ULL;
+
     // NOTE: this is a workaround for the fact that in general we cannot have EBO while keeping
     // SortedArray an aggregate
     SortedArray(Comp comp = {})
         : Comp(comp) {
     }
-
-    T        data[Nm];
-    uint32_t sz = 0ULL;
 
     size_type size() const {
         return sz;

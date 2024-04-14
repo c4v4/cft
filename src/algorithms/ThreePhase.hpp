@@ -28,7 +28,6 @@
 namespace cft {
 
 class ThreePhase {
-    static constexpr size_t heur_iters     = 250;  // TODO(any): make it a cli parameter
     static constexpr real_t init_step_size = 0.1_F;
 
     Subgradient subgrad;
@@ -48,7 +47,7 @@ public:
         real_t              unfixed_lb;
     };
 
-    ThreePhaseResult operator()(Instance& inst, prng_t& rnd, double tlim) {
+    ThreePhaseResult operator()(Environment const& env, Instance& inst) {
         constexpr ridx_t min_row_coverage = 5_R;
 
         auto tot_timer = Chrono<>();
@@ -77,20 +76,20 @@ public:
 
             real_t step_size = init_step_size;
             auto   cutoff    = best_sol.cost - fixing.fixed_cost;
-            auto   real_lb   = subgrad(inst, cutoff, core, step_size, lagr_mult);
+            auto   real_lb   = subgrad(env, inst, cutoff, core, step_size, lagr_mult);
 
             if (iter_counter == 0) {
                 unfixed_lagr_mult = lagr_mult;
                 unfixed_lb        = real_lb;
             }
 
-            if (real_lb + fixing.fixed_cost >= best_sol.cost - epsilon ||
-                tot_timer.elapsed<sec>() > tlim)
+            if (real_lb + fixing.fixed_cost >= best_sol.cost - env.epsilon ||
+                env.timer.elapsed<sec>() > env.time_limit)
                 break;
 
             sol.idxs.clear();
             sol.cost = cutoff;  // Sol get filled only if one with cost < cutoff is found
-            subgrad.heuristic(core.inst, step_size, heur_iters, greedy, sol, lagr_mult);
+            subgrad.heuristic(env, core.inst, step_size, greedy, sol, lagr_mult);
 
             if (sol.cost + fixing.fixed_cost < best_sol.cost) {
                 _from_core_to_unfixed_sol(sol, core, fixing, best_sol);
@@ -98,8 +97,8 @@ public:
             }
 
             col_fixing(orig_nrows, inst, fixing, lagr_mult, greedy);  // Fix column in inst
-            real_lb = pricer(inst, lagr_mult, core);    // Update core-inst for next iter
-            _perturb_lagr_multipliers(lagr_mult, rnd);  // Multipliers +-10% perturbation
+            real_lb = pricer(inst, lagr_mult, core);        // Update core-inst for next iter
+            _perturb_lagr_multipliers(lagr_mult, env.rnd);  // Multipliers +-10% perturbation
 
             fmt::print("3PHS  > Ending iteration    {}:\n", iter_counter);
             fmt::print("3PHS  > Remaining rows:     {}\n", rsize(inst.rows));
@@ -111,7 +110,7 @@ public:
             fmt::print("3PHS  > Iteration time:     {:.2f}s\n", timer.elapsed<sec>());
 
             // For some reason, it seems that we get the tightest bound after the column fixing
-            if (real_lb + fixing.fixed_cost >= best_sol.cost - epsilon)
+            if (real_lb + fixing.fixed_cost >= best_sol.cost - env.epsilon)
                 break;
         }
 

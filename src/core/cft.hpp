@@ -20,6 +20,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "utils/Chrono.hpp"
 #include "utils/assert.hpp"  // IWYU pragma:  keep
 #include "utils/limits.hpp"
 #include "utils/random.hpp"
@@ -38,6 +39,12 @@
 #define CFT_NOINLINE __declspec(noinline)
 #endif
 
+// AVAILABLE PARSERS
+#define CFT_RAIL_PARSER "RAIL"
+#define CFT_SCP_PARSER  "SCP"
+#define CFT_CVRP_PARSER "CVRP"
+#define CFT_MPS_PARSER  "MPS"
+
 namespace cft {
 
 using cidx_t = int32_t;                    // Type for column indexes
@@ -45,22 +52,9 @@ using ridx_t = int16_t;                    // Type for row indexes
 using real_t = float;                      // Type for real values
 using prng_t = prng_picker<real_t>::type;  // default pseudo-random number generator type
 
-struct CidxAndCost {
-    cidx_t idx;
-    real_t cost;
-};
-
-struct Solution {
-    std::vector<cidx_t> idxs = {};
-    real_t              cost = limits<real_t>::inf();
-};
-
 // Reserved values to mark removed indexes (tombstones)
 constexpr cidx_t removed_cidx = limits<cidx_t>::max();
 constexpr ridx_t removed_ridx = limits<ridx_t>::max();
-
-// Epsilon value for objective comparisons, for integer costs, 1e-6 for float costs
-constexpr real_t epsilon = checked_cast<real_t>(1 - 1e-6);
 
 // Debug checked narrow cast to cidx_t
 template <typename T>
@@ -109,6 +103,58 @@ template <typename Cont>
 inline ridx_t rsize(Cont const& cont) {
     return as_ridx(size(cont));
 }
+
+struct CidxAndCost {
+    cidx_t idx;
+    real_t cost;
+};
+
+struct Solution {
+    std::vector<cidx_t> idxs = {};
+    real_t              cost = limits<real_t>::inf();
+};
+
+// Environment struct to hold all the parameters and working variables
+struct Environment {
+    // Cli params
+    std::string inst_path        = {};                     // Instance file path
+    std::string sol_path         = {};                     // Solution file path
+    std::string initsol_path     = {};                     // Initial solution file path
+    std::string parser           = CFT_RAIL_PARSER;        // Parser to use
+    uint64_t    seed             = 0;                      // Seed for the random number generator
+    double      time_limit       = limits<double>::inf();  // Time limit in seconds
+    uint64_t    verbose          = 0;                      // Verbosity level
+    real_t      epsilon          = 0.999999;  // Epsilon value for objective comparisons
+    uint64_t    heur_iters       = 250;       // Number of iterations for the heuristic phase
+    real_t      alpha            = 1.1;       // Relative fixing fraction increment
+    real_t      beta             = 1.0;       // Relative cutoff value to terminate Refinement
+    real_t      abs_subgrad_exit = 1.0;       // Minimum LBs delta to trigger subradient termination
+    real_t      rel_subgrad_exit = 0.001;     // Minimum LBs gap to trigger subradient termination
+
+    // Working params
+    Chrono<>       timer = {};   // Timer to keep track of the elapsed time
+    mutable prng_t rnd   = {0};  // Random number generator
+
+
+    // Other hyperparameters that we might consider in the future
+    // uint64_t    subgrad_exit_period      = 300;
+    // double      fix_thresh               = -0.001;
+    // uint64_t    stepsize_init_period     = 20;
+    // double      dec_stepsize_thresh      = 0.01;
+    // double      inc_stepsize_thresh      = 0.001;
+    // double      dec_stepsize_factor      = 2.0;
+    // double      inc_stepsize_factor      = 1.5;
+    // uint64_t    init_pricing_period      = 10;
+    // uint64_t    min_max_period_increment = 1000;
+    // double      low_price_inc_thresh     = 1e-6;
+    // uint64_t    low_price_factor         = 10;
+    // double      mid_price_inc_thresh     = 0.02;
+    // uint64_t    mid_price_factor         = 5;
+    // double      up_price_inc_thresh      = 0.2;
+    // uint64_t    up_price_factor          = 2;
+    // double      c1_price_thresh          = 0.1;
+    // uint64_t    c2_price_cov             = 5;
+};
 
 }  // namespace cft
 

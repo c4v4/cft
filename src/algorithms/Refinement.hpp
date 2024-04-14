@@ -37,19 +37,19 @@ namespace local { namespace {
     }
 
     class RefinementFixManager {
-        static constexpr real_t alpha      = 1.1_F;
         static constexpr real_t min_fixing = 0.3_F;
 
-        real_t          fix_fraction = min_fixing;
+        real_t          fix_fraction = 0;
         real_t          prev_cost    = limits<real_t>::inf();
         CoverCounters<> row_coverage;
 
     public:
-        inline std::vector<cidx_t> operator()(Instance const&            inst,
+        inline std::vector<cidx_t> operator()(Environment const&         env,
+                                              Instance const&            inst,
                                               std::vector<real_t> const& best_lagr_mult,
                                               Solution const&            best_sol) {
 
-            fix_fraction *= alpha;
+            fix_fraction *= env.alpha;
             if (best_sol.cost < prev_cost)
                 fix_fraction = min_fixing;
             prev_cost = best_sol.cost;
@@ -100,13 +100,10 @@ namespace local { namespace {
 }  // namespace
 }  // namespace local
 
-constexpr real_t beta = 1.0_F;
-
 // Complete CFT algorithm (Refinement + call to 3-phase)
-inline Solution run(Instance const& orig_inst,
-                    prng_t&         rnd,
-                    double          tlim,
-                    Solution const& warmstart_sol = {}) {
+inline Solution run(Environment const& env,
+                    Instance const&    orig_inst,
+                    Solution const&    warmstart_sol = {}) {
 
     auto   timer = Chrono<>();
     cidx_t ncols = csize(orig_inst.cols);
@@ -127,7 +124,7 @@ inline Solution run(Instance const& orig_inst,
     make_identity_fixing_data(ncols, nrows, fixing);
     for (size_t iter_counter = 0;; ++iter_counter) {
 
-        auto result_3p = three_phase(inst, rnd, tlim - timer.elapsed<sec>());
+        auto result_3p = three_phase(env, inst);
         if (result_3p.sol.cost + fixing.fixed_cost < best_sol.cost) {
             local::from_fixed_to_unfixed_sol(result_3p.sol, fixing, best_sol);
             CFT_IF_DEBUG(check_solution(orig_inst, best_sol));
@@ -135,14 +132,14 @@ inline Solution run(Instance const& orig_inst,
 
         if (iter_counter == 0) {
             nofix_lagr_mult = std::move(result_3p.unfixed_lagr_mult);
-            max_cost        = beta * result_3p.unfixed_lb + epsilon;
+            max_cost        = env.beta * result_3p.unfixed_lb + env.epsilon;
         }
 
-        if (best_sol.cost <= max_cost || timer.elapsed<sec>() > tlim)
+        if (best_sol.cost <= max_cost || env.timer.elapsed<sec>() > env.time_limit)
             break;
 
         inst             = orig_inst;
-        auto cols_to_fix = select_cols_to_fix(inst, nofix_lagr_mult, best_sol);
+        auto cols_to_fix = select_cols_to_fix(env, inst, nofix_lagr_mult, best_sol);
         make_identity_fixing_data(ncols, nrows, fixing);
         fix_columns_and_compute_maps(cols_to_fix, inst, fixing, old2new);
 
@@ -155,7 +152,7 @@ inline Solution run(Instance const& orig_inst,
                    fixing.fixed_cost,
                    timer.elapsed<sec>());
 
-        if (inst.rows.empty() || timer.elapsed<sec>() > tlim)
+        if (inst.rows.empty() || env.timer.elapsed<sec>() > env.time_limit)
             break;
     }
 
