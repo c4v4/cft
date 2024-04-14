@@ -65,7 +65,7 @@ public:
         if (!sol.idxs.empty())
             nrows_to_cover -= update_covered(inst, sol, lagr_mult, score_info, total_cover);
 
-        auto   smaller_size         = min(nrows_to_cover, csize(inst.cols));
+        auto   smaller_size         = min(nrows_to_cover, csize(inst.cols) - csize(sol.idxs));
         auto   good_scores          = get_good_scores(score_info, smaller_size);
         real_t score_update_trigger = good_scores.back().score;
 

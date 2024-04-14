@@ -101,7 +101,7 @@ TEST_CASE("test_multiples_rows_cover_set_coverage") {
 TEST_CASE("Test coverage assert fails") {
     ridx_t nrows = 40;
 
-    auto cols = SparseBinMat<ridx_t>();
+    auto cols = SparseBinMat<int>();
     cols.push_back({40, 12, 13, 14, 15, 40, 17, 18, 19, 20});   // 40!
     cols.push_back({131, 32, 33, 34, 35, 100, 37, 38, 39, 0});  // 131!
     cols.push_back({-1, -11, -21, -31, -2, -12, -22, -32});     // all negative

@@ -16,7 +16,6 @@
 #ifndef CFT_SRC_INSTANCE_PARSING_HPP
 #define CFT_SRC_INSTANCE_PARSING_HPP
 
-
 #include <fmt/ostream.h>
 
 #include <stdexcept>

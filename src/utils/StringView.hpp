@@ -22,6 +22,7 @@
 #include <string>
 
 #include "utils/assert.hpp"  // IWYU pragma:  keep
+#include "utils/utility.hpp"
 
 namespace cft {
 
@@ -69,7 +70,7 @@ struct StringView {
 
     size_type size() const {
         assert(finish >= start);
-        return finish - start;
+        return checked_cast<size_t>(finish - start);
     }
 
     bool empty() const {

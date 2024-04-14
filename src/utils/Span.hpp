@@ -23,6 +23,7 @@
 #include <iterator>
 
 #include "utils/assert.hpp"  // IWYU pragma:  keep
+#include "utils/utility.hpp"
 
 namespace cft {
 
@@ -42,7 +43,7 @@ struct Span {
 
     size_type size() const {
         assert(finish >= start);
-        return finish - start;
+        return checked_cast<size_t>(finish - start);
     }
 
     bool empty() const {
@@ -67,7 +68,7 @@ struct Span {
 
     ret_type operator[](size_type i) const {
         assert(finish > start);
-        assert(i < static_cast<size_t>(finish - start));
+        assert(i < size());
         return start[i];
     }
 };

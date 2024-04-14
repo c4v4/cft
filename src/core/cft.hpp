@@ -18,6 +18,7 @@
 
 
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #include "utils/Chrono.hpp"
@@ -71,8 +72,7 @@ constexpr ridx_t as_ridx(T val) {
 // Debug checked narrow cast to ridx_t
 template <typename T>
 constexpr real_t as_real(T val) {
-    return assert(limits<real_t>::min() <= val && val <= limits<real_t>::max()),
-           checked_cast<real_t>(val);
+    return checked_cast<real_t>(val);
 }
 
 // User-defined literals for cidx_t with debug and comptime checks)
@@ -123,13 +123,13 @@ struct Environment {
     std::string parser           = CFT_RAIL_PARSER;        // Parser to use
     uint64_t    seed             = 0;                      // Seed for the random number generator
     double      time_limit       = limits<double>::inf();  // Time limit in seconds
-    uint64_t    verbose          = 0;                      // Verbosity level
-    real_t      epsilon          = 0.999999;  // Epsilon value for objective comparisons
-    uint64_t    heur_iters       = 250;       // Number of iterations for the heuristic phase
-    real_t      alpha            = 1.1;       // Relative fixing fraction increment
-    real_t      beta             = 1.0;       // Relative cutoff value to terminate Refinement
-    real_t      abs_subgrad_exit = 1.0;       // Minimum LBs delta to trigger subradient termination
-    real_t      rel_subgrad_exit = 0.001;     // Minimum LBs gap to trigger subradient termination
+    uint64_t    verbose          = 4;                      // Verbosity level
+    real_t      epsilon          = 0.999999_F;  // Epsilon value for objective comparisons
+    uint64_t    heur_iters       = 250;         // Number of iterations for the heuristic phase
+    real_t      alpha            = 1.1_F;       // Relative fixing fraction increment
+    real_t      beta             = 1.0_F;       // Relative cutoff value to terminate Refinement
+    real_t      abs_subgrad_exit = 1.0_F;    // Minimum LBs delta to trigger subradient termination
+    real_t      rel_subgrad_exit = 0.001_F;  // Minimum LBs gap to trigger subradient termination
 
     // Working params
     Chrono<>       timer = {};   // Timer to keep track of the elapsed time

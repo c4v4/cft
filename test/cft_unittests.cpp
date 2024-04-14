@@ -20,10 +20,10 @@
 namespace cft {
 
 TEST_CASE("Test CidxAndCost struct", "[cft]") {
-    auto c = CidxAndCost{1, 2.5};
+    auto c = CidxAndCost{1_C, 2.5_F};
 
-    REQUIRE(c.idx == 1);
-    REQUIRE(c.cost == 2.5);
+    REQUIRE(c.idx == 1_C);
+    REQUIRE(c.cost == 2.5_F);
 }
 
 TEST_CASE("Test Solution struct", "[cft]") {
@@ -96,7 +96,7 @@ TEST_CASE("Test as_ridx function failure ", "[cft]") {
 TEST_CASE("Test as_real function failure ", "[cft]") {
     if (static_cast<long double>(limits<real_t>::max()) < limits<long double>::max())
         REQUIRE_THROWS_AS(1e+4932_F, std::runtime_error);
-     if (static_cast<long double>(limits<real_t>::max()) < limits<long double>::max())
+    if (static_cast<long double>(limits<real_t>::max()) < limits<long double>::max())
         REQUIRE_THROWS_AS(as_real(1e+4932L), std::runtime_error);
 }
 

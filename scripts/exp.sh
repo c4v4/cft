@@ -25,12 +25,12 @@ declare -a scp_instances=(
 
 for seed in {0..9..1}; do
     for inst in "${cvrp_instances[@]}"; do
-        ${exe} ${dir}/instances/cvrp/${inst} --seed ${seed} --parser CVRP
+        ${exe} -i ${dir}/instances/cvrp/${inst} -s ${seed} -p CVRP
     done
     for inst in "${rail_instances[@]}"; do
-        ${exe} ${dir}/instances/rail/${inst} --seed ${seed} --parser RAILS
+        ${exe} -i ${dir}/instances/rail/${inst} -s ${seed} -p RAIL
     done
     for inst in "${scp_instances[@]}"; do
-        ${exe} ${dir}/instances/scp/${inst} --seed ${seed} --parser SCP
+        ${exe} -i ${dir}/instances/scp/${inst} -s ${seed} -p SCP
     done
 done

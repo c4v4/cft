@@ -17,8 +17,6 @@
 #define CFT_SRC_FIXING_COLFIXING_HPP
 
 
-#include <fmt/core.h>
-
 #include <vector>
 
 #include "core/Instance.hpp"
@@ -27,6 +25,7 @@
 #include "greedy/Greedy.hpp"
 #include "utils/Chrono.hpp"
 #include "utils/coverage.hpp"
+#include "utils/print.hpp"
 
 namespace cft {
 
@@ -41,13 +40,13 @@ class ColFixing {
 
 public:
     // Original Column Fixing
-    void operator()(ridx_t               orig_nrows,
-                    Instance&            inst,       // inout
-                    FixingData&          fixing,     // inout
-                    std::vector<real_t>& lagr_mult,  // inout
-                    Greedy&              greedy      // cache
+    void operator()(Environment const&   env,         // in
+                    ridx_t               orig_nrows,  // in
+                    Instance&            inst,        // inout
+                    FixingData&          fixing,      // inout
+                    std::vector<real_t>& lagr_mult,   // inout
+                    Greedy&              greedy       // cache
     ) {
-        // assert(rsize(inst.rows) == rsize(core.inst.rows));
         assert(rsize(inst.rows) == rsize(fixing.curr2orig.row_map));
         assert(rsize(inst.rows) == rsize(lagr_mult));
 
@@ -55,17 +54,18 @@ public:
         _select_non_overlapping_cols(inst, lagr_mult, cover_counts, cols_to_fix, reduced_costs);
         cidx_t no_overlap_ncols = csize(cols_to_fix.idxs);
 
-        auto fix_at_least = csize(cols_to_fix.idxs) + max<cidx_t>(1_C, orig_nrows / 200);
+        cidx_t fix_at_least = csize(cols_to_fix.idxs) + max<cidx_t>(1_C, orig_nrows / 200);
         greedy(inst, lagr_mult, reduced_costs, cols_to_fix, limits<real_t>::max(), fix_at_least);
 
         fix_columns_and_compute_maps(cols_to_fix.idxs, inst, fixing, old2new);
         _apply_maps_to_lagr_mult(old2new, lagr_mult);
 
-        fmt::print("CFIX   > Fixing {} columns ({} + {}), time {:.2f}s\n",
-                   csize(cols_to_fix.idxs),
-                   no_overlap_ncols,
-                   csize(cols_to_fix.idxs) - no_overlap_ncols,
-                   timer.elapsed<sec>());
+        print<4>(env,
+                 "CFIX   > Fixing {} columns ({} + {}), time {:.2f}s\n",
+                 csize(cols_to_fix.idxs),
+                 no_overlap_ncols,
+                 csize(cols_to_fix.idxs) - no_overlap_ncols,
+                 timer.elapsed<sec>());
     }
 
 private:

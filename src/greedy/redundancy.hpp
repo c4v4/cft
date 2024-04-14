@@ -18,7 +18,6 @@
 
 
 #ifndef NDEBUG
-#include <fmt/base.h>
 #endif
 
 #include "core/Instance.hpp"
@@ -89,8 +88,6 @@ namespace local { namespace {
                            bool (&vars)[CFT_ENUM_VARS],
                            bool (&sol)[CFT_ENUM_VARS]) {
 
-            CFT_IF_DEBUG(fmt::print("{}] ", CFT_ENUM_VARS));
-
             if (red_data.partial_cost < red_data.best_cost) {
                 red_data.best_cost = red_data.partial_cost;
                 for (cidx_t s = 0_C; s < CFT_ENUM_VARS; ++s)
@@ -113,8 +110,6 @@ namespace local { namespace {
                            RedundancyData& red_data,
                            bool (&vars)[CFT_ENUM_VARS],
                            bool (&sol)[CFT_ENUM_VARS]) {
-
-            CFT_IF_DEBUG(fmt::print("{} ", Depth));
 
             auto& partial_cover = red_data.partial_cover;
             auto& total_cover   = red_data.total_cover;
@@ -199,9 +194,7 @@ inline void enumeration_removal(RedundancyData& red_set, Instance const& inst) {
     bool curr_keep_state[CFT_ENUM_VARS] = {};
     bool cols_to_keep[CFT_ENUM_VARS]    = {};
 
-    CFT_IF_DEBUG(fmt::print("#E "));
     local::Enumerator<0>::invoke(inst, red_set, curr_keep_state, cols_to_keep);
-    CFT_IF_DEBUG(fmt::print("\n"));
 
     if (red_set.best_cost < old_ub)
         // cols_to_keep is updated only if the upper bound is improved
