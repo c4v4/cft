@@ -68,7 +68,7 @@ T abs(T val) {
     return val < T{} ? -val : val;
 }
 
-/// Multi-arg max
+/// Multi-arg max. NOTE: to avoid ambiguity, return type is always the first argument type
 template <typename T>
 T max(T v) {
     return v;
@@ -80,12 +80,7 @@ T1 max(T1 v1, T2 v2, Ts... tail) {
     return (v1 >= mtail ? v1 : mtail);
 }
 
-template <typename... Ts>
-bool max(bool b1, bool b2, Ts... tail) {
-    return b1 || max(b2, tail...);
-}
-
-/// Multi-arg min
+/// Multi-arg min. NOTE: to avoid ambiguity, return type is always the first argument type
 template <typename T>
 T min(T v) {
     return v;
@@ -95,11 +90,6 @@ template <typename T1, typename T2, typename... Ts>
 T1 min(T1 v1, T2 v2, Ts... tail) {
     T1 mtail = min<T1>(v2, tail...);
     return v1 <= mtail ? v1 : mtail;
-}
-
-template <typename... Ts>
-bool min(bool b1, bool b2, Ts... tail) {
-    return b1 && min(b2, tail...);
 }
 
 // Condition test operations

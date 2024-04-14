@@ -19,6 +19,8 @@
 
 #include <chrono>
 
+#include "utils/utility.hpp"
+
 namespace cft {
 
 using nsec    = std::chrono::nanoseconds;
@@ -46,7 +48,7 @@ struct Chrono {
     }
 
     // Time elapsed since the start of the timer, resets the timer to the current istant
-    uint64_t restart() {
+    int64_t restart() {
         auto old = start;
         start    = high_res_clock::now();
         return std::chrono::duration_cast<UnitT>(start - old).count();
@@ -58,14 +60,14 @@ struct Chrono {
     }
 
     // Time elapsed since the start of the timer, does not reset the timer
-    uint64_t elapsed() const {
+    int64_t elapsed() const {
         auto now = high_res_clock::now();
         return std::chrono::duration_cast<UnitT>(now - start).count();
     }
 
     template <typename UnitT2>
     double elapsed() const {
-        return time_cast<UnitT2>(elapsed());
+        return time_cast<UnitT2>(checked_cast<double>(elapsed()));
     }
 };
 

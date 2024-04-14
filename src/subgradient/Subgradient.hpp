@@ -16,7 +16,6 @@
 #ifndef CFT_SRC_SUBGRADIENT_SUBGRADIENT_HPP
 #define CFT_SRC_SUBGRADIENT_SUBGRADIENT_HPP
 
-#include <fmt/base.h>
 
 #include <cstddef>
 #include <vector>
@@ -30,6 +29,7 @@
 #include "utils/assert.hpp"  // IWYU pragma:  keep
 #include "utils/coverage.hpp"
 #include "utils/limits.hpp"
+#include "utils/print.hpp"
 #include "utils/utility.hpp"
 
 namespace cft {
@@ -67,27 +67,28 @@ public:
         auto best_real_lb   = limits<real_t>::min();
         lagr_mult           = best_lagr_mult;
 
-        fmt::print("SUBG   > Starting subgradient, LB {:.2f}, UB {:.2f}, cutoff {:.2f}\n",
-                   lb_sol.cost,
-                   cutoff,
-                   max_real_lb);
+        print<4>(env,
+                 "SUBG   > Starting subgradient, LB {:.2f}, UB {:.2f}, cutoff {:.2f}\n",
+                 lb_sol.cost,
+                 cutoff,
+                 max_real_lb);
 
         size_t max_iters = 10ULL * nrows;
         for (size_t iter = 0; iter < max_iters && best_real_lb < max_real_lb; ++iter) {
 
             _update_lbsol_and_reduced_costs(core.inst, lagr_mult, lb_sol, reduced_costs);
             _compute_reduced_row_coverage(core.inst, reduced_costs, row_coverage, lb_sol);
-            real_t norm = _compute_subgrad_sqr_norm(row_coverage);
+            real_t sqr_norm = _compute_subgrad_sqr_norm(row_coverage);
 
             if (lb_sol.cost > best_core_lb) {
-                CFT_IF_DEBUG(fmt::print("SUBG   > New best lower bound: {:.2f}\n", lb_sol.cost));
+                print<5>(env, "SUBG   > New best lower bound: {:.2f}\n", lb_sol.cost);
                 best_core_lb   = lb_sol.cost;
                 best_lagr_mult = lagr_mult;
             }
 
-            if (norm == 0.0_F) {
+            if (sqr_norm < 0.999_F) {  // Squared norm is an integer
                 // TODO(cava): is this check correct with a reduced solution? I don't think so...
-                fmt::print("SUBG   > Found optimal solution.\n");
+                print<4>(env, "SUBG   > Found optimal solution.\n");
                 best_lagr_mult = lagr_mult;
                 break;
             }
@@ -96,19 +97,20 @@ public:
                 break;
 
             step_size          = next_step_size(iter, lb_sol.cost);
-            real_t step_factor = step_size * (cutoff - lb_sol.cost) / norm;
+            real_t step_factor = step_size * (cutoff - lb_sol.cost) / sqr_norm;
             _update_lagr_mult(row_coverage, step_factor, lagr_mult);
 
             if (should_price(iter) && iter < max_iters - 1) {
                 real_t real_lb = price(orig_inst, lagr_mult, core);
                 should_price.update(best_core_lb, real_lb, cutoff);
 
-                fmt::print("SUBG   > {:4}: Core LB: {:10.2f}  Real LB: {:10.2f}  Step size: "
-                           "{:.1}\n",
-                           iter,
-                           best_core_lb,
-                           real_lb,
-                           step_size);
+                print<4>(env,
+                         "SUBG   > {:4}: Core LB: {:10.2f}  Real LB: {:10.2f}  Step size: "
+                         "{:.1}\n",
+                         iter,
+                         best_core_lb,
+                         real_lb,
+                         step_size);
 
                 best_real_lb = max(best_real_lb, real_lb);
                 best_core_lb = _reset_red_costs_and_lb(core.inst.costs, lb_sol, reduced_costs);
@@ -118,7 +120,7 @@ public:
             }
         }
 
-        fmt::print("SUBG   > Subgradient ended in {:.2f}s\n", timer.elapsed<sec>());
+        print<4>(env, "SUBG   > Subgradient ended in {:.2f}s\n", timer.elapsed<sec>());
         return best_real_lb;
     }
 
@@ -147,7 +149,7 @@ public:
             row_coverage.reset(rsize(inst.rows));
             for (cidx_t j : lb_sol.idxs)
                 row_coverage.cover(inst.cols[j]);
-            real_t norm = _compute_subgrad_sqr_norm(row_coverage);
+            real_t sqr_norm = _compute_subgrad_sqr_norm(row_coverage);
 
             if (lb_sol.cost > best_core_lb) {
                 best_core_lb   = lb_sol.cost;
@@ -162,25 +164,25 @@ public:
             greedy(inst, lagr_mult, reduced_costs, greedy_sol, best_sol.cost);
             if (greedy_sol.cost <= best_sol.cost - env.epsilon) {
                 best_sol = greedy_sol;
-                fmt::print("HEUR   > Improved current solution {:.2f}\n", best_sol.cost);
+                print<4>(env, "HEUR   > Improved current solution {:.2f}\n", best_sol.cost);
                 CFT_IF_DEBUG(check_solution(inst, best_sol));
             }
 
-            if (norm == 0.0_F) {
+            if (sqr_norm < 0.999_F) {  // Squared norm is an integer
                 assert(best_core_lb < best_sol.cost && "Optimum is above cutoff");
-                fmt::print("HEUR   > Found optimal solution.\n");
+                print<4>(env, "HEUR   > Found optimal solution.\n");
                 best_lagr_mult = lagr_mult;
                 return;
             }
 
-            real_t step_factor = step_size * (best_sol.cost - lb_sol.cost) / norm;
+            real_t step_factor = step_size * (best_sol.cost - lb_sol.cost) / sqr_norm;
             _update_lagr_mult(row_coverage, step_factor, lagr_mult);
 
             if (env.timer.elapsed<sec>() > env.time_limit)
                 break;
         }
 
-        fmt::print("HEUR   > Heuristic phase ended in {:.2f}s\n", timer.elapsed<sec>());
+        print<4>(env, "HEUR   > Heuristic phase ended in {:.2f}s\n", timer.elapsed<sec>());
     }
 
 private:
@@ -252,14 +254,14 @@ private:
         }
     }
 
-    // Computes the subgradient squared norm according to the given row coverage.
+    // Computes the subgradient squared sqr_norm according to the given row coverage.
     static real_t _compute_subgrad_sqr_norm(CoverCounters<> const& row_coverage) {
-        int64_t norm = 0;
+        int64_t sqr_norm = 0;
         for (ridx_t i = 0_R; i < rsize(row_coverage); ++i) {
             int64_t violation = 1 - row_coverage[i];
-            norm += violation * violation;
+            sqr_norm += violation * violation;
         }
-        return as_real(norm);
+        return as_real(sqr_norm);
     }
 };
 }  // namespace cft

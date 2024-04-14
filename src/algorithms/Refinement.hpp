@@ -145,12 +145,13 @@ inline Solution run(Environment const& env,
 
         auto nrows_real  = as_real(rsize(orig_inst.rows));
         auto fixing_perc = as_real(rsize(inst.rows)) * 100.0_F / nrows_real;
-        fmt::print("REFN > Free rows {} ({:.1f}%), best sol {} fixed cost {} time {:.2f}\n",
-                   rsize(inst.rows),
-                   fixing_perc,
-                   best_sol.cost,
-                   fixing.fixed_cost,
-                   timer.elapsed<sec>());
+        print<2>(env,
+                 "REFN > Free rows {} ({:.1f}%), best sol {} fixed cost {} time {:.2f}\n",
+                 rsize(inst.rows),
+                 fixing_perc,
+                 best_sol.cost,
+                 fixing.fixed_cost,
+                 timer.elapsed<sec>());
 
         if (inst.rows.empty() || env.timer.elapsed<sec>() > env.time_limit)
             break;

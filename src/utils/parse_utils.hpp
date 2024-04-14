@@ -28,6 +28,7 @@
 
 #include "utils/StringView.hpp"
 #include "utils/limits.hpp"
+#include "utils/utility.hpp"
 
 namespace cft {
 
@@ -97,7 +98,7 @@ struct string_to {
 
         if (!std::is_integral<T>::value) {
             val      = std::strtold(str.data(), &end);
-            oo_range = val == limits<T>::inf();
+            oo_range = !std::isfinite(val);
         } else if (std::is_signed<T>::value) {
             val      = std::strtoll(str.data(), &end, 10);
             oo_range = val == limits<T>::max() && errno == ERANGE;
@@ -107,12 +108,13 @@ struct string_to {
         }
 
         if (oo_range || val > limits<T>::max() || val < limits<T>::min())
-            throw std::out_of_range(fmt::format("Our of range parsing {}", typeid(T).name()));
+            throw std::out_of_range(
+                fmt::format("Out of range parsing {} (as {})", str.data(), typeid(T).name()));
 
         if (end == str.data())
             throw std::invalid_argument(
-                fmt::format("Invalid argument parsing (typeid: {})", typeid(T).name()));
-        str = str.remove_prefix(end - str.data());
+                fmt::format("Invalid argument parsing {} (as {})", str.data(), typeid(T).name()));
+        str = str.remove_prefix(checked_cast<size_t>(end - str.data()));
 
         return static_cast<T>(val);
     }

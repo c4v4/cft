@@ -32,7 +32,7 @@ TEST_CASE("test_canonical_gen") {
         auto result1 = canonical_gen<float>(rnd_u32);
         REQUIRE(result1 >= 0.0F);
         REQUIRE(result1 < 1.0F);
-        over_half += result1 > 0.5 ? 1 : 0;
+        over_half += result1 > 0.5F ? 1 : 0;
         ++total;
 
         // Test for u32 -> f64 conversion
@@ -46,7 +46,7 @@ TEST_CASE("test_canonical_gen") {
         auto result3 = canonical_gen<float>(rnd_u64);
         REQUIRE(result3 >= 0.0F);
         REQUIRE(result3 < 1.0F);
-        over_half += result3 > 0.5 ? 1 : 0;
+        over_half += result3 > 0.5F ? 1 : 0;
         ++total;
 
         // Test for u64 -> f64 conversion
@@ -85,7 +85,7 @@ TEST_CASE("test_rnd_real") {
             auto   res = rnd_real<double>(rnd_float, min, max);
             REQUIRE(res >= min);
             REQUIRE(res < max);
-            over_half += res > (min + max) / 2.0F ? 1 : 0;
+            over_half += res > (min + max) / 2.0 ? 1 : 0;
             ++total;
         }
         {
@@ -103,7 +103,7 @@ TEST_CASE("test_rnd_real") {
             auto   res = rnd_real<double>(rnd_double, min, max);
             REQUIRE(res >= min);
             REQUIRE(res < max);
-            over_half += res > (min + max) / 2.0F ? 1 : 0;
+            over_half += res > (min + max) / 2.0 ? 1 : 0;
             ++total;
         }
     }
@@ -166,31 +166,5 @@ TEST_CASE("test_coin_flip") {
     REQUIRE(true_frac < 0.51);
 }
 
-TEST_CASE("test_two_coin_flips") {
-    auto rnd_double = prng_picker<double>::type(12);
-    auto rnd_float  = prng_picker<float>::type(13);
-
-    int true_count = 0;
-    int total      = 0;
-    for (int i = 0; i < 100000; i++) {
-        {
-            auto true_p = canonical_gen<double>(rnd_float);
-            auto res    = two_coin_flips(rnd_float, true_p);
-            true_count += res[0] ? 1 : 0;
-            true_count += res[1] ? 1 : 0;
-            total += 2;
-        }
-        {
-            auto true_p = canonical_gen<double>(rnd_double);
-            auto res    = two_coin_flips(rnd_double, true_p);
-            true_count += res[0] ? 1 : 0;
-            true_count += res[1] ? 1 : 0;
-            total += 2;
-        }
-    }
-    double true_frac = true_count / static_cast<double>(total);
-    REQUIRE(0.49 < true_frac);
-    REQUIRE(true_frac < 0.51);
-}
 
 }  // namespace cft

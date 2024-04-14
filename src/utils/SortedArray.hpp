@@ -18,7 +18,6 @@
 #define CFT_SRC_CORE_SORTED_ARRAY_HPP
 
 #include <cstddef>
-#include <cstdint>
 #include <functional>
 #include <utility>
 
@@ -28,14 +27,14 @@ namespace cft {
 template <typename T, std::size_t Nm, typename Comp = std::less<T>>
 struct SortedArray : Comp /*EBO*/ {
     using iterator        = T*;
-    using size_type       = uint32_t;
+    using size_type       = size_t;
     using value_type      = T;
     using reference       = T&;
     using pointer         = T*;
     using difference_type = std::ptrdiff_t;
 
-    T        data[Nm];
-    uint32_t sz = 0ULL;
+    T      data[Nm];
+    size_t sz = 0ULL;
 
     // NOTE: this is a workaround for the fact that in general we cannot have EBO while keeping
     // SortedArray an aggregate
