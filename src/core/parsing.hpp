@@ -80,7 +80,7 @@ inline Instance parse_scp_instance(std::string const& path) {
         inst.cols.begs.push_back(csize(inst.cols.idxs));
     }
 
-    inst.cols     = SparseBinMat<ridx_t>();
+    inst.cols = SparseBinMat<ridx_t>();
     for (auto& col : cols)
         inst.cols.push_back(col);
 
@@ -102,9 +102,15 @@ inline Instance parse_rail_instance(std::string const& path) {
         line_view = file_iter.next();
         inst.costs.push_back(string_to<real_t>::consume(line_view));
         auto j_nrows = string_to<ridx_t>::consume(line_view);
+        auto tokens  = split(line_view);
+        if (rsize(tokens) != j_nrows)
+            throw std::invalid_argument("Invalid file format: not a RAIL instance?");
 
-        for (ridx_t n = 0_R; n < j_nrows; n++)
-            inst.cols.idxs.push_back(string_to<ridx_t>::consume(line_view) - 1_R);
+        for (ridx_t n = 0_R; n < j_nrows; n++) {
+            inst.cols.idxs.push_back(string_to<ridx_t>::parse(tokens[n]) - 1_R);
+            if (inst.cols.idxs.back() >= nrows)
+                throw std::invalid_argument("Invalid file format: not a RAIL instance?");
+        }
         inst.cols.begs.push_back(csize(inst.cols.idxs));
     }
 
@@ -126,8 +132,16 @@ inline FileData parse_cvrp_instance(std::string const& path) {
     for (cidx_t j = 0_C; j < ncols; j++) {
         line_view = file_iter.next();
         fdata.inst.costs.push_back(string_to<real_t>::consume(line_view));
-        while (!line_view.empty())
+
+        real_t solcost = string_to<real_t>::consume(line_view);
+        if (solcost < fdata.inst.costs.back())
+            throw std::invalid_argument("Invalid file format: not a CVRP instance?");
+
+        while (!line_view.empty()) {
             fdata.inst.cols.idxs.push_back(string_to<ridx_t>::consume(line_view));
+            if (fdata.inst.cols.idxs.back() >= nrows)
+                throw std::invalid_argument("Invalid file format: not a CVRP instance?");
+        }
         fdata.inst.cols.begs.push_back(csize(fdata.inst.cols.idxs));
     }
 
@@ -146,9 +160,12 @@ inline Instance parse_mps_instance(std::string const& path) {
     auto file_iter = FileLineIterator(path);
     auto inst      = Instance();
 
-    auto line_view = file_iter.next();
-    while (line_view != "ROWS")
+    auto   line_view    = file_iter.next();
+    size_t down_counter = 10;
+    while (line_view != "ROWS" && down_counter-- > 0)
         line_view = file_iter.next();
+    if (line_view != "ROWS")
+        throw std::invalid_argument("Invalid file format: not a MPS instance?");
 
     ridx_t nrows    = 0_R;
     auto   rows_map = std::unordered_map<std::string, ridx_t>();

@@ -34,7 +34,7 @@ struct SparseBinMat {
 
     Span<IdxT*> operator[](std::size_t i) {
         assert(i < begs.size() - 1);
-        assert(begs[i] < idxs.size());
+        assert(begs[i] < idxs.size() || begs[i + 1] == idxs.size());
         assert(begs[i + 1] <= idxs.size());
         return {idxs.data() + begs[i], idxs.data() + begs[i + 1]};
     }

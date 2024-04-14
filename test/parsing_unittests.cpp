@@ -96,4 +96,60 @@ TEST_CASE("test_parse_mps_instance") {
     REQUIRE(std::fabs(inst.costs[0] - 1.0_F) < 0.01_F);
 }
 
+TEST_CASE("test wrong parser") {
+    REQUIRE_THROWS(parse_scp_instance("../instances/rail/rail507"));
+    REQUIRE_THROWS(parse_scp_instance("../instances/cvrp/X-n536-k96_z95480_cplex95479.scp"));
+    REQUIRE_THROWS(parse_scp_instance("../instances/mps/ramos3.mps"));
+
+    REQUIRE_THROWS(parse_rail_instance("../instances/scp/scp41.txt"));
+    REQUIRE_THROWS(parse_rail_instance("../instances/cvrp/X-n536-k96_z95480_cplex95479.scp"));
+    REQUIRE_THROWS(parse_rail_instance("../instances/mps/ramos3.mps"));
+
+    REQUIRE_THROWS(parse_cvrp_instance("../instances/scp/scp41.txt"));
+    REQUIRE_THROWS(parse_cvrp_instance("../instances/rail/rail507"));
+    REQUIRE_THROWS(parse_cvrp_instance("../instances/mps/ramos3.mps"));
+
+    REQUIRE_THROWS(parse_mps_instance("../instances/scp/scp41.txt"));
+    REQUIRE_THROWS(parse_mps_instance("../instances/rail/rail507"));
+    REQUIRE_THROWS(parse_mps_instance("../instances/cvrp/X-n536-k96_z95480_cplex95479.scp"));
+}
+
+TEST_CASE("Test parse_solution", "[parsing]") {
+    SECTION("write_solution and read_solution") {
+        std::string   path = "test_solution.txt";
+        cft::Solution wsol;
+        wsol.cost = 101.5;
+        wsol.idxs = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+        cft::write_solution(path, wsol);
+        cft::Solution sol = cft::parse_solution(path);
+
+        REQUIRE(sol.cost == 101.5);
+        REQUIRE(sol.idxs == std::vector<cft::cidx_t>{1, 2, 3, 4, 5, 6, 7, 8, 9});
+
+        std::remove(path.c_str());
+    }
+
+    SECTION("Read solution: Invalid solution file") {
+        std::string   path = "test_solution.txt";
+        std::ofstream file(path);
+        REQUIRE(file.is_open());
+        fmt::print(file, "101.5 1 2 3# 4 5 Z 7 8 9\n");
+        file.close();
+
+        REQUIRE_THROWS(cft::parse_solution(path));
+        std::remove(path.c_str());
+    }
+
+    SECTION("Write solution: Invalid file path") {
+        std::string   path = "/invalid/path/test_solution.txt";
+        cft::Solution sol;
+        sol.cost = 10.5;
+        sol.idxs = {1, 2, 3};
+
+        REQUIRE_THROWS_AS(cft::write_solution(path, sol), std::exception);
+    }
+}
+
+
 }  // namespace cft
