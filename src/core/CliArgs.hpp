@@ -81,7 +81,25 @@ namespace cft {
 #define CFT_RELSGEXIT_LONG_FLAG "--rel-subg-exit"
 #define CFT_RELSGEXIT_HELP      "Minimum LBs gap to trigger subradient termination."
 
-static inline void print_arg_values(Environment const& env) {
+namespace local { namespace {
+    inline std::string make_sol_name(std::string const& inst_path) {
+        auto out_name = cft::StringView(inst_path);
+
+        // Remove path if present
+        auto slash_pos = out_name.find_last_if([](char c) { return c == '/' || c == '\\'; });
+        if (slash_pos != out_name.size())
+            out_name = out_name.get_substr(slash_pos + 1, out_name.size());
+
+        // Remove extension
+        out_name = out_name.get_substr(0, out_name.find_last_if([](char c) { return c == '.'; }));
+
+        assert(!out_name.empty());
+        return out_name.to_cpp_string() += ".sol";
+    }
+}  // namespace
+}  // namespace local
+
+inline void print_arg_values(Environment const& env) {
     print<2>(env, " {:20} = {}\n", CFT_INST_FLAG "," CFT_INST_LONG_FLAG, env.inst_path);
     print<2>(env, " {:20} = {}\n", CFT_PARSER_FLAG "," CFT_PARSER_LONG_FLAG, env.parser);
     print<2>(env, " {:20} = {}\n", CFT_OUTSOL_FLAG "," CFT_OUTSOL_LONG_FLAG, env.sol_path);
@@ -103,7 +121,7 @@ static inline void print_arg_values(Environment const& env) {
     std::fflush(stdout);
 }
 
-static inline void print_cli_help_msg() {
+inline void print_cli_help_msg() {
     fmt::print("Commandline arguments available as of compile date: " __DATE__ "\n");
     fmt::print("  {:20} " CFT_HELP_HELP "\n", CFT_HELP_FLAG "," CFT_HELP_LONG_FLAG);
     fmt::print("  {:20} " CFT_INST_HELP "\n", CFT_INST_FLAG "," CFT_INST_LONG_FLAG);
@@ -125,7 +143,7 @@ static inline void print_cli_help_msg() {
     std::fflush(stdout);
 }
 
-static inline Environment parse_cli_args(int argc, char const** argv) {
+inline Environment parse_cli_args(int argc, char const** argv) {
     auto args = cft::make_span(argv, checked_cast<size_t>(argc));
     auto env  = Environment{};
 
@@ -163,6 +181,12 @@ static inline Environment parse_cli_args(int argc, char const** argv) {
         else
             fmt::print("Arg '{}' unrecognized, ignored.\n", arg.data());
     }
+
+    if (env.inst_path.empty())
+        throw std::runtime_error("Instance file path not provided.");
+
+    if (env.sol_path.empty())
+        env.sol_path = local::make_sol_name(env.inst_path);
 
     return env;
 }
