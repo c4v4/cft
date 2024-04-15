@@ -3,3 +3,8 @@
 *.dat linguist-vendored
 *.scp linguist-vendored
 *.out linguist-vendored
+*.mps linguist-documentation
+*.txt linguist-documentation
+*.dat linguist-documentation
+*.scp linguist-documentation
+*.out linguist-documentation

@@ -2,26 +2,28 @@
 
 [![CMake on multiple platforms](https://github.com/falcopt/scp/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/falcopt/scp/actions/workflows/c-cpp.yml)
 
-Accorsi Luca and Cavaliere Francesco implementation of the CFT algorithm for the Set Covering problem.
+Accorsi Luca and Cavaliere Francesco implementation of the CFT algorithm for the [Set Covering problem](https://en.wikipedia.org/wiki/Set_cover_problem).
 
 ### References
 *Caprara, A., Fischetti, M., & Toth, P. (1999). A Heuristic Method for the Set Covering Problem. Operations Research, 47(5), 730–743. [doi:10.1287/opre.47.5.730](https://doi.org/10.1287/opre.47.5.730)*
 
 ## Building and Running the Project
-Configure the project for a Release build, and build it:
+
+Configure the project for a release build and build it:
+
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
 ```
 
-After building, the binary will be located in `build/accft`.
-Example command for running the project:
+The binary will be located at `build/accft`.
+You can run it with:
 
 ```bash
 ./build/accft -i instances/rail/rail507 -p RAIL -t 30 
 ```
 
-This command runs the `accft` binary with the specified instance, parser, and time limit.
+See `./build/accft --help` for the list of available parameters and their meaning.
 
 ## Tests and Coverage
 
@@ -33,6 +35,7 @@ cmake --build build -j
 ```
 
 Run the tests:
+
 ```bash
 ctest --test-dir build
 ```
@@ -45,14 +48,16 @@ lcov -c -d build -o coverage/tests_cov.info
 lcov -r coverage/tests_cov.info build test /usr/include/ -o tests_cov.info
 ```
 
-Finally, to generate an HTML file that can be viewed with your browser:
+Finally, to generate an HTML-report that can be viewed from your browser:
 
 ```bash
 genhtml tests_cov.info --legend --output-directory=./coverage
 ```
 
-You can check out the generated report by opening `coverage/index.html`.
+You can check out the coverage statistics by opening `coverage/index.html`.
 
+## Benchmarks
+_Coming soon..._
 
 ## Coding Style
 

@@ -122,7 +122,7 @@ constexpr size_t size(C const (& /*unused*/)[N]) {
 template <typename C, typename K>
 size_t argmin(C const& container, K key) {
     size_t min_i = 0;
-    for (size_t i = 1; i < size(container); ++i)
+    for (size_t i = 1; i < cft::size(container); ++i)
         min_i = key(container[i]) < key(container[min_i]) ? i : min_i;
     return min_i;
 }
@@ -130,7 +130,7 @@ size_t argmin(C const& container, K key) {
 template <typename C, typename Op>
 void remove_if(C& container, Op op) {
     size_t w = 0;
-    for (size_t r = 0; r < size(container); ++r)
+    for (size_t r = 0; r < cft::size(container); ++r)
         if (!op(container[r]))
             container[w++] = container[r];
     container.resize(w);

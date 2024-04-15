@@ -29,6 +29,7 @@
 #include "utils/assert.hpp"  // IWYU pragma:  keep
 #include "utils/limits.hpp"
 #include "utils/parse_utils.hpp"
+#include "utils/print.hpp"
 
 namespace cft {
 
@@ -256,6 +257,37 @@ inline void write_solution(std::string const& path, Solution const& sol) {
     for (cidx_t j : sol.idxs)
         fmt::print(file, " {}", j);
     file.close();
+}
+
+inline cft::FileData parse_inst_and_initsol(cft::Environment const& env) {
+    auto fdata = cft::FileData();
+
+    if (env.parser == CFT_RAIL_PARSER) {
+        cft::print<1>(env, "CFT > Parsing RAIL instance from {}\n", env.inst_path);
+        fdata.inst = cft::parse_rail_instance(env.inst_path);
+
+    } else if (env.parser == CFT_SCP_PARSER) {
+        cft::print<1>(env, "CFT > Parsing SCP instance from {}\n", env.inst_path);
+        fdata.inst = cft::parse_scp_instance(env.inst_path);
+
+    } else if (env.parser == CFT_CVRP_PARSER) {
+        cft::print<1>(env, "CFT > Parsing CVRP instance from {}\n", env.inst_path);
+        fdata = cft::parse_cvrp_instance(env.inst_path);
+
+    } else if (env.parser == CFT_MPS_PARSER) {
+        cft::print<1>(env, "CFT > Parsing MPS instance from {}\n", env.inst_path);
+        fdata.inst = cft::parse_mps_instance(env.inst_path);
+
+    } else {
+        cft::print<1>(env, "CFT > Parser {} does not exists.\n", env.parser);
+        throw std::runtime_error("Parser does not exists.");
+    }
+
+    if (!env.initsol_path.empty()) {
+        fdata.init_sol = cft::parse_solution(env.initsol_path);
+        CFT_IF_DEBUG(check_solution(fdata.inst, fdata.init_sol));
+    }
+    return fdata;
 }
 
 

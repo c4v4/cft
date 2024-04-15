@@ -204,12 +204,12 @@ TEST_CASE("test_all") {
 TEST_CASE("test_size") {
     SECTION("Empty container") {
         std::vector<int> empty_container;
-        REQUIRE(size(empty_container) == 0);
+        REQUIRE(cft::size(empty_container) == 0);
     }
 
     SECTION("Non-empty container") {
         std::array<int, 5> container = {1, 2, 3, 4, 5};
-        REQUIRE(size(container) == 5);
+        REQUIRE(cft::size(container) == 5);
     }
 
     SECTION("Array") {
