@@ -4,61 +4,70 @@
 
 Accorsi Luca and Cavaliere Francesco implementation of the CFT algorithm for the Set Covering problem.
 
-## Build and run unit tests
-To build unit tests
-```
-cmake .. -DUNITTESTS=1
-make -j
-```
-To run the tests
-```
-./tests
-```
-To get code coverage statistics
-```
-gcovr --html-details build/coverage.html
-```
-from the main project directory (not from the `build` dir!).
-Then checkout `build/coverage.html`.
-
-
-## How to contribute
-Create a new branch
-```
-git checkout -b new-feature
-```
-Edit the code in the new branch and push it
-```
-git add --all
-git commit -m "Message"
-git push -u origin new-feature
-```
-Create a pull request on the github UI and add a reviewer.
-
-To include suggested changes
-```
-git commit --amend -a
-git push -u origin new-feature --force
-```
-
-## References
+### References
 *Caprara, A., Fischetti, M., & Toth, P. (1999). A Heuristic Method for the Set Covering Problem. Operations Research, 47(5), 730–743. [doi:10.1287/opre.47.5.730](https://doi.org/10.1287/opre.47.5.730)*
+
+## Building and Running the Project
+Configure the project for a Release build, and build it:
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+```
+
+After building, the binary will be located in `build/accft`.
+Example command for running the project:
+
+```bash
+./build/accft -i instances/rail/rail507 -p RAIL -t 30 
+```
+
+This command runs the `accft` binary with the specified instance, parser, and time limit.
+
+## Tests and Coverage
+
+To build the project with unit tests in debug mode:
+
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Debug -DUNIT_TESTS=ON 
+cmake --build build -j
+```
+
+Run the tests:
+```bash
+ctest --test-dir build
+```
+
+Use the following commands to generate code coverage statistics, note that you need to have [`lcov`](https://github.com/linux-test-project/lcov) installed.
+
+```bash
+mkdir -p coverage
+lcov -c -d build -o coverage/tests_cov.info
+lcov -r coverage/tests_cov.info build test /usr/include/ -o tests_cov.info
+```
+
+Finally, to generate an HTML file that can be viewed with your browser:
+
+```bash
+genhtml tests_cov.info --legend --output-directory=./coverage
+```
+
+You can check out the generated report by opening `coverage/index.html`.
 
 
 ## Coding Style
 
-Here you can find the general set of rules that we try to enforce, in case you are interested in reading the source code. Being this a stand-alone project at which we work in our spare time, we took the freedom to experiment a little with simple conventions, changing from time to time when we noticed that something didn't fit our needs.
+In case you might be interested in reading the source code, here you can find the general set of rules that we try to enforce. Being this a stand-alone project at which we work in our spare time, we took the freedom to experiment a little with simple conventions, changing from time to time when we noticed that something didn't fit our needs.
 
 First of all, we constrained ourselves to the C++11 standard. The main reason for this choice has been to potentially reach a wider audience. This choice was also made to limit the use of fancy meta-programming features and abstractions which can easily result in moving the focus from the algorithm itself to the _how_ the algorithm is implemented.
 
 ### User Vs Library Code
 
-C++ is a hefty language. As we just said, one of the main perks we see in this language is its ability to define abstractions that can be general enough to serve a wide variety of use-cases (the STL is a clear example of that). However, most of the features that this language provides are redundant, unnecessary and simply add up to the overall complexity of this language, which often makes code very hard to understand. For this reason, for the algorithm implementation, we chose to limit ourselves to a _small_ set of language features. When an abstraction can really streamline both the coding process and the understanding of the code, we allow ourselves to use and write simple and carefully chosen abstractions. They are placed in the `utils` folder. This division creates two coding contexts:
+C++ is a hefty language. One of its main perks is its ability to define abstractions that can be general enough to serve a wide variety of use-cases (the STL is a clear example of that). However, most of the features that this language provides are redundant, unnecessary and simply add up to the overall complexity of the language, which often makes code very hard to understand. For this reason, for the algorithm implementation, we chose to limit ourselves to a _small_ set of language features. When an abstraction can really streamline both the coding process and the understanding of the code, we allow ourselves to use and write simple and carefully chosen abstractions. They are placed in the `utils` folder. This division creates two coding contexts:
 
 - `user-code`: which is pretty much C code extended with a fairly small set of C++ features that we think really add value.
-- `library-code`: which, as the STL, provide a carefully chosen set of abstractions we find useful.
+- `library-code`: which provide a carefully chosen set of abstractions we find useful.
 
-We do not report here classic rules like upper/lower-case naming conventions, trailing return type or not, etc., just open the code and you'll see what we like, at the end, these things are mostly a matter of taste, so we avoid spending time justifying these kinds of choices.
+We do not report here classic rules like upper/lower-case naming conventions, trailing return type or not, etc., just open the source-files and you'll see what we like, at the end, these things are mostly a matter of taste, so we avoid spending time justifying these kinds of choices.
 
 ### User Code
 
@@ -85,4 +94,4 @@ Other rules:
 
 ### Library Code
 
-Not much to say here, library code tries to adhere to _user-code_ rules, but has the freedom to break some of them for the sake of avoiding bugs or making the abstraction more intuitive/easier to use. Factory methods are often used to have a hand-made CTAD (which was not present in C++11). Templates are used but the meta-programming is kept at the minimum.
+Not much to say here, library code tries to adhere to _user-code_ rules, but has the freedom to break some of them for the sake of avoiding bugs or making the abstraction more intuitive/easier to use. Factory methods are often used to have a hand-made CTAD (which was not present in C++11). Templates are used but the meta-programming is kept at a low level.

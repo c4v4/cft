@@ -31,8 +31,8 @@ target_link_libraries(accft PUBLIC ${LIBRARIES})
 ########################################
 ############## Unit tests ##############
 ########################################
-
 option(UNIT_TESTS "Build unit tests." OFF)
+message(STATUS "UNIT_TESTS: ${UNIT_TESTS}")
 if (UNIT_TESTS) 
 
     FetchContent_Declare(catch2 GIT_REPOSITORY https://github.com/catchorg/Catch2  GIT_TAG v2.x)
