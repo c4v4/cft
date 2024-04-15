@@ -63,7 +63,7 @@ namespace cft {
 
 #define CFT_EPSILON_FLAG      "-e"
 #define CFT_EPSILON_LONG_FLAG "--epsilon"
-#define CFT_EPSILON_HELP      "Difference to consider two costs different."
+#define CFT_EPSILON_HELP      "Delta to consider two costs different."
 
 #define CFT_GITERS_FLAG      "-g"
 #define CFT_GITERS_LONG_FLAG "--heur-iters"
