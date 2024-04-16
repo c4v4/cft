@@ -18,14 +18,14 @@
 #define CFT_SRC_CORE_SORTED_ARRAY_HPP
 
 #include <cstddef>
-#include <functional>
 #include <utility>
 
 #include "utils/assert.hpp"  // IWYU pragma:  keep
+#include "utils/utility.hpp"
 
 namespace cft {
-template <typename T, std::size_t Nm, typename Comp = std::less<T>>
-struct SortedArray : Comp /*EBO*/ {
+template <typename T, std::size_t Nm, typename Key = IdentityFtor>
+struct SortedArray : Key /*EBO*/ {
     using iterator        = T*;
     using size_type       = size_t;
     using value_type      = T;
@@ -38,8 +38,8 @@ struct SortedArray : Comp /*EBO*/ {
 
     // NOTE: this is a workaround for the fact that in general we cannot have EBO while keeping
     // SortedArray an aggregate
-    SortedArray(Comp comp = {})
-        : Comp(comp) {
+    SortedArray(Key key = {})
+        : Key(key) {
     }
 
     size_type size() const {
@@ -64,15 +64,18 @@ struct SortedArray : Comp /*EBO*/ {
         return std::addressof(data[sz]);
     }
 
-    bool compare(T const& a, T const& b) const {
-        return Comp::operator()(a, b);
+    auto key(T const& a) -> decltype(this->operator()(a)) {
+        return this->operator()(a);
+    }
+
+    auto key(T const& a) const -> decltype(this->operator()(a)) {
+        return this->operator()(a);
     }
 
     template <typename U>
     bool try_insert(U&& elem) {
-
         if (sz >= Nm) {
-            if (!compare(elem, back()))
+            if (key(elem) >= key(back()))
                 return false;
             --sz;  // pop_back
         }
@@ -86,7 +89,7 @@ struct SortedArray : Comp /*EBO*/ {
 
         // find elem position
         size_type i = sz;
-        while (i > 0 && compare(elem, data[i - 1])) {
+        while (i > 0 && key(elem) < key(data[i - 1])) {
             data[i] = std::move(data[i - 1]);
             --i;
         }
@@ -99,13 +102,9 @@ struct SortedArray : Comp /*EBO*/ {
     }
 };
 
-// NOTE: here for now, might be useful in other places, move to a more general header in case
-template <typename T>
-using no_cvr = typename std::remove_reference<typename std::remove_cv<T>::type>::type;
-
-template <typename T, std::size_t Nm, typename Comp>
-inline SortedArray<T, Nm, no_cvr<Comp>> make_custom_compare_sorted_array(Comp comparator) {
-    return SortedArray<T, Nm, no_cvr<Comp>>{comparator};
+template <typename T, std::size_t Nm, typename Key>
+inline SortedArray<T, Nm, no_cvr<Key>> make_custom_key_sorted_array(Key key) {
+    return SortedArray<T, Nm, no_cvr<Key>>{key};
 }
 
 }  // namespace cft

@@ -19,7 +19,6 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <utility>
 
 #include "utils/utility.hpp"
 
@@ -36,13 +35,6 @@ namespace local { namespace {
 
 }  // namespace
 }  // namespace local
-
-struct IdentityFtor {
-    template <typename T>
-    T&& operator()(T&& t) const {
-        return std::forward<T>(t);
-    }
-};
 
 // Hook for future specializations
 template <typename C, typename K = IdentityFtor>

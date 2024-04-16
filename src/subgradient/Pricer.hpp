@@ -115,8 +115,8 @@ private:
 
         ridx_t const nrows = rsize(inst.rows);
 
-        auto heap = make_custom_compare_sorted_array<cidx_t, mincov>(
-            [&](cidx_t i, cidx_t j) { return reduced_costs[i] < reduced_costs[j]; });
+        auto heap = make_custom_key_sorted_array<cidx_t, mincov>(
+            [&](cidx_t j) { return reduced_costs[j]; });
 
         for (ridx_t i = 0_R; i < nrows; ++i) {
             heap.clear();
