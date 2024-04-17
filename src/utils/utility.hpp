@@ -19,6 +19,7 @@
 
 #include <cstddef>
 #include <type_traits>
+#include <utility>
 
 #include "utils/assert.hpp"  // IWYU pragma: keep
 #include "utils/limits.hpp"
@@ -135,6 +136,16 @@ void remove_if(C& container, Op op) {
             container[w++] = container[r];
     container.resize(w);
 }
+
+template <typename T>
+using no_cvr = typename std::remove_reference<typename std::remove_cv<T>::type>::type;
+
+struct IdentityFtor {
+    template <typename T>
+    T&& operator()(T&& t) const {
+        return std::forward<T>(t);
+    }
+};
 
 
 }  // namespace cft
