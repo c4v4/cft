@@ -68,29 +68,36 @@ public:
         if (nrows_to_cover == 0_R)
             return;
 
-        auto   smaller_size         = min(nrows_to_cover, csize(inst.cols) - csize(sol.idxs));
-        auto   good_scores          = get_good_scores(score_info, smaller_size);
+        auto   smaller_size = min(as_cidx(nrows_to_cover), csize(inst.cols) - csize(sol.idxs));
+        auto   good_scores  = get_good_scores(score_info, smaller_size);
         real_t score_update_trigger = good_scores.back().score;
 
         // Fill solution
         while (nrows_to_cover > 0_R && csize(sol.idxs) < max_sol_size) {
 
-            auto   s_min     = as_cidx(argmin(good_scores, ScoreKey{}));
-            real_t min_score = good_scores[s_min].score;
-            if (min_score >= score_update_trigger) {
-                smaller_size         = min(nrows_to_cover, csize(inst.cols) - csize(sol.idxs));
-                good_scores          = get_good_scores(score_info, smaller_size);
+            if (good_scores.empty()) {
+                smaller_size = min(as_cidx(nrows_to_cover), csize(inst.cols) - csize(sol.idxs));
+                good_scores  = get_good_scores(score_info, smaller_size);
                 score_update_trigger = good_scores.back().score;
-                s_min                = as_cidx(argmin(good_scores, ScoreKey{}));
             }
 
-            cidx_t jstar = score_info.scores[s_min].idx;
-            assert(score_info.scores[s_min].score < limits<real_t>::max() && "Illegal score");
+            auto   score_pair = range_min(good_scores, ScoreKey{});
+            cidx_t jstar      = score_pair.idx;
+            assert(score_pair.score < limits<real_t>::max() && "Illegal score");
             assert(!any(sol.idxs, [=](cidx_t j) { return j == jstar; }) && "Duplicate column");
             sol.idxs.push_back(jstar);
             sol.cost += inst.costs[jstar];
 
-            update_changed_scores(inst, lagr_mult, total_cover, s_min, score_info);
+            update_changed_scores(inst, lagr_mult, total_cover, jstar, score_info, [&](cidx_t s) {
+                if (s < csize(good_scores) && good_scores[s].score >= score_update_trigger) {
+                    cidx_t s_j    = good_scores[s].idx;
+                    cidx_t back_j = good_scores.back().idx;
+                    std::swap(good_scores[s], good_scores.back());
+                    std::swap(score_info.score_map[s_j], score_info.score_map[back_j]);
+                    good_scores = make_span(good_scores.begin(), good_scores.end() - 1U);
+                }
+            });
+
             nrows_to_cover -= as_ridx(total_cover.cover(inst.cols[jstar]));
         }
 
