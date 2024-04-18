@@ -147,11 +147,12 @@ inline Solution run(Environment const& env,
         auto nrows_real  = as_real(rsize(orig_inst.rows));
         auto fixing_perc = as_real(rsize(inst.rows)) * 100.0_F / nrows_real;
         print<2>(env,
-                 "REFN > Free rows {} ({:.1f}%), best sol {} fixed cost {} time {:.2f}\n",
-                 rsize(inst.rows),
-                 fixing_perc,
+                 "REFN> Best solution {:.2f}, fixed cost {:.2f}, free rows {} ({:.1f}%), time "
+                 "{:.2f}\n\n",
                  best_sol.cost,
                  fixing.fixed_cost,
+                 rsize(inst.rows),
+                 fixing_perc,
                  timer.elapsed<sec>());
 
         if (inst.rows.empty() || env.timer.elapsed<sec>() > env.time_limit)

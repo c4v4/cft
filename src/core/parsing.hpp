@@ -263,23 +263,23 @@ inline cft::FileData parse_inst_and_initsol(cft::Environment const& env) {
     auto fdata = cft::FileData();
 
     if (env.parser == CFT_RAIL_PARSER) {
-        cft::print<1>(env, "CFT > Parsing RAIL instance from {}\n", env.inst_path);
+        cft::print<1>(env, "CFT> Parsing RAIL instance from {}\n\n", env.inst_path);
         fdata.inst = cft::parse_rail_instance(env.inst_path);
 
     } else if (env.parser == CFT_SCP_PARSER) {
-        cft::print<1>(env, "CFT > Parsing SCP instance from {}\n", env.inst_path);
+        cft::print<1>(env, "CFT> Parsing SCP instance from {}\n\n", env.inst_path);
         fdata.inst = cft::parse_scp_instance(env.inst_path);
 
     } else if (env.parser == CFT_CVRP_PARSER) {
-        cft::print<1>(env, "CFT > Parsing CVRP instance from {}\n", env.inst_path);
+        cft::print<1>(env, "CFT> Parsing CVRP instance from {}\n\n", env.inst_path);
         fdata = cft::parse_cvrp_instance(env.inst_path);
 
     } else if (env.parser == CFT_MPS_PARSER) {
-        cft::print<1>(env, "CFT > Parsing MPS instance from {}\n", env.inst_path);
+        cft::print<1>(env, "CFT> Parsing MPS instance from {}\n\n", env.inst_path);
         fdata.inst = cft::parse_mps_instance(env.inst_path);
 
     } else {
-        cft::print<1>(env, "CFT > Parser {} does not exists.\n", env.parser);
+        cft::print<1>(env, "CFT> Parser {} does not exists.\n\n", env.parser);
         throw std::runtime_error("Parser does not exists.");
     }
 

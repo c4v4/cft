@@ -75,7 +75,7 @@ public:
 
         for (size_t iter_counter = 0; !inst.rows.empty(); ++iter_counter) {
             auto timer = Chrono<>();
-            print<3>(env, "3PHS  > Starting 3-phase iteration {}:\n", iter_counter);
+            print<3>(env, "3PHS> Three-phase iteration {}:\n", iter_counter);
 
             real_t step_size = init_step_size;
             auto   cutoff    = best_sol.cost - fixing.fixed_cost;
@@ -103,14 +103,13 @@ public:
             real_lb = pricer(inst, lagr_mult, core);        // Update core-inst for next iter
             _perturb_lagr_multipliers(lagr_mult, env.rnd);  // Multipliers +-10% perturbation
 
-            print<3>(env, "3PHS  > Ending iteration    {}:\n", iter_counter);
-            print<3>(env, "3PHS  > Remaining rows:     {}\n", rsize(inst.rows));
-            print<3>(env, "3PHS  > Remaining columns:  {}\n", csize(inst.cols));
-            print<3>(env, "3PHS  > Core instance cols: {}\n", csize(core.inst.cols));
-            print<3>(env, "3PHS  > Fixed cost:         {:.2f}\n", fixing.fixed_cost);
-            print<3>(env, "3PHS  > Best solution:      {:.2f}\n", best_sol.cost);
-            print<3>(env, "3PHS  > Current LB:         {:.2f}\n", real_lb + fixing.fixed_cost);
-            print<3>(env, "3PHS  > Iteration time:     {:.2f}s\n", timer.elapsed<sec>());
+            print<3>(env, "3PHS> Remaining rows:     {}\n", rsize(inst.rows));
+            print<3>(env, "3PHS> Remaining columns:  {}\n", csize(inst.cols));
+            print<3>(env, "3PHS> Core instance cols: {}\n", csize(core.inst.cols));
+            print<3>(env, "3PHS> Fixed cost:         {:.2f}\n", fixing.fixed_cost);
+            print<3>(env, "3PHS> Best solution:      {:.2f}\n", best_sol.cost);
+            print<3>(env, "3PHS> Current LB:         {:.2f}\n", real_lb + fixing.fixed_cost);
+            print<3>(env, "3PHS> Iteration time:     {:.2f}s\n\n", timer.elapsed<sec>());
 
             // For some reason, it seems that we get the tightest bound after the column fixing
             if (real_lb + fixing.fixed_cost >= best_sol.cost - env.epsilon)
@@ -118,7 +117,7 @@ public:
         }
 
         print<3>(env,
-                 "3PHS  > Best solution: {:.2f}, time: {:.2f}s\n",
+                 "3PHS> Best solution: {:.2f}, time: {:.2f}s\n\n",
                  best_sol.cost,
                  tot_timer.elapsed<sec>());
         return {std::move(best_sol), std::move(unfixed_lagr_mult), unfixed_lb};
