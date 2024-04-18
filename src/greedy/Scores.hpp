@@ -47,16 +47,41 @@ struct Scores {
     std::vector<cidx_t>    score_map;     // maps column index to score index
 };
 
-// Score computed as descrived in the paper. Mu represents the number of still uncovered rows
-// that would be covered by the current column. Gamma represents the reduced cost of the column
-// minus the component of the lagrangian multiplier associated with already covered rows.
-inline real_t compute_score(real_t gamma, ridx_t mu) {
-    if (mu == 0_R)
-        return limits<real_t>::max();
-    if (gamma > 0.0_F)
-        return gamma / as_real(mu);
-    return gamma * as_real(mu);
-}
+namespace local { namespace {
+    // Score computed as descrived in the paper. Mu represents the number of still uncovered rows
+    // that would be covered by the current column. Gamma represents the reduced cost of the column
+    // minus the component of the lagrangian multiplier associated with already covered rows.
+    inline real_t compute_score(real_t gamma, ridx_t mu) {
+        if (mu == 0_R)
+            return limits<real_t>::max();
+        if (gamma > 0.0_F)
+            return gamma / as_real(mu);
+        return gamma * as_real(mu);
+    }
+
+    template <typename Hook>
+    void update_row_scores(std::vector<cidx_t> const& row,
+                           real_t                     i_lagr_mult,
+                           Scores&                    score_info,
+                           Hook                       update_hook) {
+        auto& scores = score_info.scores;  // shorthand
+
+        for (cidx_t j : row) {
+            score_info.covered_rows[j] -= 1;
+            score_info.gammas[j] += i_lagr_mult;
+
+            cidx_t s = score_info.score_map[j];
+            assert(s != removed_cidx && "Column is not in the score map");
+            scores[s].score = local::compute_score(score_info.gammas[j],
+                                                   score_info.covered_rows[j]);
+            assert(std::isfinite(score_info.gammas[j]) && "Gamma is not finite");
+            assert(std::isfinite(scores[s].score) && "Score is not finite");
+            update_hook(s);  // further ops on s element
+        }
+    }
+
+}  // namespace
+}  // namespace local
 
 // Initialize the scores for the greedy algorithm
 inline void complete_scores_init(Instance const& inst, Scores& score_info) {
@@ -70,29 +95,12 @@ inline void complete_scores_init(Instance const& inst, Scores& score_info) {
 
     for (cidx_t j = 0_C; j < csize(inst.cols); ++j) {
         ridx_t cover_num           = rsize(inst.cols[j]);
-        real_t score               = compute_score(score_info.gammas[j], cover_num);
+        real_t score               = local::compute_score(score_info.gammas[j], cover_num);
         score_info.score_map[j]    = j;
         score_info.covered_rows[j] = cover_num;
         score_info.scores.push_back({score, j});
         assert(std::isfinite(score_info.gammas[j]) && "Gamma is not finite");
         assert(std::isfinite(score) && "Score is not finite");
-    }
-}
-
-inline void update_row_scores(std::vector<cidx_t> const& row,
-                              real_t                     i_lagr_mult,
-                              Scores&                    score_info) {
-    auto& scores = score_info.scores;  // shorthand
-
-    for (cidx_t j : row) {
-        score_info.covered_rows[j] -= 1;
-        score_info.gammas[j] += i_lagr_mult;
-
-        cidx_t s = score_info.score_map[j];
-        assert(s != removed_cidx && "Column is not in the score map");
-        scores[s].score = compute_score(score_info.gammas[j], score_info.covered_rows[j]);
-        assert(std::isfinite(score_info.gammas[j]) && "Gamma is not finite");
-        assert(std::isfinite(scores[s].score) && "Score is not finite");
     }
 }
 
@@ -108,37 +116,31 @@ inline ridx_t update_covered(Instance const&            inst,
 
     for (ridx_t i = 0_R; i < rsize(total_cover); i++)
         if (total_cover[i] > 0)
-            update_row_scores(inst.rows[i], lagr_mult[i], score_info);
+            local::update_row_scores(inst.rows[i], lagr_mult[i], score_info, NoOp{});
 
     return covered_rows;
 }
 
+template <typename Hook>
 inline void update_changed_scores(Instance const&            inst,
                                   std::vector<real_t> const& lagr_mult,
                                   CoverCounters<> const&     total_cover,
-                                  cidx_t                     score_argmin,
-                                  Scores&                    score_info) {
-    cidx_t jstar    = score_info.scores[score_argmin].idx;
-    auto   col_star = inst.cols[jstar];
+                                  cidx_t                     jstar,
+                                  Scores&                    score_info,
+                                  Hook                       update_hook) {
 
+    auto col_star = inst.cols[jstar];
     for (ridx_t i : col_star)
         if (total_cover[i] == 0)
-            update_row_scores(inst.rows[i], lagr_mult[i], score_info);
+            local::update_row_scores(inst.rows[i], lagr_mult[i], score_info, update_hook);
 }
 
-inline score_subspan_t get_good_scores(Scores& score_info, size_t amount) {
+inline score_subspan_t get_good_scores(Scores& score_info, cidx_t amount) {
     assert(amount > 0 && "Good size must be greater than 0");
     auto& scores = score_info.scores;  // shorthand
 
-    remove_if(scores, [&](ScoreData sd) {
-        if (sd.score < limits<real_t>::max())
-            return false;
-        score_info.score_map[sd.idx] = removed_cidx;
-        return true;
-    });
-
-    amount = std::min(amount, scores.size());
-    cft::nth_element(scores, amount, ScoreKey{});
+    amount = std::min(amount, csize(scores));
+    cft::nth_element(scores, amount - 1, ScoreKey{});
     for (cidx_t s = 0_C; s < csize(scores); ++s)
         score_info.score_map[scores[s].idx] = s;
 

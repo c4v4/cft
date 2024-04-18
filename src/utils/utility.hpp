@@ -26,6 +26,18 @@
 
 namespace cft {
 
+struct IdentityFtor {
+    template <typename T>
+    T&& operator()(T&& t) const {
+        return std::forward<T>(t);
+    }
+};
+
+struct NoOp {
+    template <typename... ArgsT>
+    void operator()(ArgsT&&... /*args*/) const {
+    }
+};
 
 ////////////////////////////////////// CHECKED CAST //////////////////////////////////////
 // We want to wrap static_cast for numeric values, checking that some properties are satisfied:
@@ -93,6 +105,26 @@ T1 min(T1 v1, T2 v2, Ts... tail) {
     return v1 <= mtail ? v1 : mtail;
 }
 
+template <typename C>
+size_t size(C const& container) {
+    return container.size();
+}
+
+template <typename C, size_t N>
+constexpr size_t size(C const (& /*unused*/)[N]) {
+    return N;
+}
+
+template <typename T>
+using no_cvr = typename std::remove_reference<typename std::remove_cv<T>::type>::type;
+
+template <typename C>
+using container_iterator_t = decltype(std::begin(std::declval<C&>()));
+template <typename C>
+using container_value_type_t = no_cvr<decltype(*std::declval<container_iterator_t<C>>())>;
+template <typename C>
+using container_size_type_t = decltype(cft::size(std::declval<C>()));
+
 // Condition test operations
 template <typename T, typename O>
 bool any(T const& container, O op) {
@@ -110,43 +142,33 @@ bool all(T const& container, O op) {
     return true;
 }
 
-template <typename C>
-size_t size(C const& container) {
-    return container.size();
+template <typename C, typename K = IdentityFtor>
+container_value_type_t<C> range_min(C const& container, K key = {}) {
+    assert(cft::size(container) > 0ULL);
+    auto min_elem = container[0];
+    for (size_t i = 1ULL; i < cft::size(container); ++i)
+        if (key(container[i]) < key(min_elem))
+            min_elem = container[i];
+    return min_elem;
 }
 
-template <typename C, size_t N>
-constexpr size_t size(C const (& /*unused*/)[N]) {
-    return N;
-}
-
-template <typename C, typename K>
-size_t argmin(C const& container, K key) {
+template <typename C, typename K = IdentityFtor>
+size_t argmin(C const& container, K key = {}) {
     size_t min_i = 0;
-    for (size_t i = 1; i < cft::size(container); ++i)
-        min_i = key(container[i]) < key(container[min_i]) ? i : min_i;
+    for (size_t i = 1ULL; i < cft::size(container); ++i)
+        if (key(container[i]) < key(container[min_i]))
+            min_i = i;
     return min_i;
 }
 
 template <typename C, typename Op>
 void remove_if(C& container, Op op) {
     size_t w = 0;
-    for (size_t r = 0; r < cft::size(container); ++r)
-        if (!op(container[r]))
-            container[w++] = container[r];
+    for (size_t i = 0ULL; i < cft::size(container); ++i)
+        if (!op(container[i]))
+            container[w++] = container[i];
     container.resize(w);
 }
-
-template <typename T>
-using no_cvr = typename std::remove_reference<typename std::remove_cv<T>::type>::type;
-
-struct IdentityFtor {
-    template <typename T>
-    T&& operator()(T&& t) const {
-        return std::forward<T>(t);
-    }
-};
-
 
 }  // namespace cft
 
