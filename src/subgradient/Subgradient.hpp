@@ -26,8 +26,8 @@
 #include "subgradient/Pricer.hpp"
 #include "subgradient/utils.hpp"
 #include "utils/Chrono.hpp"
+#include "utils/CoverCounters.hpp"
 #include "utils/assert.hpp"  // IWYU pragma:  keep
-#include "utils/coverage.hpp"
 #include "utils/limits.hpp"
 #include "utils/print.hpp"
 #include "utils/utility.hpp"
@@ -39,7 +39,7 @@ class Subgradient {
     // Caches
     Solution            lb_sol;         // Partial solution with negative reduced costs
     Solution            greedy_sol;     // Greedy solution
-    CoverCounters<>     row_coverage;   // Row coverage
+    CoverCounters       row_coverage;   // Row coverage
     std::vector<real_t> reduced_costs;  // Reduced costs vector
     std::vector<real_t> lagr_mult;      // Lagrangian multipliers
 
@@ -196,9 +196,9 @@ private:
         lb_sol.idxs.clear();
     }
 
-    static void _update_lagr_mult(CoverCounters<> const& row_coverage,  // in
-                                  real_t                 step_factor,   // in
-                                  std::vector<real_t>&   lagr_mult      // inout
+    static void _update_lagr_mult(CoverCounters const& row_coverage,  // in
+                                  real_t               step_factor,   // in
+                                  std::vector<real_t>& lagr_mult      // inout
     ) {
         for (ridx_t i = 0_R; i < rsize(row_coverage); ++i) {
             auto violation = 1.0_F - as_real(row_coverage[i]);
@@ -236,7 +236,7 @@ private:
     // Computes the row coverage of the given solution by including the best non-redundant columns.
     static void _compute_reduced_row_coverage(Instance const&            inst,           // in
                                               std::vector<real_t> const& reduced_costs,  // in
-                                              CoverCounters<>&           row_coverage,   // out
+                                              CoverCounters&             row_coverage,   // out
                                               Solution&                  lb_sol          // out
     ) {
         row_coverage.reset(rsize(inst.rows));
@@ -250,7 +250,7 @@ private:
     }
 
     // Computes the subgradient squared sqr_norm according to the given row coverage.
-    static real_t _compute_subgrad_sqr_norm(CoverCounters<> const& row_coverage) {
+    static real_t _compute_subgrad_sqr_norm(CoverCounters const& row_coverage) {
         int64_t sqr_norm = 0;
         for (ridx_t i = 0_R; i < rsize(row_coverage); ++i) {
             int64_t violation = 1 - checked_cast<int64_t>(row_coverage[i]);

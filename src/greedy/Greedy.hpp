@@ -20,8 +20,8 @@
 #include "core/Instance.hpp"
 #include "core/cft.hpp"
 #include "greedy/redundancy.hpp"
-#include "utils/coverage.hpp"
 #include "greedy/scores.hpp"
+#include "utils/CoverCounters.hpp"
 #include "utils/limits.hpp"
 #include "utils/utility.hpp"
 

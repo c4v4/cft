@@ -20,7 +20,7 @@
 #include "algorithms/ThreePhase.hpp"
 #include "core/cft.hpp"
 #include "utils/Chrono.hpp"
-#include "utils/coverage.hpp"
+#include "utils/CoverCounters.hpp"
 #include "utils/utility.hpp"
 
 namespace cft {
@@ -42,7 +42,7 @@ namespace local { namespace {
 
         real_t                   fix_fraction      = 0.0_F;
         real_t                   prev_cost         = limits<real_t>::max();
-        CoverCounters<>          row_coverage      = {};
+        CoverCounters            row_coverage      = {};
         std::vector<CidxAndCost> gap_contributions = {};  // Delta values in the paper
 
 

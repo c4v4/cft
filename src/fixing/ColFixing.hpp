@@ -24,7 +24,7 @@
 #include "fixing/FixingData.hpp"
 #include "greedy/Greedy.hpp"
 #include "utils/Chrono.hpp"
-#include "utils/coverage.hpp"
+#include "utils/CoverCounters.hpp"
 #include "utils/print.hpp"
 
 namespace cft {
@@ -35,7 +35,7 @@ class ColFixing {
     // Caches
     std::vector<cidx_t> cols_to_fix;    // Columns indexes to fix
     IdxsMaps            old2new;        // Indexes mappings between before/after fixing
-    CoverCounters<>     row_coverage;   // Row coverage for column fixing
+    CoverCounters       row_coverage;   // Row coverage for column fixing
     std::vector<real_t> reduced_costs;  // Reduced costs of columns
 
 public:
@@ -71,7 +71,7 @@ public:
 private:
     static void _select_non_overlapping_cols(Instance const&            inst,          // in
                                              std::vector<real_t> const& lagr_mult,     // in
-                                             CoverCounters<>&           row_coverage,  // cache
+                                             CoverCounters&             row_coverage,  // cache
                                              std::vector<cidx_t>&       cols_to_fix,   // out
                                              std::vector<real_t>&       reduced_costs  // out
     ) {
