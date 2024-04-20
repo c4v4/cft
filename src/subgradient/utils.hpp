@@ -75,22 +75,21 @@ namespace cft { namespace local { namespace {
         }
 
         // Evaluates the exit condition by comparing the current best lower-bound with the
-        // previous period's best lower-bound. Returns the original CFT exit condition based on the
-        // absolute and relative improvement in the lower-bound.
+        // previous period's best lower-bound.
         bool operator()(Environment const& env, size_t iter, real_t lower_bound) {
             if (iter == next_update_iter) {
                 next_update_iter += period;
-                real_t abs_improvement      = lower_bound - prev_lower_bound;
-                real_t relative_improvement = abs_improvement / lower_bound;
-                prev_lower_bound            = lower_bound;
+                real_t abs_improvement = lower_bound - prev_lower_bound;
+                real_t rel_improvement = abs_improvement / lower_bound;
+                prev_lower_bound       = lower_bound;
                 return abs_improvement < env.abs_subgrad_exit &&
-                       relative_improvement < env.rel_subgrad_exit;
+                       rel_improvement < env.rel_subgrad_exit;
             }
             return false;
         }
     };
 
-    // Functor managing the pricing frequency.
+    // Functional object managing the pricing frequency.
     class PricingManager {
         size_t period;
         size_t next_update_iter;

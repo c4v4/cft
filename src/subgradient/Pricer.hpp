@@ -24,35 +24,32 @@
 #include "utils/SortedArray.hpp"
 #include "utils/sort.hpp"
 
-constexpr int mincov = 5;
-
 namespace cft {
 
 class Pricer {
+    static constexpr int mincov = 5;
+
     // Caches.
     std::vector<real_t> reduced_costs;
     std::vector<bool>   taken_idxs;
 
 public:
-    real_t operator()(Instance const&            inst,
-                      std::vector<real_t> const& lagr_mult,
-                      InstAndMap&                core) {
+    real_t operator()(Instance const&            inst,       // in
+                      std::vector<real_t> const& lagr_mult,  // in
+                      InstAndMap&                core        // out
+    ) {
+        ridx_t const nrows = rsize(inst.rows);
+        cidx_t const ncols = csize(inst.cols);
 
-        if (core.inst.cols.empty() || core.inst.rows.empty()) {
-            clear_inst(core.inst);
-            core.col_map.clear();
+        assert(nrows == rsize(lagr_mult));
+        if (nrows == 0 || ncols == 0)
             return 0.0_F;
-        }
-
-        assert(!core.inst.cols.empty());
-        ridx_t nrows = rsize(inst.rows);
-        cidx_t ncols = csize(inst.cols);
 
         core.col_map.clear();
-        _prepare_caches(ncols, reduced_costs, taken_idxs);
+        taken_idxs.assign(ncols, false);
 
         auto real_lower_bound = _compute_col_reduced_costs(inst, lagr_mult, reduced_costs);
-        _select_c1_col_idxs(inst, reduced_costs, as_cidx(5 * nrows), core.col_map, taken_idxs);
+        _select_c1_col_idxs(inst, reduced_costs, core.col_map, taken_idxs);
         _select_c2_col_idxs(inst, reduced_costs, core.col_map, taken_idxs);
 
         _init_partial_instance(inst, core.col_map, core.inst);
@@ -62,21 +59,15 @@ public:
     }
 
 private:
-    static void _prepare_caches(cidx_t               ncols,
-                                std::vector<real_t>& reduced_costs,
-                                std::vector<bool>&   taken_idxs) {
-        reduced_costs.resize(ncols);
-        taken_idxs.assign(ncols, false);
-    }
-
-    static real_t _compute_col_reduced_costs(Instance const&            inst,
-                                             std::vector<real_t> const& lagr_mult,
-                                             std::vector<real_t>&       reduced_costs) {
-
+    static real_t _compute_col_reduced_costs(Instance const&            inst,          // in
+                                             std::vector<real_t> const& lagr_mult,     // in
+                                             std::vector<real_t>&       reduced_costs  // out
+    ) {
         real_t real_lower_bound = 0.0_F;
         for (real_t u : lagr_mult)
             real_lower_bound += u;
 
+        reduced_costs.resize(csize(inst.cols));
         for (cidx_t j = 0_C; j < csize(inst.cols); ++j) {
             reduced_costs[j] = inst.costs[j];
             for (ridx_t i : inst.cols[j])
@@ -88,17 +79,18 @@ private:
         return real_lower_bound;
     }
 
-    static void _select_c1_col_idxs(Instance const&            inst,
-                                    std::vector<real_t> const& reduced_costs,
-                                    cidx_t                     maxsize,
-                                    std::vector<cidx_t>&       idxs,
-                                    std::vector<bool>&         taken_idxs) {
+    static void _select_c1_col_idxs(Instance const&            inst,           // in
+                                    std::vector<real_t> const& reduced_costs,  // in
+                                    std::vector<cidx_t>&       idxs,           // inout
+                                    std::vector<bool>&         taken_idxs      // inout
+    ) {
         assert(idxs.empty());
 
         for (cidx_t j = 0_C; j < csize(inst.cols); ++j)
             if (reduced_costs[j] < 0.1_F)
                 idxs.push_back(j);
 
+        cidx_t const maxsize = as_cidx(5 * rsize(inst.rows));
         if (csize(idxs) > maxsize) {
             cft::nth_element(idxs, maxsize - 1, [&](cidx_t i) { return reduced_costs[i]; });
             idxs.resize(maxsize);
@@ -108,11 +100,11 @@ private:
             taken_idxs[j] = true;
     }
 
-    static void _select_c2_col_idxs(Instance const&            inst,
-                                    std::vector<real_t> const& reduced_costs,
-                                    std::vector<cidx_t>&       idxs,
-                                    std::vector<bool>&         taken_idxs) {
-
+    static void _select_c2_col_idxs(Instance const&            inst,           // in
+                                    std::vector<real_t> const& reduced_costs,  // in
+                                    std::vector<cidx_t>&       idxs,           // inout
+                                    std::vector<bool>&         taken_idxs      // inout
+    ) {
         ridx_t const nrows = rsize(inst.rows);
 
         auto heap = make_custom_key_sorted_array<cidx_t, mincov>(
@@ -120,7 +112,7 @@ private:
 
         for (ridx_t i = 0_R; i < nrows; ++i) {
             heap.clear();
-            for (cidx_t const j : inst.rows[i])
+            for (cidx_t j : inst.rows[i])
                 heap.try_insert(j);
             for (cidx_t j : heap) {
                 if (!taken_idxs[j]) {
@@ -131,10 +123,10 @@ private:
         }
     }
 
-    static void _init_partial_instance(Instance const&            inst,
-                                       std::vector<cidx_t> const& idxs,
-                                       Instance&                  core_inst) {
-
+    static void _init_partial_instance(Instance const&            inst,      // in
+                                       std::vector<cidx_t> const& idxs,      // in
+                                       Instance&                  core_inst  // inout
+    ) {
         // Clean up the current core instance.
         core_inst.cols.clear();
         core_inst.rows.clear();

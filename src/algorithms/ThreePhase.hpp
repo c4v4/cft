@@ -59,7 +59,7 @@ public:
         auto tot_timer  = Chrono<>();
         auto unfixed_lb = limits<real_t>::min();
         _three_phase_setup(inst, greedy, sol, best_sol, core, lagr_mult, fixing);
-        
+
         CFT_IF_DEBUG(auto inst_copy = inst);
         for (size_t iter_counter = 0; !inst.rows.empty(); ++iter_counter) {
             auto timer = Chrono<>();
@@ -67,7 +67,7 @@ public:
 
             real_t step_size = init_step_size;
             auto   cutoff    = best_sol.cost - fixing.fixed_cost;
-            auto   real_lb   = subgrad(env, inst, cutoff, core, step_size, lagr_mult);
+            auto   real_lb   = subgrad(env, inst, cutoff, pricer, core, step_size, lagr_mult);
 
             if (iter_counter == 0) {
                 unfixed_lagr_mult = lagr_mult;
