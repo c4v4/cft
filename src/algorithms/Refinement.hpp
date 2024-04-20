@@ -109,7 +109,7 @@ inline Solution run(Environment const& env,                // in
     ridx_t const nrows = rsize(orig_inst.rows);
 
     auto inst     = orig_inst;
-    auto best_sol = Solution();
+    auto best_sol = Solution{{}, limits<real_t>::max()};
 
     if (!warmstart_sol.idxs.empty())
         best_sol = warmstart_sol;
@@ -126,7 +126,7 @@ inline Solution run(Environment const& env,                // in
         auto result_3p = three_phase(env, inst);
         if (result_3p.sol.cost + fixing.fixed_cost < best_sol.cost) {
             local::from_fixed_to_unfixed_sol(result_3p.sol, fixing, best_sol);
-            CFT_IF_DEBUG(check_solution(orig_inst, best_sol));
+            CFT_IF_DEBUG(check_inst_solution(orig_inst, best_sol));
         }
 
         if (iter_counter == 0) {

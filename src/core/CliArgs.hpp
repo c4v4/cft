@@ -86,12 +86,12 @@ namespace local { namespace {
         auto out_name = cft::StringView(inst_path);
 
         // Remove path if present
-        auto slash_pos = out_name.find_last_if([](char c) { return c == '/' || c == '\\'; });
+        auto slash_pos = out_name.find_last_true([](char c) { return c == '/' || c == '\\'; });
         if (slash_pos != out_name.size())
             out_name = out_name.get_substr(slash_pos + 1, out_name.size());
 
         // Remove extension
-        out_name = out_name.get_substr(0, out_name.find_last_if([](char c) { return c == '.'; }));
+        out_name = out_name.get_substr(0, out_name.find_last_true([](char c) { return c == '.'; }));
 
         assert(!out_name.empty());
         return out_name.to_cpp_string() += ".sol";
@@ -159,15 +159,12 @@ inline Environment parse_cli_args(int argc, char const** argv) {
             env.sol_path = args[++a];
         else if (arg == CFT_INITSOL_FLAG || arg == CFT_INITSOL_LONG_FLAG)
             env.initsol_path = args[++a];
-        else if (arg == CFT_SEED_FLAG || arg == CFT_SEED_LONG_FLAG) {
-            env.seed = string_to<uint64_t>::parse(args[++a]);
-            env.rnd  = {env.seed};
-        } else if (arg == CFT_TLIM_FLAG || arg == CFT_TLIM_LONG_FLAG)
+        else if (arg == CFT_SEED_FLAG || arg == CFT_SEED_LONG_FLAG)
+            env.rnd = {env.seed = string_to<uint64_t>::parse(args[++a])};
+        else if (arg == CFT_TLIM_FLAG || arg == CFT_TLIM_LONG_FLAG)
             env.time_limit = string_to<double>::parse(args[++a]);
         else if (arg == CFT_VERBOSE_FLAG || arg == CFT_VERBOSE_LONG_FLAG)
-            env.verbose = (a + 1 < args.size() && std::isdigit(args[a + 1][0]) != 0
-                               ? string_to<uint64_t>::parse(args[++a])
-                               : 5);
+            env.verbose = string_to<uint64_t>::parse(args[++a]);
         else if (arg == CFT_EPSILON_FLAG || arg == CFT_EPSILON_LONG_FLAG)
             env.epsilon = string_to<real_t>::parse(args[++a]);
         else if (arg == CFT_GITERS_FLAG || arg == CFT_GITERS_LONG_FLAG)

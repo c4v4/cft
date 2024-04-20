@@ -21,13 +21,15 @@
 namespace cft {
 TEST_CASE("parse_cli_args parses command line arguments correctly", "[parse_cli_args]") {
     char const* argv[] = {
-        "program_name", "-i",   "input.txt", "-p",   "rail", "-o", "output.sol", "-s", "12345",
-        "-t",           "10.0", "-v",        "-e",   "1E-3", "-g", "100",        "-b", "0.5",
-        "-a",           "1e-2", "-r",        "1E-1", "-h",   "-w", "test.sol"};
+        "program_name", "-i",   "input.txt", "-p", "rail", "-o",   "output.sol", "-s",      "12345",
+        "-t",           "10.0", "-v",        " 5", "-e",   "1E-3", "-g",         "100",     "-b",
+        "0.5",          "-a",   "1e-2",      "-r", "1E-1", "-h",   "-w",         "test.sol"};
 
     int argc = sizeof(argv) / sizeof(argv[0]);
 
     SECTION("parse_cli_args parses command line arguments correctly") {
+        std::freopen("/dev/null", "w", stdout);  // Redirect stdout to /dev/null
+
         auto env = parse_cli_args(argc, argv);
 
         REQUIRE(env.inst_path == "input.txt");
@@ -42,8 +44,10 @@ TEST_CASE("parse_cli_args parses command line arguments correctly", "[parse_cli_
         REQUIRE(env.beta == 0.5_F);
         REQUIRE(env.abs_subgrad_exit == 0.01_F);
         REQUIRE(env.rel_subgrad_exit == 0.1_F);
+
         REQUIRE_NOTHROW(print_cli_help_msg());
         REQUIRE_NOTHROW(print_arg_values(env));
+        std::freopen("/dev/tty", "w", stdout);  // Redirect stdout back to /dev/tty
     }
 }
 
@@ -78,6 +82,7 @@ TEST_CASE("parse_cli_args parses command line arguments correctly (long)", "[par
     int argc = sizeof(argv) / sizeof(argv[0]);
 
     SECTION("parse_cli_args parses command line arguments correctly") {
+        std::freopen("/dev/null", "w", stdout);  // Redirect stdout to /dev/null
         auto env = parse_cli_args(argc, argv);
 
         REQUIRE(env.inst_path == "input.txt");
@@ -92,8 +97,10 @@ TEST_CASE("parse_cli_args parses command line arguments correctly (long)", "[par
         REQUIRE(env.beta == 0.5_F);
         REQUIRE(env.abs_subgrad_exit == 0.01_F);
         REQUIRE(env.rel_subgrad_exit == 0.1_F);
+
         REQUIRE_NOTHROW(print_cli_help_msg());
         REQUIRE_NOTHROW(print_arg_values(env));
+        std::freopen("/dev/tty", "w", stdout);  // Redirect stdout back to /dev/tty
     }
 }
 }  // namespace cft

@@ -99,7 +99,9 @@ Diagnostics:
 
             cppcoreguidelines-pro-type-union-access, # custom variant-like
 
-            readability-use-anyofallof
+            readability-use-anyofallof,
+
+            cppcoreguidelines-owning-memory
             ]
             
 InlayHints:

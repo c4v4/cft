@@ -39,13 +39,9 @@ struct NoOp {
     }
 };
 
-////////////////////////////////////// CHECKED CAST //////////////////////////////////////
-// We want to wrap static_cast for numeric values, checking that some properties are satisfied:
-// 1. If we start from an integral type, the round-trip is lossless.
-// 2. The sign is preserved between integrals casts.
-// 3. The value is in range for the target type for floating point casts.
-//
-// NOTE: this is NOT a `narrow-cast`, we might lose information with floating point values.
+// Remove const, volatile and reference from a type
+template <typename T>
+using no_cvr = typename std::remove_reference<typename std::remove_cv<T>::type>::type;
 
 // SFINAE helpers, activate overload if T is integral or floating point
 template <typename T>
@@ -54,6 +50,13 @@ template <typename T>
 using requires_floating_point = typename std::enable_if<std::is_floating_point<T>::value,
                                                         bool>::type;
 
+////////////////////////////////////// CHECKED CAST //////////////////////////////////////
+// We want to wrap static_cast for numeric values, checking that some properties are satisfied:
+// 1. If we start from an integral type, the round-trip is lossless.
+// 2. The sign is preserved between integrals casts.
+// 3. The value is in range for the target type for floating point casts.
+//
+// NOTE: this is NOT a `narrow-cast`, information might be lost with floating points.
 // NOTE: integral -> floating point must be in the range where the floating point can represent the
 // integral with precision at least 1
 template <typename ResT, typename T, requires_integral<T> = true>
@@ -70,6 +73,8 @@ constexpr ResT checked_cast(T val) {
     return assert(limits<ResT>::min() <= val && val <= limits<ResT>::max()),  // Range check
            static_cast<ResT>(val);
 }
+
+///////////// COMPARISON STUFF /////////////
 
 template <typename T, typename LT, typename UT>
 T clamp(T const& v, LT const& lb, UT const& ub) {
@@ -105,6 +110,8 @@ T1 min(T1 v1, T2 v2, Ts... tail) {
     return v1 <= mtail ? v1 : mtail;
 }
 
+///////////// RANGES STUFF /////////////
+
 template <typename C>
 size_t size(C const& container) {
     return container.size();
@@ -114,9 +121,6 @@ template <typename C, size_t N>
 constexpr size_t size(C const (& /*unused*/)[N]) {
     return N;
 }
-
-template <typename T>
-using no_cvr = typename std::remove_reference<typename std::remove_cv<T>::type>::type;
 
 template <typename C>
 using container_iterator_t = decltype(std::begin(std::declval<C&>()));
@@ -142,6 +146,7 @@ bool all(T const& container, O op) {
     return true;
 }
 
+// Return minimum value of a non-empty range
 template <typename C, typename K = IdentityFtor>
 container_value_type_t<C> range_min(C const& container, K key = {}) {
     assert(cft::size(container) > 0ULL);
@@ -152,15 +157,7 @@ container_value_type_t<C> range_min(C const& container, K key = {}) {
     return min_elem;
 }
 
-template <typename C, typename K = IdentityFtor>
-size_t argmin(C const& container, K key = {}) {
-    size_t min_i = 0;
-    for (size_t i = 1ULL; i < cft::size(container); ++i)
-        if (key(container[i]) < key(container[min_i]))
-            min_i = i;
-    return min_i;
-}
-
+// Removes elements from a container based on a given predicate, and resizes the container.
 template <typename C, typename Op>
 void remove_if(C& container, Op op) {
     size_t w = 0;

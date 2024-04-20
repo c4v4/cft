@@ -30,6 +30,7 @@ using sec     = std::chrono::seconds;
 using minutes = std::chrono::minutes;
 using hours   = std::chrono::hours;
 
+// Chrono class to measure time elapsed since the start of the timer
 template <typename UnitT = usec>
 struct Chrono {
     using high_res_clock = std::chrono::steady_clock;

@@ -100,3 +100,14 @@ Other rules:
 ### Library Code
 
 Not much to say here, library code tries to adhere to _user-code_ rules, but has the freedom to break some of them for the sake of avoiding bugs or making the abstraction more intuitive/easier to use. Factory methods are often used to have a hand-made CTAD (which was not present in C++11). Templates are used but the meta-programming is kept at a low level.
+
+### Function Parameters
+
+Looking around you might notice that most function parameters are annotated, although intuitive,
+ here is the meaning:
+
+- **`in`**: Input, read-only parameters.
+- **`out`**: Ouput parameter, previous state is ignored and replaced with a new state.
+- **`inout`**: Input/output parameter. Both previous and new states are relevant.
+- **`cache`**: Cache object to avoid costly operations (usually memory allocations). Input and output states are ignored.
+

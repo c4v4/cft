@@ -37,6 +37,18 @@ struct Instance {
     std::vector<real_t>              costs;
 };
 
+// For core instance we only need column mappings, since the rows remain the same.
+struct InstAndMap {
+    Instance            inst;
+    std::vector<cidx_t> col_map;
+};
+
+// Generic mappings between instances of columns and rows indexes.
+struct IdxsMaps {
+    std::vector<cidx_t> col_map;
+    std::vector<ridx_t> row_map;
+};
+
 #ifndef NDEBUG
 inline void col_and_rows_check(SparseBinMat<ridx_t> const&             cols,
                                std::vector<std::vector<cidx_t>> const& rows) {
@@ -55,9 +67,8 @@ inline void col_and_rows_check(SparseBinMat<ridx_t> const&             cols,
     }
 }
 
-// TODO(any): find a better place for this function.
-inline void check_solution(Instance const& inst, Solution const& sol) {
-    ridx_t nrows = rsize(inst.rows);
+inline void check_inst_solution(Instance const& inst, Solution const& sol) {
+    ridx_t const nrows = rsize(inst.rows);
 
     // check coverage
     ridx_t covered_rows = 0_R;
@@ -75,9 +86,10 @@ inline void check_solution(Instance const& inst, Solution const& sol) {
 #endif
 
 // Completes instance initialization by creating rows
-inline void fill_rows_from_cols(SparseBinMat<ridx_t> const&       cols,
-                                ridx_t                            nrows,
-                                std::vector<std::vector<cidx_t>>& rows) {
+inline void fill_rows_from_cols(SparseBinMat<ridx_t> const&       cols,   // in
+                                ridx_t                            nrows,  // in
+                                std::vector<std::vector<cidx_t>>& rows    // out
+) {
     rows.resize(nrows);
     for (auto& row : rows) {
         row.clear();
@@ -92,29 +104,22 @@ inline void fill_rows_from_cols(SparseBinMat<ridx_t> const&       cols,
 
 // Copy a column from one instance to another pushing it back as last column.
 // The main utility of this function is to avoid forgetting somethign in the copy.
-inline void push_back_col_from(Instance const& src_inst, cidx_t j, Instance& dest_inst) {
+inline void push_back_col_from(Instance const& src_inst,  // in
+                               cidx_t          j,         // in
+                               Instance&       dest_inst  // inout
+) {
     dest_inst.cols.push_back(src_inst.cols[j]);
     dest_inst.costs.push_back(src_inst.costs[j]);
 }
 
 // Clear all data of an instance creating an empty instance inplace.
-inline void clear_inst(Instance& inst) {
+inline void clear_inst(Instance& inst  // out
+) {
     inst.cols.clear();
     inst.rows.clear();
     inst.costs.clear();
 }
 
-// For core instance we only need column mappings, since the rows remain the same.
-struct InstAndMap {
-    Instance            inst;
-    std::vector<cidx_t> col_map;
-};
-
-// Generic mappings between instances of columns and rows indexes.
-struct IdxsMaps {
-    std::vector<cidx_t> col_map;
-    std::vector<ridx_t> row_map;
-};
 }  // namespace cft
 
 

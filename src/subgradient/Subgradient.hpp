@@ -159,7 +159,7 @@ public:
             if (greedy_sol.cost <= best_sol.cost - env.epsilon) {
                 best_sol = greedy_sol;
                 print<4>(env, "HEUR> {:4}: Improved solution {:.2f}\n", iter, best_sol.cost);
-                CFT_IF_DEBUG(check_solution(core_inst, best_sol));
+                CFT_IF_DEBUG(check_inst_solution(core_inst, best_sol));
             }
 
             if (sqr_norm < 0.999_F) {  // Squared norm is an integer
