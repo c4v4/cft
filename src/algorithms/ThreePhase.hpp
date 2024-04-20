@@ -27,52 +27,40 @@
 
 namespace cft {
 
+struct ThreePhaseResult {
+    Solution            sol;                // Best feasible solution found
+    std::vector<real_t> unfixed_lagr_mult;  // Lagrangian multipliers before the first fixing
+    real_t              unfixed_lb;         // Lower bound before the first fixing
+};
+
 class ThreePhase {
     static constexpr real_t init_step_size = 0.1_F;
 
-    Subgradient subgrad;
-    Greedy      greedy;
-    ColFixing   col_fixing;
+    // Caches
+    Subgradient         subgrad;            // Subgradient functor
+    Greedy              greedy;             // Greedy functor
+    ColFixing           col_fixing;         // Column fixing functor
+    Pricer              pricer;             // Pricing functor
+    FixingData          fixing;             // Column fixing data
+    Solution            sol;                // Current solution
+    Solution            best_sol;           // Best solution
+    InstAndMap          core;               // Core instance
+    std::vector<real_t> lagr_mult;          // Lagrangian multipliers
+    std::vector<real_t> unfixed_lagr_mult;  // Best multipliers before the first fixing
 
 public:
-    struct ThreePhaseResult {
-        Solution sol;
+    // 3-phase algorithm consisting in subgradient, greedy and column fixing.
+    // NOTE: inst gets progressively fixed inplace, loosing its original state.
+    ThreePhaseResult operator()(Environment const& env,  // in
+                                Instance&          inst  // in/cache
+    ) {
+        ridx_t const orig_nrows = rsize(inst.rows);  // Original number of rows for ColFixing
 
-        // TODO(any): consider putting together multipliers and LB in a struct
-        // TODO(any): opposite of the previous todo, the LB can be computed on-the-fly in the
-        // refinement procedure starting from the multipliers (but this probably means keeping a
-        // useless copy of instance only for this computation, so maybe it's better to store it
-        // here)
-        std::vector<real_t> unfixed_lagr_mult;
-        real_t              unfixed_lb;
-    };
-
-    ThreePhaseResult operator()(Environment const& env, Instance& inst) {
-        constexpr ridx_t min_row_coverage = 5_R;
-
-        auto tot_timer = Chrono<>();
-
-        auto core = _build_tentative_core_instance(inst, min_row_coverage);
-
-        // First iter data (without fixing) needed by Refinement
-        auto   unfixed_lagr_mult = std::vector<real_t>();
-        real_t unfixed_lb        = limits<real_t>::min();
-        ridx_t orig_nrows        = rsize(inst.rows);  // Save original number of rows
-
-        auto fixing    = FixingData();
-        auto pricer    = Pricer();
-        auto lagr_mult = std::vector<real_t>(rsize(core.inst.rows), 0.0_F);
-        auto sol       = Solution();
-        greedy(core.inst, lagr_mult, core.inst.costs, sol);
-
-        _compute_greedy_multipliers(core.inst, lagr_mult);
-        make_identity_fixing_data(csize(inst.cols), rsize(inst.rows), fixing);
-
-        auto best_sol = Solution();
-        _from_core_to_unfixed_sol(sol, core, fixing, best_sol);
-        CFT_IF_DEBUG(check_solution(inst, best_sol));
+        auto tot_timer  = Chrono<>();
+        auto unfixed_lb = limits<real_t>::min();
+        _three_phase_setup(inst, greedy, sol, best_sol, core, lagr_mult, fixing);
+        
         CFT_IF_DEBUG(auto inst_copy = inst);
-
         for (size_t iter_counter = 0; !inst.rows.empty(); ++iter_counter) {
             auto timer = Chrono<>();
             print<3>(env, "3PHS> Three-phase iteration {}:\n", iter_counter);
@@ -120,10 +108,29 @@ public:
                  "3PHS> Best solution: {:.2f}, time: {:.2f}s\n\n",
                  best_sol.cost,
                  tot_timer.elapsed<sec>());
-        return {std::move(best_sol), std::move(unfixed_lagr_mult), unfixed_lb};
+        return {best_sol, unfixed_lagr_mult, unfixed_lb};
     }
 
 private:
+    static void _three_phase_setup(Instance const&      inst,       // in
+                                   Greedy&              greedy,     // cache
+                                   Solution&            sol,        // cache
+                                   Solution&            best_sol,   // out
+                                   InstAndMap&          core,       // out
+                                   std::vector<real_t>& lagr_mult,  // out
+                                   FixingData&          fixing      // out
+    ) {
+        _build_tentative_core_instance(inst, core);         // init core instance
+        _compute_greedy_multipliers(core.inst, lagr_mult);  // compute initial multipliers
+        make_identity_fixing_data(csize(inst.cols), rsize(inst.rows), fixing);  // init fixing
+
+        // init sol
+        sol.idxs.clear();
+        greedy(core.inst, lagr_mult, core.inst.costs, sol);
+
+        _from_core_to_unfixed_sol(sol, core, fixing, best_sol);  // init best_sol
+    }
+
     // Transform a solution of a core instance (i.e., where both fixing and pricing have been
     // applied) to the original instance whole without fixing.
     static void _from_core_to_unfixed_sol(Solution const&   core_sol,    // in
@@ -141,7 +148,9 @@ private:
     }
 
     // Greedily creates lagrangian multipliers for the given instance.
-    static void _compute_greedy_multipliers(Instance const& inst, std::vector<real_t>& lagr_mult) {
+    static void _compute_greedy_multipliers(Instance const&      inst,      // in
+                                            std::vector<real_t>& lagr_mult  // out
+    ) {
 
         lagr_mult.assign(rsize(inst.rows), limits<real_t>::max());
         for (ridx_t i = 0_R; i < rsize(inst.rows); ++i)
@@ -152,42 +161,46 @@ private:
     }
 
     // Defines lagrangian multipliers as a perturbation of the given ones.
-    static void _perturb_lagr_multipliers(std::vector<real_t>& lagr_mult, prng_t& rnd) {
+    static void _perturb_lagr_multipliers(std::vector<real_t>& lagr_mult,  // inout
+                                          prng_t&              rnd         // inout
+    ) {
         for (real_t& u : lagr_mult) {
             u *= rnd_real(rnd, 0.9_F, 1.1_F);
             assert(std::isfinite(u) && "Multiplier is not finite");
         }
     }
 
-    static InstAndMap _build_tentative_core_instance(Instance const& inst,
-                                                     size_t          min_row_coverage) {
-        ridx_t nrows         = rsize(inst.rows);
-        auto   core_inst     = Instance{};
-        auto   selected_cols = std::vector<cidx_t>();
+    static void _build_tentative_core_instance(Instance const& inst,      // in
+                                               InstAndMap&     core_inst  // out
+    ) {
+        static constexpr cidx_t min_row_coverage = 5_C;
+        ridx_t const            nrows            = rsize(inst.rows);
+
+        clear_inst(core_inst.inst);
+        core_inst.col_map.clear();
 
         // Select the first n columns of each row (there might be duplicates)
-        selected_cols.reserve(nrows * min_row_coverage);
+        core_inst.col_map.reserve(as_cidx(nrows) * min_row_coverage);
         for (auto const& row : inst.rows)
             for (size_t n = 0; n < min(row.size(), min_row_coverage); ++n) {
                 cidx_t j = row[n];  // column covering row i
-                selected_cols.push_back(j);
+                core_inst.col_map.push_back(j);
             }
 
         // There might be duplicates, so let's sort the column list to detect them
-        cft::sort(selected_cols);
+        cft::sort(core_inst.col_map);
         cidx_t w     = 0_C;
         cidx_t old_j = removed_cidx;  // To detect duplicates
-        for (cidx_t j : selected_cols) {
+        for (cidx_t j : core_inst.col_map) {
             if (j == old_j)
                 continue;  // Skip duplicate
-            old_j              = j;
-            selected_cols[w++] = j;                  // Store 1 column per set of duplicates
-            push_back_col_from(inst, j, core_inst);  // Add column to core_inst
+            old_j                  = j;
+            core_inst.col_map[w++] = j;                   // Store 1 column per set of duplicates
+            push_back_col_from(inst, j, core_inst.inst);  // Add column to core_inst
         }
-        selected_cols.resize(w);
+        core_inst.col_map.resize(w);
 
-        fill_rows_from_cols(core_inst.cols, nrows, core_inst.rows);
-        return {std::move(core_inst), std::move(selected_cols)};
+        fill_rows_from_cols(core_inst.inst.cols, nrows, core_inst.inst.rows);
     }
 };
 }  // namespace cft
