@@ -33,13 +33,6 @@
 #define CFT_IF_DEBUG(...) __VA_ARGS__
 #endif
 
-// Noinline attribute to help profiling specific functions
-#if defined(__GNUC__) || defined(__clang__)
-#define CFT_NOINLINE __attribute__((noinline))
-#elif defined(_MSC_VER)
-#define CFT_NOINLINE __declspec(noinline)
-#endif
-
 // AVAILABLE PARSERS
 #define CFT_RAIL_PARSER "RAIL"
 #define CFT_SCP_PARSER  "SCP"
@@ -132,7 +125,7 @@ struct Environment {
     real_t      rel_subgrad_exit = 0.001_F;  // Minimum LBs gap to trigger subradient termination
 
     // Working params
-    Chrono<>       timer = {};   // Timer to keep track of the elapsed time
+    Chrono<>       timer = {};   // Keeps track of the elapsed time
     mutable prng_t rnd   = {0};  // Random number generator
 
 

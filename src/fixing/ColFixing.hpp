@@ -61,7 +61,7 @@ public:
         _apply_maps_to_lagr_mult(old2new, lagr_mult);
 
         print<4>(env,
-                 "CFIX   > Fixing {} columns ({} + {}), time {:.2f}s\n",
+                 "CFIX> Fixing {} columns ({} + {}), time {:.2f}s\n\n",
                  csize(cols_to_fix.idxs),
                  no_overlap_ncols,
                  csize(cols_to_fix.idxs) - no_overlap_ncols,

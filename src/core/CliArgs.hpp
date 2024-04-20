@@ -100,21 +100,21 @@ namespace local { namespace {
 }  // namespace local
 
 inline void print_arg_values(Environment const& env) {
-    print<2>(env, " {:20} = {}\n", CFT_INST_FLAG "," CFT_INST_LONG_FLAG, env.inst_path);
-    print<2>(env, " {:20} = {}\n", CFT_PARSER_FLAG "," CFT_PARSER_LONG_FLAG, env.parser);
-    print<2>(env, " {:20} = {}\n", CFT_OUTSOL_FLAG "," CFT_OUTSOL_LONG_FLAG, env.sol_path);
-    print<2>(env, " {:20} = {}\n", CFT_INITSOL_FLAG "," CFT_INITSOL_LONG_FLAG, env.initsol_path);
-    print<2>(env, " {:20} = {}\n", CFT_SEED_FLAG "," CFT_SEED_LONG_FLAG, env.seed);
-    print<2>(env, " {:20} = {}\n", CFT_TLIM_FLAG "," CFT_TLIM_LONG_FLAG, env.time_limit);
-    print<2>(env, " {:20} = {}\n", CFT_VERBOSE_FLAG "," CFT_VERBOSE_LONG_FLAG, env.verbose);
-    print<2>(env, " {:20} = {}\n", CFT_EPSILON_FLAG "," CFT_EPSILON_LONG_FLAG, env.epsilon);
-    print<2>(env, " {:20} = {}\n", CFT_GITERS_FLAG "," CFT_GITERS_LONG_FLAG, env.heur_iters);
-    print<2>(env, " {:20} = {}\n", CFT_BETA_FLAG "," CFT_BETA_LONG_FLAG, env.beta);
-    print<2>(env,
+    print<3>(env, " {:20} = {}\n", CFT_INST_FLAG "," CFT_INST_LONG_FLAG, env.inst_path);
+    print<3>(env, " {:20} = {}\n", CFT_PARSER_FLAG "," CFT_PARSER_LONG_FLAG, env.parser);
+    print<3>(env, " {:20} = {}\n", CFT_OUTSOL_FLAG "," CFT_OUTSOL_LONG_FLAG, env.sol_path);
+    print<3>(env, " {:20} = {}\n", CFT_INITSOL_FLAG "," CFT_INITSOL_LONG_FLAG, env.initsol_path);
+    print<3>(env, " {:20} = {}\n", CFT_SEED_FLAG "," CFT_SEED_LONG_FLAG, env.seed);
+    print<3>(env, " {:20} = {}\n", CFT_TLIM_FLAG "," CFT_TLIM_LONG_FLAG, env.time_limit);
+    print<3>(env, " {:20} = {}\n", CFT_VERBOSE_FLAG "," CFT_VERBOSE_LONG_FLAG, env.verbose);
+    print<3>(env, " {:20} = {}\n", CFT_EPSILON_FLAG "," CFT_EPSILON_LONG_FLAG, env.epsilon);
+    print<3>(env, " {:20} = {}\n", CFT_GITERS_FLAG "," CFT_GITERS_LONG_FLAG, env.heur_iters);
+    print<3>(env, " {:20} = {}\n", CFT_BETA_FLAG "," CFT_BETA_LONG_FLAG, env.beta);
+    print<3>(env,
              " {:20} = {}\n",
              CFT_ABSSGEXIT_FLAG "," CFT_ABSSGEXIT_LONG_FLAG,
              env.abs_subgrad_exit);
-    print<2>(env,
+    print<3>(env,
              " {:20} = {}\n\n",
              CFT_RELSGEXIT_FLAG "," CFT_RELSGEXIT_LONG_FLAG,
              env.rel_subgrad_exit);

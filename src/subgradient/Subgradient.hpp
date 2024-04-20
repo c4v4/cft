@@ -68,7 +68,7 @@ public:
         lagr_mult           = best_lagr_mult;
 
         print<4>(env,
-                 "SUBG   > Starting subgradient, LB {:.2f}, UB {:.2f}, cutoff {:.2f}\n",
+                 "SUBG> Starting subgradient, LB {:.2f}, UB {:.2f}, cutoff {:.2f}\n",
                  lb_sol.cost,
                  cutoff,
                  max_real_lb);
@@ -81,14 +81,14 @@ public:
             real_t sqr_norm = _compute_subgrad_sqr_norm(row_coverage);
 
             if (lb_sol.cost > best_core_lb) {
-                print<5>(env, "SUBG   > New best lower bound: {:.2f}\n", lb_sol.cost);
+                print<5>(env, "SUBG> {:4}: Current lower bound: {:.2f}\n", iter, lb_sol.cost);
                 best_core_lb   = lb_sol.cost;
                 best_lagr_mult = lagr_mult;
             }
 
             if (sqr_norm < 0.999_F) {  // Squared norm is an integer
                 // TODO(cava): is this check correct with a reduced solution? I don't think so...
-                print<4>(env, "SUBG   > Found optimal solution.\n");
+                print<4>(env, "SUBG> {:4}: Found optimal solution.\n", iter);
                 best_lagr_mult = lagr_mult;
                 break;
             }
@@ -105,11 +105,10 @@ public:
                 should_price.update(best_core_lb, real_lb, cutoff);
 
                 print<4>(env,
-                         "SUBG   > {:4}: Core LB: {:10.2f}  Real LB: {:10.2f}  Step size: "
-                         "{:.1}\n",
+                         "SUBG> {:4}: LB: {:8.2f}  Core LB: {:8.2f}  Step size: {:6.1}\n",
                          iter,
-                         best_core_lb,
                          real_lb,
+                         best_core_lb,
                          step_size);
 
                 best_real_lb = max(best_real_lb, real_lb);
@@ -120,7 +119,7 @@ public:
             }
         }
 
-        print<4>(env, "SUBG   > Subgradient ended in {:.2f}s\n", timer.elapsed<sec>());
+        print<4>(env, "SUBG> Subgradient ended in {:.2f}s\n\n", timer.elapsed<sec>());
         return best_real_lb;
     }
 
@@ -161,15 +160,16 @@ public:
 
             greedy_sol.idxs.clear();
             greedy(inst, lagr_mult, reduced_costs, greedy_sol, best_sol.cost);
+            print<5>(env, "HEUR> {:4}: Greedy solution {:.2f}\n", iter, best_sol.cost);
             if (greedy_sol.cost <= best_sol.cost - env.epsilon) {
                 best_sol = greedy_sol;
-                print<4>(env, "HEUR   > Improved current solution {:.2f}\n", best_sol.cost);
+                print<4>(env, "HEUR> {:4}: Improved solution {:.2f}\n", iter, best_sol.cost);
                 CFT_IF_DEBUG(check_solution(inst, best_sol));
             }
 
             if (sqr_norm < 0.999_F) {  // Squared norm is an integer
                 assert(best_core_lb <= best_sol.cost && "Optimum is above cutoff");
-                print<4>(env, "HEUR   > Found optimal solution.\n");
+                print<4>(env, "HEUR> {:4} Found optimal solution.\n", iter);
                 best_lagr_mult = lagr_mult;
                 return;
             }
@@ -181,7 +181,7 @@ public:
                 break;
         }
 
-        print<4>(env, "HEUR   > Heuristic phase ended in {:.2f}s\n", timer.elapsed<sec>());
+        print<4>(env, "HEUR> Heuristic phase ended in {:.2f}s\n\n", timer.elapsed<sec>());
     }
 
 private:
