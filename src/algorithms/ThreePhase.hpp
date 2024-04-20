@@ -126,7 +126,7 @@ private:
 
         // init sol
         sol.idxs.clear();
-        greedy(core.inst, lagr_mult, core.inst.costs, sol);
+        sol.cost = greedy(core.inst, lagr_mult, core.inst.costs, sol.idxs);
 
         _from_core_to_unfixed_sol(sol, core, fixing, best_sol);  // init best_sol
     }

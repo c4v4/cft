@@ -16,8 +16,9 @@
 #ifndef CFT_SRC_GREEDY_SCORES_HPP
 #define CFT_SRC_GREEDY_SCORES_HPP
 
-
+#ifndef NDEBUG
 #include <cmath>
+#endif
 
 #include "core/Instance.hpp"
 #include "core/cft.hpp"
@@ -38,7 +39,7 @@ struct ScoreKey {
     }
 };
 
-using score_subspan_t = Span<std::vector<ScoreData>::iterator>;
+using score_subspan_t = Span<container_iterator_t<std::vector<ScoreData>>>;
 
 struct Scores {
     std::vector<ScoreData> scores;        // column scores
@@ -48,9 +49,10 @@ struct Scores {
 };
 
 namespace local { namespace {
-    // Score computed as descrived in the paper. Mu represents the number of still uncovered rows
-    // that would be covered by the current column. Gamma represents the reduced cost of the column
-    // minus the component of the lagrangian multiplier associated with already covered rows.
+
+    // Score computed as described in the paper. Mu represents the number of rows that would be
+    // covered by the current column. Gamma represents the reduced cost of the column minus the
+    // component of the lagrangian multiplier associated with already covered rows.
     inline real_t compute_score(real_t gamma, ridx_t mu) {
         if (mu == 0_R)
             return limits<real_t>::max();
@@ -60,10 +62,11 @@ namespace local { namespace {
     }
 
     template <typename Hook>
-    void update_row_scores(std::vector<cidx_t> const& row,
-                           real_t                     i_lagr_mult,
-                           Scores&                    score_info,
-                           Hook                       update_hook) {
+    void update_row_scores(std::vector<cidx_t> const& row,          // in
+                           real_t                     i_lagr_mult,  // in
+                           Scores&                    score_info,   // inout
+                           Hook                       update_hook   // in
+    ) {
         auto& scores = score_info.scores;  // shorthand
 
         for (cidx_t j : row) {
@@ -84,9 +87,10 @@ namespace local { namespace {
 }  // namespace local
 
 // Initialize the scores for the greedy algorithm
-inline void complete_scores_init(Instance const& inst, Scores& score_info) {
-    assert(csize(score_info.gammas) == csize(inst.cols) && "Expected initialized gammas "
-                                                           "vector");
+inline void complete_scores_init(Instance const& inst,       // in
+                                 Scores&         score_info  // inout
+) {
+    assert(csize(score_info.gammas) == csize(inst.cols) && "Expected initialized gammas vector");
 
     cidx_t ncols = csize(inst.cols);
     score_info.scores.clear();
@@ -104,47 +108,49 @@ inline void complete_scores_init(Instance const& inst, Scores& score_info) {
     }
 }
 
-inline ridx_t update_covered(Instance const&            inst,
-                             Solution const&            sol,
-                             std::vector<real_t> const& lagr_mult,
-                             Scores&                    score_info,
-                             CoverCounters<>&           total_cover) {
-
+inline ridx_t update_covered(Instance const&            inst,         // in
+                             std::vector<cidx_t> const& sol,          // in
+                             std::vector<real_t> const& lagr_mult,    // in
+                             Scores&                    score_info,   // inout
+                             CoverCounters<>&           row_coverage  // inout
+) {
     ridx_t covered_rows = 0_R;
-    for (cidx_t j : sol.idxs)
-        covered_rows += as_ridx(total_cover.cover(inst.cols[j]));
+    for (cidx_t j : sol)
+        covered_rows += as_ridx(row_coverage.cover(inst.cols[j]));
 
-    for (ridx_t i = 0_R; i < rsize(total_cover); i++)
-        if (total_cover[i] > 0)
+    for (ridx_t i = 0_R; i < rsize(row_coverage); i++)
+        if (row_coverage[i] > 0)
             local::update_row_scores(inst.rows[i], lagr_mult[i], score_info, NoOp{});
 
     return covered_rows;
 }
 
 template <typename Hook>
-inline void update_changed_scores(Instance const&            inst,
-                                  std::vector<real_t> const& lagr_mult,
-                                  CoverCounters<> const&     total_cover,
-                                  cidx_t                     jstar,
-                                  Scores&                    score_info,
-                                  Hook                       update_hook) {
-
+inline void update_changed_scores(Instance const&            inst,          // in
+                                  std::vector<real_t> const& lagr_mult,     // in
+                                  CoverCounters<> const&     row_coverage,  // in
+                                  cidx_t                     jstar,         // in
+                                  Scores&                    score_info,    // inout
+                                  Hook                       update_hook    // in
+) {
     auto col_star = inst.cols[jstar];
     for (ridx_t i : col_star)
-        if (total_cover[i] == 0)
+        if (row_coverage[i] == 0)
             local::update_row_scores(inst.rows[i], lagr_mult[i], score_info, update_hook);
 }
 
-inline score_subspan_t get_good_scores(Scores& score_info, cidx_t amount) {
-    assert(amount > 0 && "Good size must be greater than 0");
+inline score_subspan_t select_good_scores(Scores& score_info,  // in
+                                          cidx_t  how_many     // in
+) {
+    assert(how_many > 0 && "Good size must be greater than 0");
     auto& scores = score_info.scores;  // shorthand
 
-    amount = std::min(amount, csize(scores));
-    cft::nth_element(scores, amount - 1, ScoreKey{});
+    how_many = std::min(how_many, csize(scores));
+    cft::nth_element(scores, how_many - 1, ScoreKey{});
     for (cidx_t s = 0_C; s < csize(scores); ++s)
         score_info.score_map[scores[s].idx] = s;
 
-    return make_span(scores.begin(), amount);
+    return make_span(scores.begin(), how_many);
 }
 }  // namespace cft
 

@@ -17,11 +17,11 @@
 #define CFT_SRC_GREEDY_GREEDY_HPP
 
 
-#include "Scores.hpp"
 #include "core/Instance.hpp"
 #include "core/cft.hpp"
 #include "greedy/redundancy.hpp"
 #include "utils/coverage.hpp"
+#include "greedy/scores.hpp"
 #include "utils/limits.hpp"
 #include "utils/utility.hpp"
 
@@ -44,52 +44,54 @@ public:
     // 2. Add the column with the best score (until the solution is "complete")
     // 3. If present, remove redundant columns from the solution
     // NOTE: a valid solution is returned only if its cost is below the cutoff_cost
-    void operator()(Instance const&            inst,
-                    std::vector<real_t> const& lagr_mult,
-                    std::vector<real_t> const& reduced_costs,
-                    Solution&                  sol,
-                    real_t                     cutoff_cost  = limits<real_t>::max(),
-                    cidx_t                     max_sol_size = limits<cidx_t>::max()) {
+    real_t operator()(Instance const&            inst,                                  // in
+                      std::vector<real_t> const& lagr_mult,                             // in
+                      std::vector<real_t> const& reduced_costs,                         // in
+                      std::vector<cidx_t>&       sol,                                   // out
+                      real_t                     cutoff_cost  = limits<real_t>::max(),  // in
+                      cidx_t                     max_sol_size = limits<cidx_t>::max()   // in
+    ) {
+        ridx_t const nrows = rsize(inst.rows);
 
-        if (csize(sol.idxs) >= max_sol_size)
-            return;
+        real_t sol_cost = limits<real_t>::max();
+        if (csize(sol) >= max_sol_size)
+            return sol_cost;
 
         score_info.gammas = reduced_costs;
 
-        ridx_t nrows       = rsize(inst.rows);
-        auto&  total_cover = redund_info.total_cover;
+        auto& total_cover = redund_info.total_cover;
         total_cover.reset(nrows);
 
         ridx_t nrows_to_cover = nrows;
         complete_scores_init(inst, score_info);
-        if (!sol.idxs.empty())
+        if (!sol.empty())
             nrows_to_cover -= update_covered(inst, sol, lagr_mult, score_info, total_cover);
 
         if (nrows_to_cover == 0_R)
-            return;
+            return sol_cost;
 
-        auto   smaller_size = min(as_cidx(nrows_to_cover), csize(inst.cols) - csize(sol.idxs));
-        auto   good_scores  = get_good_scores(score_info, smaller_size);
-        real_t score_update_trigger = good_scores.back().score;
 
         // Fill solution
-        while (nrows_to_cover > 0_R && csize(sol.idxs) < max_sol_size) {
+        auto   good_scores      = score_subspan_t{};
+        real_t worst_good_score = 0.0_F;
+        while (nrows_to_cover > 0_R && csize(sol) < max_sol_size) {
 
+            // Get the column-fraction with best scores
             if (good_scores.empty()) {
-                smaller_size = min(as_cidx(nrows_to_cover), csize(inst.cols) - csize(sol.idxs));
-                good_scores  = get_good_scores(score_info, smaller_size);
-                score_update_trigger = good_scores.back().score;
+                auto good_size   = min(as_cidx(nrows_to_cover), csize(inst.cols) - csize(sol));
+                good_scores      = select_good_scores(score_info, good_size);
+                worst_good_score = good_scores.back().score;
             }
 
-            auto   score_pair = range_min(good_scores, ScoreKey{});
-            cidx_t jstar      = score_pair.idx;
-            assert(score_pair.score < limits<real_t>::max() && "Illegal score");
-            assert(!any(sol.idxs, [=](cidx_t j) { return j == jstar; }) && "Duplicate column");
-            sol.idxs.push_back(jstar);
-            sol.cost += inst.costs[jstar];
+            auto   min_score = range_min(good_scores, ScoreKey{});
+            cidx_t jstar     = min_score.idx;
+            assert(min_score.score < limits<real_t>::max() && "Illegal score");
+            assert(!any(sol, [=](cidx_t j) { return j == jstar; }) && "Duplicate column");
+            sol.push_back(jstar);
 
             update_changed_scores(inst, lagr_mult, total_cover, jstar, score_info, [&](cidx_t s) {
-                if (s < csize(good_scores) && good_scores[s].score >= score_update_trigger) {
+                // s score changed, check if can be removed from good_scores
+                if (s < csize(good_scores) && good_scores[s].score >= worst_good_score) {
                     cidx_t s_j    = good_scores[s].idx;
                     cidx_t back_j = good_scores.back().idx;
                     std::swap(good_scores[s], good_scores.back());
@@ -101,50 +103,46 @@ public:
             nrows_to_cover -= as_ridx(total_cover.cover(inst.cols[jstar]));
         }
 
-        _remove_redundant_cols(inst, cutoff_cost, redund_info, sol);
+        return _remove_redundant_cols(inst, cutoff_cost, redund_info, sol);
     }
 
 private:
-    static void _remove_redundant_cols(Instance const& inst,         // in
-                                       real_t          cutoff_cost,  // in
-                                       RedundancyData& redund_info,  // inout
-                                       Solution&       sol           // inout
+    static real_t _remove_redundant_cols(Instance const&      inst,         // in
+                                         real_t               cutoff_cost,  // in
+                                         RedundancyData&      redund_info,  // inout
+                                         std::vector<cidx_t>& sol           // inout
     ) {
-
-        complete_init_redund_set(redund_info, inst, sol.idxs, cutoff_cost);
+        complete_init_redund_set(inst, sol, cutoff_cost, redund_info);
         if (_try_early_exit(redund_info, sol))
-            return;
-        CFT_IF_DEBUG(check_redundancy_data(inst, sol.idxs, redund_info));
+            return redund_info.partial_cost;  // Solution will be discarded
+        CFT_IF_DEBUG(check_redundancy_data(inst, sol, redund_info));
 
-        heuristic_removal(redund_info, inst);
+        heuristic_removal(inst, redund_info);
         if (_try_early_exit(redund_info, sol))
-            return;
-        CFT_IF_DEBUG(check_redundancy_data(inst, sol.idxs, redund_info));
+            return redund_info.partial_cost;  // Solution will be discarded
+        CFT_IF_DEBUG(check_redundancy_data(inst, sol, redund_info));
 
-        enumeration_removal(redund_info, inst);
-        sol.cost = redund_info.best_cost;
-        if (sol.cost >= cutoff_cost)
-            return;
+        enumeration_removal(inst, redund_info);
+        if (redund_info.best_cost < cutoff_cost)
+            remove_if(sol, [&](cidx_t j) {
+                return any(redund_info.cols_to_remove, [j](cidx_t r) { return r == j; });
+            });
 
-        remove_if(sol.idxs, [&](cidx_t j) {
-            return any(redund_info.cols_to_remove, [j](cidx_t r) { return r == j; });
-        });
+        return redund_info.best_cost;
     }
 
-    static bool _try_early_exit(RedundancyData& redund_info, Solution& sol) {
-        sol.cost = redund_info.partial_cost;
+    static bool _try_early_exit(RedundancyData& redund_info, std::vector<cidx_t>& sol) {
         if (redund_info.partial_cost >= redund_info.best_cost || redund_info.redund_set.empty())
-            return true;  // Discard sol
+            return true;  // Partial solution already worse than best cost
 
         if (redund_info.partial_cov_count < rsize(redund_info.partial_cover))
-            return false;  // Continue with following step
+            return false;  // Partial cover not completed yet, continue
 
-        // Complete sol
+        // Otherwise complete the solution removing redundant columns
         for (CidxAndCost x : redund_info.redund_set)
             redund_info.cols_to_remove.push_back(x.idx);
 
-        // TODO(cava): profile and see if sort + bin-search is faster
-        remove_if(sol.idxs, [&](cidx_t j) {
+        remove_if(sol, [&](cidx_t j) {
             return any(redund_info.cols_to_remove, [j](cidx_t r) { return r == j; });
         });
 

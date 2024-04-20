@@ -31,14 +31,14 @@ TEST_CASE("enumeration_removal removes redundant columns using implicit enumerat
         }
 
         auto init_cov = red_set.total_cover;
-        REQUIRE_NOTHROW(complete_init_redund_set(red_set, inst, sol.idxs, limits<real_t>::max()));
+        REQUIRE_NOTHROW(complete_init_redund_set(inst, sol.idxs, limits<real_t>::max(), red_set));
         CFT_IF_DEBUG(check_redundancy_data(inst, sol.idxs, red_set));
 
-        REQUIRE_NOTHROW(heuristic_removal(red_set, inst));
+        REQUIRE_NOTHROW(heuristic_removal(inst, red_set));
         CFT_IF_DEBUG(check_redundancy_data(inst, sol.idxs, red_set));
 
         if (red_set.partial_cov_count < rsize(inst.rows))
-            REQUIRE_NOTHROW(enumeration_removal(red_set, inst));
+            REQUIRE_NOTHROW(enumeration_removal(inst, red_set));
 
         remove_if(sol.idxs, [&](cidx_t j) {
             return any(red_set.cols_to_remove, [j](cidx_t r) { return r == j; });

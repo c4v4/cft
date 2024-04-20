@@ -79,31 +79,26 @@ namespace local { namespace {
 
     template <>
     struct Enumerator<CFT_ENUM_VARS> {
-        static void invoke(Instance const& /*inst*/,
-                           RedundancyData& red_data,
-                           bool (&vars)[CFT_ENUM_VARS],
-                           bool (&sol)[CFT_ENUM_VARS]) {
-
+        static void invoke(Instance const& /*inst*/,           // unused
+                           RedundancyData& red_data,           // inout
+                           bool const (&vars)[CFT_ENUM_VARS],  // in
+                           bool (&sol)[CFT_ENUM_VARS]          // out
+        ) {
             if (red_data.partial_cost < red_data.best_cost) {
                 red_data.best_cost = red_data.partial_cost;
                 for (cidx_t s = 0_C; s < CFT_ENUM_VARS; ++s)
                     sol[s] = vars[s];
             }
-
-#ifndef NDEBUG
-            for (ridx_t i = 0_R; i < rsize(red_data.partial_cover); ++i)
-                assert(red_data.partial_cover[i] <= red_data.total_cover[i]);
-#endif
         }
     };
 
     template <size_t Depth>
     struct Enumerator {
-        static void invoke(Instance const& inst,
-                           RedundancyData& red_data,
-                           bool (&vars)[CFT_ENUM_VARS],
-                           bool (&sol)[CFT_ENUM_VARS]) {
-
+        static void invoke(Instance const& inst,         // in
+                           RedundancyData& red_data,     // inout
+                           bool (&vars)[CFT_ENUM_VARS],  // inout
+                           bool (&sol)[CFT_ENUM_VARS]    // out
+        ) {
             auto& partial_cover = red_data.partial_cover;
             auto& total_cover   = red_data.total_cover;
 
@@ -149,11 +144,11 @@ namespace local { namespace {
 }  // namespace
 }  // namespace local
 
-inline void complete_init_redund_set(RedundancyData&            red_data,
-                                     Instance const&            inst,
-                                     std::vector<cidx_t> const& sol,
-                                     real_t                     cutoff_cost) {
-
+inline void complete_init_redund_set(Instance const&            inst,         // in
+                                     std::vector<cidx_t> const& sol,          // in
+                                     real_t                     cutoff_cost,  // in
+                                     RedundancyData&            red_data      // inout
+) {
     red_data.redund_set.clear();
     red_data.partial_cover.reset(rsize(inst.rows));
     red_data.partial_cov_count = 0_R;
@@ -175,20 +170,20 @@ inline void complete_init_redund_set(RedundancyData&            red_data,
 
 // Remove redundant columns from the redundancy set using an implicit enumeration. NOTE: assumes
 // no more than CFT_ENUM_VARS columns are redundant.
-inline void enumeration_removal(RedundancyData& red_set, Instance const& inst) {
+inline void enumeration_removal(Instance const& inst,    // in
+                                RedundancyData& red_set  // inout
+) {
     assert(csize(red_set.redund_set) <= CFT_ENUM_VARS);
     real_t old_ub = red_set.best_cost;
     if (red_set.partial_cost >= old_ub || red_set.redund_set.empty())
         return;
 
-    // TODO(cava): Redundant set can be an instance like, with a subset of rows and columns
     bool curr_keep_state[CFT_ENUM_VARS] = {};
     bool cols_to_keep[CFT_ENUM_VARS]    = {};
 
     local::Enumerator<0>::invoke(inst, red_set, curr_keep_state, cols_to_keep);
 
     if (red_set.best_cost < old_ub)
-        // cols_to_keep is updated only if the upper bound is improved
         for (cidx_t r = 0_C; r < csize(red_set.redund_set); ++r)
             if (!cols_to_keep[r])
                 red_set.cols_to_remove.push_back(red_set.redund_set[r].idx);
@@ -196,10 +191,12 @@ inline void enumeration_removal(RedundancyData& red_set, Instance const& inst) {
 
 // Remove redundant columns from the redundancy set using an heuristic greedy approach until
 // CFT_ENUM_VARS columns are left.
-inline void heuristic_removal(RedundancyData& red_set, Instance const& inst) {
+inline void heuristic_removal(Instance const& inst,    // in
+                              RedundancyData& red_set  // inout
+) {
     while (red_set.partial_cost < red_set.best_cost && csize(red_set.redund_set) > CFT_ENUM_VARS) {
 
-        if (red_set.partial_cov_count == rsize(red_set.partial_cover))
+        if (red_set.partial_cov_count == rsize(inst.rows))
             return;
 
         cidx_t j = red_set.redund_set.back().idx;
@@ -209,7 +206,6 @@ inline void heuristic_removal(RedundancyData& red_set, Instance const& inst) {
 
         // They say they update the redudant set after every removal, which has the only effect
         // of exting earlier (with more elements) and start the enumeration.
-        // TODO(cava): test if it actually improve/degrade performace/quality
         remove_if(red_set.redund_set, [&](CidxAndCost x) {
             if (red_set.total_cover.is_redundant_uncover(inst.cols[x.idx]))
                 return false;
