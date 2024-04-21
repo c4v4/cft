@@ -61,9 +61,10 @@ namespace local { namespace {
     }
 #endif
 
-    inline ridx_t compute_maps_from_cols_to_fix(Instance const&            inst,
-                                                std::vector<cidx_t> const& cols_to_fix,
-                                                IdxsMaps&                  old2new) {
+    inline ridx_t compute_maps_from_cols_to_fix(Instance const&            inst,         // in
+                                                std::vector<cidx_t> const& cols_to_fix,  // in
+                                                IdxsMaps&                  old2new       // out
+    ) {
 
         assert(!cols_to_fix.empty());
         old2new.col_map.assign(csize(inst.cols), 0_C);
@@ -103,7 +104,9 @@ namespace local { namespace {
         return removed_rows;
     }
 
-    inline void inplace_apply_col_map(IdxsMaps const& old2new, Instance& inst) {
+    inline void inplace_apply_col_map(IdxsMaps const& old2new,  // in
+                                      Instance&       inst      // inout
+    ) {
         size_t n     = 0;
         cidx_t new_j = 0_C;
         for (cidx_t old_j = 0_C; old_j < csize(inst.cols); ++old_j) {
@@ -129,7 +132,9 @@ namespace local { namespace {
         inst.costs.resize(new_ncols);
     }
 
-    inline void inplace_apply_row_map(IdxsMaps const& old2new, Instance& inst) {
+    inline void inplace_apply_row_map(IdxsMaps const& old2new,  // in
+                                      Instance&       inst      // inout
+    ) {
         ridx_t new_i = 0_R;
         for (ridx_t old_i = 0_R; old_i < rsize(inst.rows); ++old_i) {
             if (old2new.row_map[old_i] == removed_ridx)
@@ -153,12 +158,14 @@ namespace local { namespace {
 }  // namespace
 }  // namespace local
 
+// Remove a given set of columns from the instance. First the mappings between the old and new
+// indexes are computed, then these mappings are appplied.
 inline void remove_fixed_cols_from_inst(std::vector<cidx_t> const& cols_to_fix,  // in
                                         Instance&                  inst,         // inout
                                         IdxsMaps&                  old2new       // out
 ) {
 
-    CFT_IF_DEBUG(auto old_inst = inst);
+    CFT_IF_DEBUG(auto old_inst = inst);  // save old instance for debug checks
 
     ridx_t removed_rows = local::compute_maps_from_cols_to_fix(inst, cols_to_fix, old2new);
     if (removed_rows == rsize(inst.rows))

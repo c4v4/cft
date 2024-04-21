@@ -27,8 +27,24 @@ namespace cft {
 struct FixingData {
     IdxsMaps            curr2orig;
     std::vector<cidx_t> fixed_cols;
-    real_t              fixed_cost = 0.0_F;
+    real_t              fixed_cost;
 };
+
+// Create a fixing data structure with identity mappings and no fixed columns.
+inline void make_identity_fixing_data(cidx_t      ncols,  // in
+                                      ridx_t      nrows,  // in
+                                      FixingData& fixing  // out
+) {
+    fixing.curr2orig.col_map.resize(ncols);
+    fixing.curr2orig.row_map.resize(nrows);
+    fixing.fixed_cols.clear();
+    fixing.fixed_cost = 0.0_F;
+
+    for (cidx_t j = 0_C; j < ncols; ++j)
+        fixing.curr2orig.col_map[j] = j;
+    for (ridx_t i = 0_R; i < nrows; ++i)
+        fixing.curr2orig.row_map[i] = i;
+}
 
 namespace local { namespace {
 
@@ -63,8 +79,8 @@ namespace local { namespace {
         cidx_t new_ncols = csize(inst.cols);
         ridx_t new_nrows = rsize(inst.rows);
 
-        assert("Instance wit fixing has more columns than before" && new_ncols <= old_ncols);
-        assert("Instance wit fixing has more rows than before" && new_nrows <= old_nrows);
+        assert("Instance with fixing has more columns than before" && new_ncols <= old_ncols);
+        assert("Instance with fixing has more rows than before" && new_nrows <= old_nrows);
 
         // Update original col mappings
         for (cidx_t old_j = 0_C; old_j < old_ncols; ++old_j) {
@@ -84,19 +100,6 @@ namespace local { namespace {
     }
 }  // namespace
 }  // namespace local
-
-// Create a fixing data structure with identity mappings and no fixed columns.
-inline void make_identity_fixing_data(cidx_t ncols, ridx_t nrows, FixingData& fixing) {
-    fixing.curr2orig.col_map.resize(ncols);
-    fixing.curr2orig.row_map.resize(nrows);
-    fixing.fixed_cols.clear();
-    fixing.fixed_cost = 0.0_F;
-
-    for (cidx_t j = 0_C; j < ncols; ++j)
-        fixing.curr2orig.col_map[j] = j;
-    for (ridx_t i = 0_R; i < nrows; ++i)
-        fixing.curr2orig.row_map[i] = i;
-}
 
 // This wrapper is here to avoid the risk of calling the functions in the wrong order.
 inline void fix_columns_and_compute_maps(std::vector<cidx_t> const& cols_to_fix,  // in
