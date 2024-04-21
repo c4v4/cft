@@ -154,7 +154,7 @@ public:
                 return;
 
             greedy_sol.idxs.clear();
-            greedy(core_inst, lagr_mult, reduced_costs, greedy_sol, cutoff);
+            greedy_sol.cost = greedy(core_inst, lagr_mult, reduced_costs, greedy_sol.idxs, cutoff);
             print<5>(env, "HEUR> {:4}: Greedy solution {:.2f}\n", iter, best_sol.cost);
             if (greedy_sol.cost <= best_sol.cost - env.epsilon) {
                 best_sol = greedy_sol;
