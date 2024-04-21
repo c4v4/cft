@@ -24,7 +24,7 @@
 #include "utils/assert.hpp"  // IWYU pragma:  keep
 
 #ifndef NDEBUG
-#include "utils/coverage.hpp"
+#include "utils/CoverCounters.hpp"
 #include "utils/utility.hpp"
 #endif
 
@@ -61,7 +61,7 @@ inline void check_solution(Instance const& inst, Solution const& sol) {
 
     // check coverage
     ridx_t covered_rows = 0_R;
-    auto   row_coverage = CoverCounters<>(nrows);
+    auto   row_coverage = CoverCounters(nrows);
     for (auto j : sol.idxs)
         covered_rows += as_ridx(row_coverage.cover(inst.cols[j]));
     assert(covered_rows == nrows);

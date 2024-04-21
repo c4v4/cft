@@ -22,7 +22,7 @@
 
 #include "core/Instance.hpp"
 #include "core/cft.hpp"
-#include "utils/coverage.hpp"
+#include "utils/CoverCounters.hpp"
 #include "utils/limits.hpp"
 #include "utils/sort.hpp"
 #include "utils/utility.hpp"
@@ -112,7 +112,7 @@ inline ridx_t update_covered(Instance const&            inst,         // in
                              std::vector<cidx_t> const& sol,          // in
                              std::vector<real_t> const& lagr_mult,    // in
                              Scores&                    score_info,   // inout
-                             CoverCounters<>&           row_coverage  // inout
+                             CoverCounters&             row_coverage  // inout
 ) {
     ridx_t covered_rows = 0_R;
     for (cidx_t j : sol)
@@ -128,7 +128,7 @@ inline ridx_t update_covered(Instance const&            inst,         // in
 template <typename Hook>
 inline void update_changed_scores(Instance const&            inst,          // in
                                   std::vector<real_t> const& lagr_mult,     // in
-                                  CoverCounters<> const&     row_coverage,  // in
+                                  CoverCounters const&       row_coverage,  // in
                                   cidx_t                     jstar,         // in
                                   Scores&                    score_info,    // inout
                                   Hook                       update_hook    // in

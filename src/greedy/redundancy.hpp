@@ -19,7 +19,7 @@
 
 #include "core/Instance.hpp"
 #include "core/cft.hpp"
-#include "utils/coverage.hpp"
+#include "utils/CoverCounters.hpp"
 #include "utils/limits.hpp"
 #include "utils/sort.hpp"
 #include "utils/utility.hpp"
@@ -31,8 +31,8 @@ namespace cft {
 // Data structure to store the redundancy set and related information
 struct RedundancyData {
     std::vector<CidxAndCost> redund_set;      // redundant columns + their cost
-    CoverCounters<>          total_cover;     // row-cov if all the remaining columns are selected
-    CoverCounters<>          partial_cover;   // row-cov if we selected the current column
+    CoverCounters            total_cover;     // row-cov if all the remaining columns are selected
+    CoverCounters            partial_cover;   // row-cov if we selected the current column
     std::vector<cidx_t>      cols_to_remove;  // list of columns to remove
     real_t                   best_cost         = limits<real_t>::max();  // current best upper bound
     real_t                   partial_cost      = 0.0_F;                  // current solution cost
@@ -44,8 +44,8 @@ inline void check_redundancy_data(Instance const&            inst,
                                   std::vector<cidx_t> const& sol,
                                   RedundancyData const&      red_set) {
 
-    auto   total_check    = CoverCounters<>(rsize(inst.rows));
-    auto   part_check     = CoverCounters<>(rsize(inst.rows));
+    auto   total_check    = CoverCounters(rsize(inst.rows));
+    auto   part_check     = CoverCounters(rsize(inst.rows));
     ridx_t part_cov_count = 0_R;
     for (cidx_t j : sol) {
         part_check.cover(inst.cols[j]);

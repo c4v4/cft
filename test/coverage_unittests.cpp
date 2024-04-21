@@ -19,7 +19,7 @@
 
 #include "core/cft.hpp"
 #include "utils/SparseBinMat.hpp"
-#include "utils/coverage.hpp"
+#include "utils/CoverCounters.hpp"
 
 namespace cft {
 
@@ -36,7 +36,7 @@ TEST_CASE("test_single_row_cover_set_coverage") {
     cols.push_back({13, 57, 14, 82, 73, 64, 85, 47, 6, 96, 45, 65, 74, 18, 27, 17, 43, 8});
     cols.push_back({5, 91, 34, 55, 0, 23, 36, 56, 80, 68, 67, 59, 94, 76, 52, 89});
 
-    auto cs = CoverCounters<>(nrows);
+    auto cs = CoverCounters(nrows);
     REQUIRE(cs.cover(cols.idxs) == static_cast<size_t>(nrows));
 
     cs.reset(nrows);
@@ -60,7 +60,7 @@ TEST_CASE("test_multiples_rows_cover_set_coverage") {
     cols.push_back({3, 13, 23, 33, 4, 14, 24, 34});
     cols.push_back({5, 15, 25, 35, 6, 16, 26, 36});
 
-    auto cs = CoverCounters<>(nrows);
+    auto cs = CoverCounters(nrows);
     REQUIRE(cs.cover(cols.idxs) == static_cast<size_t>(nrows));
 
     cs.reset(nrows);
@@ -107,7 +107,7 @@ TEST_CASE("Test coverage assert fails") {
     cols.push_back({-1, -11, -21, -31, -2, -12, -22, -32});     // all negative
     cols.push_back({-5, 15, 25, 35, 6, 1, 26, 36});             // -5!
 
-    auto cs = CoverCounters<>(nrows);
+    auto cs = CoverCounters(nrows);
     for (cidx_t j = 0; j < 4; ++j) {
         REQUIRE_THROWS_AS(cs.cover(cols[j]), std::runtime_error);
         REQUIRE_THROWS_AS(cs.is_redundant_cover(cols[j]), std::runtime_error);
@@ -119,7 +119,6 @@ TEST_CASE("Test coverage assert fails") {
     }
     REQUIRE_THROWS_AS(cs.uncover(std::vector<int>{0, 0, 0, 0, 0}), std::runtime_error);
 
-    REQUIRE(cs[0] >= 0);
     REQUIRE_THROWS_AS(cs[40], std::runtime_error);
     REQUIRE_THROWS_AS(cs[-1], std::runtime_error);
 }
