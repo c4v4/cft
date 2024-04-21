@@ -157,6 +157,8 @@ inline FileData parse_cvrp_instance(std::string const& path) {
     return fdata;
 }
 
+// Note: not a complete mps parser, best effort to parse a SCP instance, but can probably fail with
+// some formats, or parse non SCP instances as SCP.
 inline Instance parse_mps_instance(std::string const& path) {
     auto file_iter = FileLineIterator(path);
     auto inst      = Instance();
@@ -229,8 +231,6 @@ inline Instance parse_mps_instance(std::string const& path) {
 
         line_view = file_iter.next();
     }
-
-    // TODO(any): check bounds
 #endif
 
     fill_rows_from_cols(inst.cols, nrows, inst.rows);
@@ -285,7 +285,7 @@ inline cft::FileData parse_inst_and_initsol(cft::Environment const& env) {
 
     if (!env.initsol_path.empty()) {
         fdata.init_sol = cft::parse_solution(env.initsol_path);
-        CFT_IF_DEBUG(check_solution(fdata.inst, fdata.init_sol));
+        CFT_IF_DEBUG(check_inst_solution(fdata.inst, fdata.init_sol));
     }
     return fdata;
 }

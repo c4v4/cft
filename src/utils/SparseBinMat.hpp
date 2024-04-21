@@ -24,8 +24,8 @@
 
 namespace cft {
 
-// A simple sparse binary matrix. Operator[] returns a span to the i-th element (row or column).
-// For finer control, idxs and begs are public.
+// A simple sparse binary matrix. Operator[] returns a span to the i-th element.
+// For fine grained manipulations, idxs and begs are public.
 template <typename IdxT>
 struct SparseBinMat {
 
@@ -36,22 +36,22 @@ struct SparseBinMat {
         assert(i < begs.size() - 1);
         assert(begs[i] < idxs.size() || begs[i + 1] == idxs.size());
         assert(begs[i + 1] <= idxs.size());
-        return {idxs.data() + begs[i], idxs.data() + begs[i + 1]};
+        return make_span(idxs.data() + begs[i], begs[i + 1] - begs[i]);
     }
 
     Span<IdxT const*> operator[](std::size_t i) const {
         assert(i < begs.size());
         assert(begs[i] < idxs.size() || begs[i + 1] == idxs.size());
         assert(begs[i + 1] <= idxs.size());
-        return {idxs.data() + begs[i], idxs.data() + begs[i + 1]};
+        return make_span(idxs.data() + begs[i], begs[i + 1] - begs[i]);
     }
 
     std::size_t size() const {
-        return begs.size() - 1;
+        return begs.size() - 1ULL;
     }
 
     bool empty() const {
-        return begs.size() == 1;
+        return begs.size() == 1ULL;
     }
 
     void clear() {

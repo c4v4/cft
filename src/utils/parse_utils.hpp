@@ -32,9 +32,6 @@
 
 namespace cft {
 
-template <bool C, typename T1, typename T2>
-using if_t = typename std::conditional<C, T1, T2>::type;
-
 struct IsSpace {
     bool operator()(char c) const {
         return std::isspace(c) != 0;
@@ -48,14 +45,14 @@ struct NotSpace {
 };
 
 inline StringView ltrim(StringView str) {
-    size_t prefix = str.find_first_if(NotSpace{});
+    size_t prefix = str.find_first_true(NotSpace{});
     return str.remove_prefix(prefix);
 }
 
 inline StringView rtrim(StringView str) {
     if (str.empty())
         return str;
-    size_t suffix = str.find_last_if(NotSpace{});
+    size_t suffix = str.find_last_true(NotSpace{});
     return str.remove_suffix(suffix + 1);
 }
 
@@ -67,47 +64,51 @@ inline std::vector<StringView> split(StringView str) {
     auto trimmed = trim(str);
     auto elems   = std::vector<StringView>{};
     while (!trimmed.empty()) {
-        size_t end = trimmed.find_first_if(IsSpace{});
-        elems.push_back(trimmed.get_substr(0, end));
-        trimmed = ltrim(trimmed.remove_prefix(end));
+        size_t elem_end = trimmed.find_first_true(IsSpace{});
+        elems.push_back(trimmed.get_substr(0, elem_end));
+        trimmed = ltrim(trimmed.remove_prefix(elem_end));
     }
     return elems;
 }
 
+// Parse a string to a specific native scalar type
 template <typename T>
 struct string_to {
+    template <bool C, typename T1, typename T2>
+    using if_t = typename std::conditional<C, T1, T2>::type;
+
     using safe_type = if_t<std::is_integral<T>::value,
                            if_t<std::is_signed<T>::value, int64_t, uint64_t>,
                            long double>;
 
-    // parse without modifying the string view
+    // Parse without modifying the string view  (note the pass by value)
     static T parse(StringView str) {
         return consume(str);
     }
 
-    // parse and modify the string view removing the element parsed
+    // Parse and modify the string view removing the element parsed
     static T consume(StringView& str) {
         if (str.empty())
             throw std::invalid_argument(
                 fmt::format("Invalid argument parsing {}", typeid(T).name()));
 
         safe_type val      = {};
-        bool      oo_range = false;
+        bool      oo_range = false;  // out of range
         char*     end      = nullptr;
         errno              = 0;
 
-        if (!std::is_integral<T>::value) {
+        if (std::is_floating_point<T>::value) {
             val      = std::strtold(str.data(), &end);
             oo_range = !std::isfinite(val);
         } else if (std::is_signed<T>::value) {
             val      = std::strtoll(str.data(), &end, 10);
             oo_range = val == limits<T>::max() && errno == ERANGE;
-        } else {
+        } else {  // unsigned
             val      = std::strtoull(str.data(), &end, 10);
             oo_range = val == limits<T>::max() && errno == ERANGE;
         }
 
-        if (oo_range || val > limits<T>::max() || val < limits<T>::min())
+        if (oo_range || val < limits<T>::min() || limits<T>::max() < val)
             throw std::out_of_range(
                 fmt::format("Out of range parsing {} (as {})", str.data(), typeid(T).name()));
 
@@ -116,10 +117,11 @@ struct string_to {
                 fmt::format("Invalid argument parsing {} (as {})", str.data(), typeid(T).name()));
         str = str.remove_prefix(checked_cast<size_t>(end - str.data()));
 
-        return static_cast<T>(val);
+        return checked_cast<T>(val);
     }
 };
 
+// Reads a file line by line returning trimmed string views
 struct FileLineIterator {
     std::ifstream in;
     std::string   line;

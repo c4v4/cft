@@ -18,9 +18,9 @@
 
 // Testing for failed assertions is not trivial with Catch2.
 // This header provides a way to throw exceptions on failed assertions in debug mode, which can be
-// caught by Catch2. In this way, we can test that out-of-contract input, and fail as  expected (in
+// caught by Catch2. In this way, we can test that out-of-contract input failss as expected (in
 // debug mode). To activare this special asserts, define CFT_ASSERT_FAIL_THROWS before including
-// this header the first time or at compile time.
+// this header or at compile time.
 
 #ifdef CFT_ASSERT_FAIL_THROWS  // Activates throwing exceptions on failed assertions
 #undef assert

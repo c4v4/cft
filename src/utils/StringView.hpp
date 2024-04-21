@@ -26,6 +26,7 @@
 
 namespace cft {
 
+// Specialized non-owning Span for strings
 struct StringView {
     using iterator        = char const*;
     using size_type       = std::size_t;
@@ -97,24 +98,24 @@ struct StringView {
         return start[i];
     }
 
-    StringView remove_prefix(size_type n) const {
-        assert(n <= size());
-        return {start + n, finish};
+    StringView remove_prefix(size_type pos) const {
+        assert(pos <= size());
+        return {start + pos, finish};
     }
 
-    StringView remove_suffix(size_type n) const {
-        assert(n <= size());
-        return {start, start + n};
+    StringView remove_suffix(size_type pos) const {
+        assert(pos <= size());
+        return {start, start + pos};
     }
 
-    StringView get_substr(size_type b, size_type e) const {
-        assert(b <= size());
-        assert(e <= size());
-        return {start + b, start + e};
+    StringView get_substr(size_type beg_pos, size_type end_pos) const {
+        assert(beg_pos <= size());
+        assert(end_pos <= size());
+        return {start + beg_pos, start + end_pos};
     }
 
     template <typename T>
-    size_t find_first_if(T cond) const {
+    size_t find_first_true(T cond) const {
         for (size_t i = 0; i < size(); ++i)
             if (cond((*this)[i]))
                 return i;
@@ -122,7 +123,7 @@ struct StringView {
     }
 
     template <typename T>
-    size_t find_last_if(T cond) const {
+    size_t find_last_true(T cond) const {
         if (empty())
             return size();
         for (size_t i = size() - 1; i > 0; --i)

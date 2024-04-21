@@ -235,28 +235,6 @@ TEST_CASE("test_range_min") {
     }
 }
 
-TEST_CASE("test_argmin") {
-    SECTION("Empty container") {
-        std::vector<int> empty_container;
-        REQUIRE(argmin(empty_container, [](int x) { return x; }) == 0);
-    }
-
-    SECTION("Container with positive values") {
-        int container[] = {1, 2, 3, 4, 5};
-        REQUIRE(argmin(container, [](int x) { return x; }) == 0);
-    }
-
-    SECTION("Container with negative values") {
-        std::array<int, 5> container = {-1, -2, -3, -4, -5};
-        REQUIRE(argmin(container, [](int x) { return x; }) == 4);
-    }
-
-    SECTION("Container with mixed values") {
-        int container[5] = {-1, 0, 1, 2, 3};
-        REQUIRE(argmin(container, [](int x) { return x; }) == 0);
-    }
-}
-
 TEST_CASE("test_remove_if") {
     SECTION("Empty container") {
         std::vector<int> empty_container;

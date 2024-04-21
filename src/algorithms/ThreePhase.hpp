@@ -84,7 +84,7 @@ public:
 
             if (sol.cost + fixing.fixed_cost < best_sol.cost) {
                 _from_core_to_unfixed_sol(sol, core, fixing, best_sol);
-                CFT_IF_DEBUG(check_solution(inst_copy, best_sol));
+                CFT_IF_DEBUG(check_inst_solution(inst_copy, best_sol));
             }
 
             col_fixing(env, orig_nrows, inst, fixing, lagr_mult, greedy);  // Fix column in inst
@@ -129,6 +129,7 @@ private:
         sol.cost = greedy(core.inst, lagr_mult, core.inst.costs, sol.idxs);
 
         _from_core_to_unfixed_sol(sol, core, fixing, best_sol);  // init best_sol
+        CFT_IF_DEBUG(check_inst_solution(inst, best_sol));
     }
 
     // Transform a solution of a core instance (i.e., where both fixing and pricing have been

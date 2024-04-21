@@ -36,10 +36,11 @@ TEST_CASE("Whole algorithm run test", "[Refinement]") {
         for (int n = 0; n < 100; ++n) {
             auto inst = make_easy_inst(n, 1000);
             auto sol  = run(env, inst, init_sol);
-            REQUIRE(sol.cost <= 1000.0_F);
+            REQUIRE(sol.cost <= 1000.0_F);                  // Trivial bad solution has 1000 cost
+            REQUIRE(sol.cost >= as_real(sol.idxs.size()));  // Min col cost is 1.0
             if (abs(sol.cost - 1000.0_F) < 1e-6_F)
                 REQUIRE_THAT(sol.idxs, Catch::Matchers::UnorderedEquals(init_sol.idxs));
-            CFT_IF_DEBUG(REQUIRE_NOTHROW(check_solution(inst, sol)));
+            CFT_IF_DEBUG(REQUIRE_NOTHROW(check_inst_solution(inst, sol)));
         }
     }
 }

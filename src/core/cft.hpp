@@ -97,14 +97,16 @@ inline ridx_t rsize(Cont const& cont) {
     return as_ridx(cft::size(cont));
 }
 
+// Simple pair of column index and cost of some sort
 struct CidxAndCost {
     cidx_t idx;
     real_t cost;
 };
 
+// Solution represented by a vector of column indexes and the total cost
 struct Solution {
-    std::vector<cidx_t> idxs = {};
-    real_t              cost = limits<real_t>::inf();
+    std::vector<cidx_t> idxs;
+    real_t              cost;
 };
 
 // Environment struct to hold all the parameters and working variables
