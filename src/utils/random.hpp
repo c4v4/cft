@@ -22,6 +22,8 @@
 #include "utils/xoshiro_prng.hpp"
 
 namespace cft {
+
+// Xoshiro library provides specialized PRNGs for different result types.
 template <typename TargetT = uint64_t>
 struct prng_picker {
     using type = Xoshiro256PlusPlus;
@@ -44,7 +46,9 @@ struct prng_picker<double> {
 
 ////////////////////////////////// UTILITY RANDOM FUNCTIONS //////////////////////////////////
 
-// Generate a canonical uniform distribution in the [0,1) range (unbiased)
+// Generate a canonical uniform distribution in the [0,1) range (unbiased).
+// The gist of it is to only take the mantissa bits +1 of the PRNG result and scale it to [0,1).
+// Could use SFINAE here, but I preferred to rely o ncompiler optimizations for clarity.
 template <typename FlT, typename RndT>
 inline FlT canonical_gen(RndT& rnd) {
     using gen_type               = typename RndT::result_type;
@@ -58,8 +62,8 @@ inline FlT canonical_gen(RndT& rnd) {
 
     static constexpr float  f32_mantis_mult = 5.960464477539063e-08F;                       // 2^-24
     static constexpr double f64_mantis_mult = 1.1102230246251565404236316680908203125e-16;  // 2^-53
-    static constexpr uint32_t f32_exp_size  = 8;
-    static constexpr uint32_t f64_exp_size  = 11;
+    static constexpr uint64_t f32_exp_size  = 8;
+    static constexpr uint64_t f64_exp_size  = 11;
 
     if (is_u32 && is_f32)
         return static_cast<FlT>(rnd() >> f32_exp_size) * f32_mantis_mult;  // u32 -> f32
@@ -67,7 +71,7 @@ inline FlT canonical_gen(RndT& rnd) {
         return static_cast<FlT>(rnd()) * 2.3283064365386962890625e-10;  // 2^-32  // u32 -> f64
     if (is_u64 && is_f32)
         return static_cast<FlT>(rnd() >> (32U + f32_exp_size)) * f32_mantis_mult;  // u64 -> f32
-    // if (is_u64 && is_f64)
+    assert(is_u64 && is_f64);
     return static_cast<FlT>(rnd() >> f64_exp_size) * f64_mantis_mult;  // u64 -> f64
 }
 
@@ -81,11 +85,9 @@ inline FlT rnd_real(RndT& rnd, FlT min, FlT max) {
 template <typename IntT, typename RndT>
 inline IntT roll_dice(RndT& rnd, IntT min, IntT max) {
     using gen_type = typename RndT::result_type;
-    static_assert(std::is_unsigned<typename RndT::result_type>::value,
-                  "PRNG result is not unsigned.");
-    assert(double(max - min) <= double(RndT::max() - RndT::min()) && "Range too large.");
+    static_assert(std::is_unsigned<gen_type>::value, "PRNG result is not unsigned.");
+    assert(max >= min);
 
-    assert(max - min >= 0);
     IntT result = min + checked_cast<IntT>(rnd() % checked_cast<gen_type>(max - min + IntT{1}));
     assert(min <= result && result <= max);
     return result;
