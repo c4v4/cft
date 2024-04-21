@@ -112,9 +112,9 @@ struct Solution {
 // Environment struct to hold all the parameters and working variables
 struct Environment {
     // Cli params
-    std::string inst_path        = {};                     // Instance file path
-    std::string sol_path         = {};                     // Solution file path
-    std::string initsol_path     = {};                     // Initial solution file path
+    std::string inst_path;                                 // Instance file path
+    std::string sol_path;                                  // Solution file path
+    std::string initsol_path;                              // Initial solution file path
     std::string parser           = CFT_RAIL_PARSER;        // Parser to use
     uint64_t    seed             = 0;                      // Seed for the random number generator
     double      time_limit       = limits<double>::inf();  // Time limit in seconds
@@ -127,8 +127,8 @@ struct Environment {
     real_t      rel_subgrad_exit = 0.001_F;  // Minimum LBs gap to trigger subradient termination
 
     // Working params
-    Chrono<>       timer = {};   // Keeps track of the elapsed time
-    mutable prng_t rnd   = {0};  // Random number generator
+    Chrono<>       timer;            // Keeps track of the elapsed time
+    mutable prng_t rnd = prng_t(0);  // Random number generator
 
 
     // Other hyperparameters that we might consider in the future

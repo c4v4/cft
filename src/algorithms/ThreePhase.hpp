@@ -181,7 +181,7 @@ private:
         core_inst.col_map.clear();
 
         // Select the first n columns of each row (there might be duplicates)
-        core_inst.col_map.reserve(as_cidx(nrows) * min_row_coverage);
+        core_inst.col_map.reserve(checked_cast<size_t>(as_cidx(nrows) * min_row_coverage));
         for (auto const& row : inst.rows)
             for (size_t n = 0; n < min(row.size(), min_row_coverage); ++n) {
                 cidx_t j = row[n];  // column covering row i

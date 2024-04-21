@@ -65,7 +65,7 @@ namespace random {
         using state_type  = std::array<result_type, 4>;
         state_type m_state;
 
-        inline result_type operator()() {
+        result_type operator()() {
             uint64_t result = m_state[0] + m_state[3];
             uint64_t t      = m_state[1] << 17U;
             m_state[2] ^= m_state[0];
@@ -89,7 +89,7 @@ namespace random {
         using state_type  = std::array<result_type, 4>;
         state_type m_state;
 
-        inline result_type operator()() {
+        result_type operator()() {
             uint64_t result = rot_l(m_state[0] + m_state[3], 23) + m_state[0];
             uint64_t t      = m_state[1] << 17U;
             m_state[2] ^= m_state[0];
@@ -113,7 +113,7 @@ namespace random {
         using state_type  = std::array<result_type, 4>;
         state_type m_state;
 
-        inline result_type operator()() {
+        result_type operator()() {
             uint32_t result = m_state[0] + m_state[3];
             uint32_t t      = m_state[1] << 9U;
             m_state[2] ^= m_state[0];
@@ -137,7 +137,7 @@ namespace random {
         using state_type  = std::array<result_type, 4>;
         state_type m_state;
 
-        inline result_type operator()() {
+        result_type operator()() {
             uint32_t result = rot_l(m_state[0] + m_state[3], 7) + m_state[0];
             uint32_t t      = m_state[1] << 9U;
             m_state[2] ^= m_state[0];
@@ -155,7 +155,7 @@ namespace random {
         using result_type = typename GenT::result_type;
         using state_type  = typename GenT::state_type;
 
-        RandMixIn(uint64_t seed = default_seed)
+        explicit RandMixIn(uint64_t seed = default_seed)
             : GenT{generate_state_from_seed<result_type, 4>(seed)} {
         }
 

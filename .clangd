@@ -90,18 +90,17 @@ Diagnostics:
 
             cppcoreguidelines-pro-bounds-constant-array-index, # C for loops are still a thing
 
-            google-explicit-constructor, # In library code I use it often for abstractions
-            hicpp-explicit-conversions,
-
             cppcoreguidelines-avoid-const-or-ref-data-members, # I understand the rationale, but  for some short-lived abstractions I use it quite often
 
-            modernize-pass-by-value,
+            modernize-pass-by-value, # Just no.
 
             cppcoreguidelines-pro-type-union-access, # custom variant-like
 
-            readability-use-anyofallof,
+            readability-use-anyofallof, # Not always the best choice
 
-            cppcoreguidelines-owning-memory
+            cppcoreguidelines-missing-std-forward, # Miopic, forwarding reference are used for other things than perfect forwarding
+
+            cppcoreguidelines-pro-bounds-pointer-arithmetic, # Mostly agree, but c strings still exist
             ]
             
 InlayHints:

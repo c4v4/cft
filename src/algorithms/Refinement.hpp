@@ -26,7 +26,7 @@
 namespace cft {
 namespace local { namespace {
 
-    // Convert a solution from a fixed instance to the original unfixed instance.
+    // Converts the solution of a fixed instance to the solution of the associated unfixed instance.
     inline void from_fixed_to_unfixed_sol(Solution const&   sol,      // in
                                           FixingData const& fixing,   // in
                                           Solution&         best_sol  // out
@@ -40,18 +40,18 @@ namespace local { namespace {
     class RefinementFixManager {
         static constexpr real_t min_fixing = 0.3_F;
 
-        real_t                   fix_fraction      = 0.0_F;
-        real_t                   prev_cost         = limits<real_t>::max();
-        CoverCounters            row_coverage      = {};
-        std::vector<CidxAndCost> gap_contributions = {};  // Delta values in the paper
+        real_t                   fix_fraction = 0.0_F;
+        real_t                   prev_cost    = limits<real_t>::max();
+        CoverCounters            row_coverage;
+        std::vector<CidxAndCost> gap_contributions;  // Delta values in the paper
 
 
     public:
         // Finds a set of columns to fix in the next refinement iteration.
-        inline std::vector<cidx_t> operator()(Environment const&         env,             // in
-                                              Instance const&            inst,            // in
-                                              std::vector<real_t> const& best_lagr_mult,  // in
-                                              Solution const&            best_sol         // in
+        std::vector<cidx_t> operator()(Environment const&         env,             // in
+                                       Instance const&            inst,            // in
+                                       std::vector<real_t> const& best_lagr_mult,  // in
+                                       Solution const&            best_sol         // in
         ) {
             ridx_t const nrows = rsize(inst.rows);
 

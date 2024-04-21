@@ -86,7 +86,7 @@ namespace local { namespace {
 }  // namespace
 }  // namespace local
 
-// Initialize the scores for the greedy algorithm
+// Initializes the scores for the greedy algorithm.
 inline void complete_scores_init(Instance const& inst,       // in
                                  Scores&         score_info  // inout
 ) {

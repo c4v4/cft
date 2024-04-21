@@ -37,7 +37,7 @@ struct SortedArray : Key /*EBO*/ {
     size_t sz = 0ULL;
 
     // NOTE: this is a workaround, in general we cannot have EBO *and* be an aggregate.
-    SortedArray(Key key = {})
+    explicit SortedArray(Key key = {})
         : Key(key) {
     }
 

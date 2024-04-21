@@ -52,12 +52,20 @@ struct StringView {
         assert(finish >= start);
     }
 
+    // The main consequence of making this constructor explicit is that the user would need
+    // to provide overloads that accept string-like objects, explicitly or using templates.
+    // The main advantage is that in this way they have to opt-in for the conversion (handling
+    // the overloads), while with the implicit approach, the conversion is always possible. However,
+    // considering the scope of this project and the use of this class, using the implicit approach
+    // is acceptable and cleaner.
+    // NOLINTNEXTLINE(hicpp-explicit-conversions, google-explicit-constructor)
     StringView(std::string const& str)
         : start(str.data())
         , finish(str.data() + str.size()) {
         assert(finish >= start);
     }
 
+    // NOLINTNEXTLINE(hicpp-explicit-conversions, google-explicit-constructor)
     StringView(char const* str)
         : start(str)
         , finish(str + std::strlen(str)) {
@@ -135,11 +143,14 @@ struct StringView {
     }
 
     int compare(StringView other) const {
-        size_t str_size = std::min(size(), other.size());
-        int    res      = _compare_cstr(start, other.start, str_size);
-        if (res != 0)
-            return res;
-        return size() == other.size() ? 0 : (size() < other.size() ? -1 : 1);
+        size_t min_size = cft::min(size(), other.size());
+        for (size_t n = 0; n < min_size; ++n) {
+            if ((*this)[n] < other[n])
+                return -1;
+            if ((*this)[n] > other[n])
+                return 1;
+        }
+        return size() < other.size() ? -1 : (size() > other.size() ? 1 : 0);
     }
 
     bool operator==(StringView rhs) const {
@@ -164,17 +175,6 @@ struct StringView {
 
     bool operator>=(StringView rhs) const {
         return compare(rhs) >= 0;
-    }
-
-private:
-    static int _compare_cstr(char const* s1, char const* s2, size_t n) {
-        for (; n != 0; ++s1, ++s2, --n) {
-            if (*s1 < *s2)
-                return -1;
-            if (*s1 > *s2)
-                return 1;
-        }
-        return 0;
     }
 };
 

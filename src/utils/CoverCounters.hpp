@@ -34,7 +34,7 @@ struct CoverCounters {
 
     std::vector<counter_t> cov_counters;
 
-    CoverCounters(size_t nelems = 0)
+    explicit CoverCounters(size_t nelems = 0)
         : cov_counters(nelems, 0) {
     }
 

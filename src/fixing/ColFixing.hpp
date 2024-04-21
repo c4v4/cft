@@ -39,7 +39,7 @@ class ColFixing {
     std::vector<real_t> reduced_costs;  // Reduced costs of columns
 
 public:
-    // Fix columns in instance and update the lagrange multipliers.
+    // Fixes columns in instance and update the lagrange multipliers.
     void operator()(Environment const&   env,         // in
                     ridx_t               orig_nrows,  // in
                     Instance&            inst,        // inout

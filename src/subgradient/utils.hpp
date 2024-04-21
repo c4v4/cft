@@ -68,7 +68,7 @@ namespace cft { namespace local { namespace {
         real_t prev_lower_bound;
 
     public:
-        ExitConditionManager(size_t c_period)
+        explicit ExitConditionManager(size_t c_period)
             : period(c_period)
             , next_update_iter(c_period)
             , prev_lower_bound(limits<real_t>::min()) {
