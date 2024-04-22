@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2024 Francesco Cavaliere <francescocava95@gmail.com>
+// SPDX-License-Identifier: MIT
+
 #include <catch2/catch.hpp>
 
 #include "greedy/redundancy.hpp"

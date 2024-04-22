@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2024 Francesco Cavaliere <francescocava95@gmail.com>
+SPDX-License-Identifier: MIT
+-->
+
 # AC-CFT
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
