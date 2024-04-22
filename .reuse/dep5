@@ -1,0 +1,24 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: cft
+Upstream-Contact: Francesco Cavaliere <francescocava95@gmail.com>
+Source: https://github.com/c4v4/cft
+
+Files: .*
+Copyright: 2024 Francesco Cavaliere <francescocava95@gmail.com>
+License: MIT
+
+Files: instances/rail/*
+Copyright: 2010 J E Beasley
+License: MIT
+
+Files: instances/scp/*
+Copyright: 2010 J E Beasley
+License: MIT
+
+Files: instances/cvrp/*
+Copyright: 2024 Francesco Cavaliere <francescocava95@gmail.com>
+License: MIT
+
+Files: instances/mps/ramos3.mps
+Copyright: 2018 F. Ramos
+License: CC-BY-SA-4.0

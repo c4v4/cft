@@ -1,20 +1,8 @@
-// Copyright (c) 2024 Francesco Cavaliere
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program. If not, see <https://www.gnu.org/licenses/>.
+// SPDX-FileCopyrightText: 2024 Francesco Cavaliere <francescocava95@gmail.com>
+// SPDX-License-Identifier: MIT
 
 // Based on Reputeless' Xoshiro-cpp (github.com/Reputeless/Xoshiro-cpp) which is based on David
-// Blackman and Sebastiano Vigna's xoshiro/xoroshiro generators (prng.di.unimi.it/)
+// Blackman and Sebastiano Vigna's xoshiro/xoroshiro generators (prng.di.unimi.it/)#ifndef
 
 #ifndef CFT_SRC_CORE_XOSHIRO_PRNG_HPP
 #define CFT_SRC_CORE_XOSHIRO_PRNG_HPP
@@ -54,11 +42,7 @@ namespace random {
         return seeds;
     }
 
-    // xoshiro256+
-    // Output: 64 bits
-    // Period: 2^256 - 1
-    // Footprint: 32 bytes
-    // Original implementation: http://prng.di.unimi.it/xoshiro256plus.c
+    // Source: http://prng.di.unimi.it/xoshiro256plus.c
     class Xoshiro256PlusImpl {
     public:
         using result_type = uint64_t;
@@ -78,11 +62,7 @@ namespace random {
         }
     };
 
-    // xoshiro256++
-    // Output: 64 bits
-    // Period: 2^256 - 1
-    // Footprint: 32 bytes
-    // Original implementation: http://prng.di.unimi.it/xoshiro256plusplus.c
+    // Source: http://prng.di.unimi.it/xoshiro256plusplus.c
     class Xoshiro256PlusPlusImpl {
     public:
         using result_type = uint64_t;
@@ -102,11 +82,7 @@ namespace random {
         }
     };
 
-    // xoshiro128+
-    // Output: 32 bits
-    // Period: 2^128 - 1
-    // Footprint: 16 bytes
-    // Original implementation: http://prng.di.unimi.it/xoshiro128plus.c
+    // Source: http://prng.di.unimi.it/xoshiro128plus.c
     class Xoshiro128PlusImpl {
     public:
         using result_type = uint32_t;
@@ -126,11 +102,7 @@ namespace random {
         }
     };
 
-    // xoshiro128++
-    // Output: 32 bits
-    // Period: 2^128 - 1
-    // Footprint: 16 bytes
-    // Original implementation: http://prng.di.unimi.it/xoshiro128plusplus.c
+    // Source: http://prng.di.unimi.it/xoshiro128plusplus.c
     class Xoshiro128PlusPlusImpl {
     public:
         using result_type = uint32_t;

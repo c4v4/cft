@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2024 Francesco Cavaliere <francescocava95@gmail.com>
+SPDX-License-Identifier: MIT
+-->
+
 # AC-CFT
 
 [![CMake on multiple platforms](https://github.com/falcopt/scp/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/falcopt/scp/actions/workflows/c-cpp.yml)

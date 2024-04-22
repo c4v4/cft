@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2024 Francesco Cavaliere <francescocava95@gmail.com>
+# SPDX-License-Identifier: MIT
+
 cmake_minimum_required(VERSION 3.16)
 project(AC-CFT)
 include(FetchContent)
