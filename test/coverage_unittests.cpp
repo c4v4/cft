@@ -15,11 +15,14 @@
 
 #include <catch2/catch.hpp>
 #include <cstring>
+
+#ifndef NDEBUG
 #include <stdexcept>
+#endif
 
 #include "core/cft.hpp"
-#include "utils/SparseBinMat.hpp"
 #include "utils/CoverCounters.hpp"
+#include "utils/SparseBinMat.hpp"
 
 namespace cft {
 

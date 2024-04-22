@@ -10,7 +10,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 FetchContent_Declare(fmt GIT_REPOSITORY https://github.com/fmtlib/fmt)
 FetchContent_MakeAvailable(fmt)
 
-set(WARNING_FLAGS "-Wall -Wextra -Wpedantic -Wuninitialized -Wshadow -Wnull-dereference -Wduplicated-cond -Wuseless-cast -Wduplicated-branches -Winit-self -Wlogical-op -Wunused-macros -Wwrite-strings")
+set(WARNING_FLAGS "-Wall -Wextra -Wpedantic -Wuninitialized -Wshadow -Wnull-dereference -Wduplicated-cond -Wuseless-cast -Wduplicated-branches -Winit-self -Wlogical-op -Wunused-macros -Wwrite-strings -Wextra-semi")
 
 set(SANITIZERS_FLAGS "-fno-omit-frame-pointer -fsanitize=address -fsanitize-address-use-after-scope -fsanitize=undefined")
 set(OPT_FLAGS "-O3 -flto=auto -fno-omit-frame-pointer -g")

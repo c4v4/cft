@@ -126,13 +126,13 @@ struct FileLineIterator {
     std::ifstream in;
     std::string   line;
 
-    FileLineIterator(std::string const& path)
+    explicit FileLineIterator(std::string const& path)
         : in(path) {
         if (!in.is_open())
             throw std::invalid_argument(fmt::format("Cannot open file {}", path));
     }
 
-    FileLineIterator(char const* path)
+    explicit FileLineIterator(char const* path)
         : in(path) {
         if (!in.is_open())
             throw std::invalid_argument(fmt::format("Cannot open file {}", path));

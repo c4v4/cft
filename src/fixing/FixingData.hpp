@@ -30,7 +30,7 @@ struct FixingData {
     real_t              fixed_cost;
 };
 
-// Create a fixing data structure with identity mappings and no fixed columns.
+// Creates a fixing data structure with identity mappings and no fixed columns.
 inline void make_identity_fixing_data(cidx_t      ncols,  // in
                                       ridx_t      nrows,  // in
                                       FixingData& fixing  // out

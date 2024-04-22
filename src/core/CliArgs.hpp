@@ -143,37 +143,42 @@ inline void print_cli_help_msg() {
     std::fflush(stdout);
 }
 
+#define CFT_FLAG_MATCH(ARG, FLAG) ((ARG) == CFT_##FLAG##_FLAG || (ARG) == CFT_##FLAG##_LONG_FLAG)
+
 inline Environment parse_cli_args(int argc, char const** argv) {
     auto args = cft::make_span(argv, checked_cast<size_t>(argc));
     auto env  = Environment{};
 
-    for (size_t a = 1; a < args.size(); ++a) {
+    auto asize = size(args);
+    for (size_t a = 1; a < asize; ++a) {
         auto arg = StringView(args[a]);
         if (arg == CFT_HELP_FLAG || arg == CFT_HELP_LONG_FLAG)
             print_cli_help_msg();
-        else if (arg == CFT_INST_FLAG || arg == CFT_INST_LONG_FLAG)
+        else if (a + 1 >= asize)
+            fmt::print("Missing value of argument {}.\n", arg.data());
+        else if (CFT_FLAG_MATCH(arg, INST))
             env.inst_path = args[++a];
-        else if (arg == CFT_PARSER_FLAG || arg == CFT_PARSER_LONG_FLAG)
+        else if (CFT_FLAG_MATCH(arg, PARSER))
             env.parser = args[++a];
-        else if (arg == CFT_OUTSOL_FLAG || arg == CFT_OUTSOL_LONG_FLAG)
+        else if (CFT_FLAG_MATCH(arg, OUTSOL))
             env.sol_path = args[++a];
-        else if (arg == CFT_INITSOL_FLAG || arg == CFT_INITSOL_LONG_FLAG)
+        else if (CFT_FLAG_MATCH(arg, INITSOL))
             env.initsol_path = args[++a];
-        else if (arg == CFT_SEED_FLAG || arg == CFT_SEED_LONG_FLAG)
-            env.rnd = {env.seed = string_to<uint64_t>::parse(args[++a])};
-        else if (arg == CFT_TLIM_FLAG || arg == CFT_TLIM_LONG_FLAG)
+        else if (CFT_FLAG_MATCH(arg, SEED))
+            env.rnd = prng_t(env.seed = string_to<uint64_t>::parse(args[++a]));
+        else if (CFT_FLAG_MATCH(arg, TLIM))
             env.time_limit = string_to<double>::parse(args[++a]);
-        else if (arg == CFT_VERBOSE_FLAG || arg == CFT_VERBOSE_LONG_FLAG)
+        else if (CFT_FLAG_MATCH(arg, VERBOSE))
             env.verbose = string_to<uint64_t>::parse(args[++a]);
-        else if (arg == CFT_EPSILON_FLAG || arg == CFT_EPSILON_LONG_FLAG)
+        else if (CFT_FLAG_MATCH(arg, EPSILON))
             env.epsilon = string_to<real_t>::parse(args[++a]);
-        else if (arg == CFT_GITERS_FLAG || arg == CFT_GITERS_LONG_FLAG)
+        else if (CFT_FLAG_MATCH(arg, GITERS))
             env.heur_iters = string_to<uint64_t>::parse(args[++a]);
-        else if (arg == CFT_BETA_FLAG || arg == CFT_BETA_LONG_FLAG)
+        else if (CFT_FLAG_MATCH(arg, BETA))
             env.beta = string_to<real_t>::parse(args[++a]);
-        else if (arg == CFT_ABSSGEXIT_FLAG || arg == CFT_ABSSGEXIT_LONG_FLAG)
+        else if (CFT_FLAG_MATCH(arg, ABSSGEXIT))
             env.abs_subgrad_exit = string_to<real_t>::parse(args[++a]);
-        else if (arg == CFT_RELSGEXIT_FLAG || arg == CFT_RELSGEXIT_LONG_FLAG)
+        else if (CFT_FLAG_MATCH(arg, RELSGEXIT))
             env.rel_subgrad_exit = string_to<real_t>::parse(args[++a]);
         else
             fmt::print("Arg '{}' unrecognized, ignored.\n", arg.data());

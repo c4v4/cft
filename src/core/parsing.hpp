@@ -157,6 +157,31 @@ inline FileData parse_cvrp_instance(std::string const& path) {
     return fdata;
 }
 
+
+#ifndef NDEBUG
+namespace local { namespace {
+    inline void mps_epilogue_check(FileLineIterator&                              file_iter,
+                                   std::unordered_map<std::string, ridx_t> const& rows_map) {
+        // Check RHSs
+        auto line_view = file_iter.next();
+        while (line_view != "BOUNDS") {
+            line_view   = trim(line_view);
+            auto tokens = split(line_view);
+            assert(tokens[0] == "rhs" || tokens[0] == "RHS");
+
+            for (size_t t = 1; t < tokens.size(); t += 2) {
+                auto row_name = tokens[t];
+                assert(rows_map.find(row_name.to_cpp_string()) != rows_map.end());
+                assert(tokens[t + 1] == "1" || tokens[t + 1] == "-1");
+            }
+
+            line_view = file_iter.next();
+        }
+    }
+}  // namespace
+}  // namespace local
+#endif
+
 // Note: not a complete mps parser, best effort to parse a SCP instance, but can probably fail with
 // some formats, or parse non SCP instances as SCP.
 inline Instance parse_mps_instance(std::string const& path) {
@@ -214,25 +239,7 @@ inline Instance parse_mps_instance(std::string const& path) {
     }
     inst.cols.begs.push_back(csize(inst.cols.idxs));
 
-
-#ifndef NDEBUG
-    // Check RHSs
-    line_view = file_iter.next();
-    while (line_view != "BOUNDS") {
-        line_view   = trim(line_view);
-        auto tokens = split(line_view);
-        assert(tokens[0] == "rhs" || tokens[0] == "RHS");
-
-        for (size_t t = 1; t < tokens.size(); t += 2) {
-            auto row_name = tokens[t];
-            assert(rows_map.find(row_name.to_cpp_string()) != rows_map.end());
-            assert(tokens[t + 1] == "1" || tokens[t + 1] == "-1");
-        }
-
-        line_view = file_iter.next();
-    }
-#endif
-
+    CFT_IF_DEBUG(local::mps_epilogue_check(file_iter, rows_map));
     fill_rows_from_cols(inst.cols, nrows, inst.rows);
     return inst;
 }

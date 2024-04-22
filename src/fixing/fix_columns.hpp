@@ -158,7 +158,7 @@ namespace local { namespace {
 }  // namespace
 }  // namespace local
 
-// Remove a given set of columns from the instance. First the mappings between the old and new
+// Removes a given set of columns from the instance. First the mappings between the old and new
 // indexes are computed, then these mappings are appplied.
 inline void remove_fixed_cols_from_inst(std::vector<cidx_t> const& cols_to_fix,  // in
                                         Instance&                  inst,         // inout
