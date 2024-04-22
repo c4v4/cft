@@ -57,3 +57,4 @@ instances/mps/ex1010-pi.mps
 TODO.md
 perf.data*
 bench.sh
+coverage
