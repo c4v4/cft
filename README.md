@@ -1,10 +1,13 @@
 # AC-CFT
 
-[![CMake on multiple platforms](https://github.com/falcopt/scp/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/falcopt/scp/actions/workflows/c-cpp.yml)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Ubuntu CI](https://github.com/c4v4/cft/actions/workflows/c-cpp.yml/badge.svg?branch=main)](https://github.com/c4v4/cft/actions/workflows/c-cpp.yml)
+[![codecov](https://codecov.io/gh/c4v4/cft/graph/badge.svg?token=2KKRX2KK7J)](https://codecov.io/gh/c4v4/cft)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/e1b326b8671444f3ad1d2c767a28a115)](https://app.codacy.com?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
-Accorsi Luca and Cavaliere Francesco implementation of the CFT algorithm for the [Set Covering problem](https://en.wikipedia.org/wiki/Set_cover_problem).
+Implementation of the Caprara, Fischetti, and Toth algorithm for the [Set Covering problem](https://en.wikipedia.org/wiki/Set_cover_problem).
 
-### References
+## References
 *Caprara, A., Fischetti, M., & Toth, P. (1999). A Heuristic Method for the Set Covering Problem. Operations Research, 47(5), 730–743. [doi:10.1287/opre.47.5.730](https://doi.org/10.1287/opre.47.5.730)*
 
 ## Building and Running the Project
@@ -51,7 +54,7 @@ lcov -r coverage/tests_cov.info build test /usr/include/ -o tests_cov.info
 Finally, to generate an HTML-report that can be viewed from your browser:
 
 ```bash
-genhtml tests_cov.info --legend --output-directory=./coverage
+genhtml coverage/tests_cov.info --legend --output-directory=./coverage
 ```
 
 You can check out the coverage statistics by opening `coverage/index.html`.
@@ -103,11 +106,10 @@ Not much to say here, library code tries to adhere to _user-code_ rules, but has
 
 ### Function Parameters
 
-Looking around you might notice that most function parameters are annotated, although intuitive,
- here is the meaning:
+Looking around you might notice that most function parameters are annotated with a tag. Although intuitive, here is the meaning:
 
-- **`in`**: Input, read-only parameters.
-- **`out`**: Ouput parameter, previous state is ignored and replaced with a new state.
+- **`in`**: Input parameter, read-only.
+- **`out`**: Ouput parameter, previous state is ignored and replaced with the new state.
 - **`inout`**: Input/output parameter. Both previous and new states are relevant.
 - **`cache`**: Cache object to avoid costly operations (usually memory allocations). Input and output states are ignored.
 
