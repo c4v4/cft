@@ -42,7 +42,7 @@ public:
         _select_non_overlapping_cols(inst, lagr_mult, row_coverage, cols_to_fix, reduced_costs);
         cidx_t no_overlap_ncols = csize(cols_to_fix);
 
-        cidx_t fix_at_least = csize(cols_to_fix) + max<cidx_t>(1_C, orig_nrows / 200);
+        cidx_t fix_at_least = csize(cols_to_fix) + max(1_C, as_cidx(orig_nrows / 200_R));
         greedy(inst, lagr_mult, reduced_costs, cols_to_fix, limits<real_t>::max(), fix_at_least);
 
         fix_columns_and_compute_maps(cols_to_fix, inst, fixing, old2new);

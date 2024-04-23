@@ -155,7 +155,7 @@ private:
     ) {
         for (real_t& u : lagr_mult) {
             u *= rnd_real(rnd, 0.9_F, 1.1_F);
-            assert(std::isfinite(u) && "Multiplier is not finite");
+            assert(std::isfinite(native_cast(u)) && "Multiplier is not finite");
         }
     }
 

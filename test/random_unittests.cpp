@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2024 Francesco Cavaliere <francescocava95@gmail.com>
 // SPDX-License-Identifier: MIT
 
+#define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
 
 #include "utils/random.hpp"
@@ -42,6 +43,13 @@ TEST_CASE("test_canonical_gen") {
         REQUIRE(result4 >= 0.0);
         REQUIRE(result4 < 1.0);
         over_half += result4 > 0.5 ? 1 : 0;
+        ++total;
+
+        // Test for u64 -> f128 conversion
+        auto result5 = canonical_gen<long double>(rnd_double);
+        REQUIRE(result5 >= 0.0L);
+        REQUIRE(result5 < 1.0L);
+        over_half += result5 > 0.5L ? 1 : 0;
         ++total;
     }
     double over_half_frac = over_half / static_cast<double>(total);
@@ -92,6 +100,15 @@ TEST_CASE("test_rnd_real") {
             REQUIRE(res >= min);
             REQUIRE(res < max);
             over_half += res > (min + max) / 2.0 ? 1 : 0;
+            ++total;
+        }
+        {
+            // Test for u64 -> f64 conversion
+            long double min = -10.0L * i, max = 10.0L * i + 1;
+            auto        res = rnd_real<long double>(rnd_double, min, max);
+            REQUIRE(res >= min);
+            REQUIRE(res < max);
+            over_half += res > (min + max) / 2.0L ? 1 : 0;
             ++total;
         }
     }

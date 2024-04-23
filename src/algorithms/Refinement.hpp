@@ -26,7 +26,6 @@ namespace local { namespace {
     }
 
     class RefinementFixManager {
-        static constexpr real_t min_fixing = 0.3_F;
 
         real_t                   fix_fraction = 0.0_F;
         real_t                   prev_cost    = limits<real_t>::max();
@@ -45,7 +44,7 @@ namespace local { namespace {
 
             fix_fraction = min(1.0_F, fix_fraction * env.alpha);
             if (best_sol.cost < prev_cost)
-                fix_fraction = min_fixing;
+                fix_fraction = env.min_fixing;
             prev_cost = best_sol.cost;
 
             auto nrows_real   = as_real(rsize(inst.rows));
@@ -97,7 +96,8 @@ inline Solution run(Environment const& env,                // in
     ridx_t const nrows = rsize(orig_inst.rows);
 
     auto inst     = orig_inst;
-    auto best_sol = Solution{{}, limits<real_t>::max()};
+    auto best_sol = Solution();
+    best_sol.cost = limits<real_t>::max();
 
     if (!warmstart_sol.idxs.empty())
         best_sol = warmstart_sol;

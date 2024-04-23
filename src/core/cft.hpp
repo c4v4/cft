@@ -4,13 +4,13 @@
 #ifndef CFT_SRC_CORE_CFT_HPP
 #define CFT_SRC_CORE_CFT_HPP
 
-
 #include <cstdint>
 #include <string>
 #include <vector>
 
 #include "utils/Chrono.hpp"
 #include "utils/assert.hpp"  // IWYU pragma:  keep
+#include "utils/custom_types.hpp"
 #include "utils/limits.hpp"
 #include "utils/random.hpp"
 #include "utils/utility.hpp"
@@ -27,12 +27,28 @@
 #define CFT_CVRP_PARSER "CVRP"
 #define CFT_MPS_PARSER  "MPS"
 
+#ifndef CFT_CIDX_TYPE
+#define CFT_CIDX_TYPE int32_t
+#endif
+
+#ifndef CFT_RIDX_TYPE
+#define CFT_RIDX_TYPE int16_t
+#endif
+
+#ifndef CFT_REAL_TYPE
+#define CFT_REAL_TYPE float
+#endif
+
 namespace cft {
 
-using cidx_t = int32_t;                    // Type for column indexes
-using ridx_t = int16_t;                    // Type for row indexes
-using real_t = float;                      // Type for real values
+using cidx_t = CFT_CIDX_TYPE;              // Type for column indexes
+using ridx_t = CFT_RIDX_TYPE;              // Type for row indexes
+using real_t = CFT_REAL_TYPE;              // Type for real values
 using prng_t = prng_picker<real_t>::type;  // default pseudo-random number generator type
+
+static_assert(std::is_integral<native_t<cidx_t>>::value, "cidx_t must be integral");
+static_assert(std::is_integral<native_t<ridx_t>>::value, "ridx_t must be integral");
+static_assert(std::is_floating_point<native_t<real_t>>::value, "real_t must be a floating point");
 
 // Reserved values to mark removed indexes (tombstones)
 constexpr cidx_t removed_cidx = limits<cidx_t>::max();
@@ -119,6 +135,7 @@ struct Environment {
     mutable prng_t rnd = prng_t(0);  // Random number generator
 
 
+    real_t min_fixing = 0.3_F;
     // Other hyperparameters that we might consider in the future
     // uint64_t    subgrad_exit_period      = 300;
     // double      fix_thresh               = -0.001;

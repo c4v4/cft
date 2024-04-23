@@ -69,7 +69,7 @@ inline void check_inst_solution(Instance const& inst, Solution const& sol) {
     real_t total_cost = 0.0_F;
     for (cidx_t j : sol.idxs)
         total_cost += inst.costs[j];
-    assert(-1e-6_F < total_cost - sol.cost && total_cost - sol.cost < 1e-6_F);
+    assert(abs(total_cost - sol.cost) < 1e-6_F);
 }
 #endif
 
@@ -81,13 +81,12 @@ inline void fill_rows_from_cols(SparseBinMat<ridx_t> const&       cols,   // in
     rows.resize(nrows);
     for (auto& row : rows) {
         row.clear();
-        row.reserve(csize(cols.idxs) / nrows);
+        row.reserve(csize(cols.idxs) / as_cidx(nrows));
     }
 
     for (cidx_t j = 0_C; j < csize(cols); ++j)
         for (ridx_t i : cols[j])
             rows[i].push_back(j);
-    // CFT_IF_DEBUG(col_and_rows_check(cols, rows));
 }
 
 // Copy a column from one instance to another pushing it back as last column.

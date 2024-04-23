@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2024 Francesco Cavaliere <francescocava95@gmail.com>
 // SPDX-License-Identifier: MIT
 
+#define CATCH_CONFIG_MAIN 
 #include <catch2/catch.hpp>
 
 #include "utils/SortedArray.hpp"

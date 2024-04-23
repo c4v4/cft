@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2024 Francesco Cavaliere <francescocava95@gmail.com>
 // SPDX-License-Identifier: MIT
 
+#define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
 
 #include "core/cft.hpp"
@@ -63,14 +64,14 @@ TEST_CASE("Test rsize function", "[cft]") {
 TEST_CASE("Test as_cidx function failure ", "[cft]") {
     if (static_cast<uint64_t>(limits<cidx_t>::max()) < limits<uint64_t>::max())
         REQUIRE_THROWS_AS(as_cidx(limits<uint64_t>::max()), std::runtime_error);
-    if (!std::is_signed<cidx_t>::value)
+    if (!std::is_signed<native_t<cidx_t>>::value)
         REQUIRE_THROWS_AS(as_cidx(-1), std::runtime_error);
 }
 
 TEST_CASE("Test as_ridx function failure ", "[cft]") {
     if (static_cast<uint64_t>(limits<ridx_t>::max()) < limits<uint64_t>::max())
         REQUIRE_THROWS_AS(as_ridx(limits<uint64_t>::max()), std::runtime_error);
-    if (!std::is_signed<ridx_t>::value)
+    if (!std::is_signed<native_t<ridx_t>>::value)
         REQUIRE_THROWS_AS(as_ridx(-1), std::runtime_error);
 }
 
