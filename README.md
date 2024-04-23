@@ -5,11 +5,11 @@ SPDX-License-Identifier: MIT
 
 # AC-CFT
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Ubuntu CI](https://github.com/c4v4/cft/actions/workflows/c-cpp.yml/badge.svg?branch=main)](https://github.com/c4v4/cft/actions/workflows/c-cpp.yml)
 [![codecov](https://codecov.io/gh/c4v4/cft/graph/badge.svg?token=2KKRX2KK7J)](https://codecov.io/gh/c4v4/cft)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/e1b326b8671444f3ad1d2c767a28a115)](https://app.codacy.com?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
-
+<!-- TODO(cava): add REUSE badge -->
 Implementation of the Caprara, Fischetti, and Toth algorithm for the [Set Covering problem](https://en.wikipedia.org/wiki/Set_cover_problem).
 
 ## References
