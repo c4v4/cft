@@ -123,7 +123,7 @@ Looking around you might notice that most function parameters are annotated with
 
 This project offers flexibility in choosing the numeric types used for column indexes, row indexes, and real values. We provide aliases (`cidx_t`, `ridx_t`, `real_t`) defined in [`src/core/cft.hpp`](src/core/cft.hpp) that you can customize by defining the corresponding macros (`CFT_CIDX_TYPE`, `CFT_RIDX_TYPE`, `CFT_REAL_TYPE`). This allows you to easily switch between native integer/floating-point types depending on your needs.
 
-Beyond basic types, we also support defining custom types through a simple interface. You can find an example implementation in [`test/custom_types_unittests.cpp`](test/custom_type_unittests.cpp). 
+Beyond basic types, we also support defining custom types through a simple interface. You can find an example implementation in [`test/custom_types_unittests.cpp`](test/custom_types_unittests.cpp). 
 For instance, you can use this interface to:
 
 - Enforce Checks: Implement custom checks for every mathematical operation performed on your data.
