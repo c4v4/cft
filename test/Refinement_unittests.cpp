@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2024 Francesco Cavaliere <francescocava95@gmail.com>
 // SPDX-License-Identifier: MIT
 
+#define CATCH_CONFIG_MAIN 
 #include <catch2/catch.hpp>
 
 #include "algorithms/Refinement.hpp"
@@ -21,7 +22,7 @@ TEST_CASE("Whole algorithm run test", "[Refinement]") {
 
     SECTION("Test with easy instances") {
         for (int n = 0; n < 100; ++n) {
-            auto inst = make_easy_inst(n, 1000);
+            auto inst = make_easy_inst(n, 1000_C);
             auto sol  = run(env, inst, init_sol);
             REQUIRE(sol.cost <= 1000.0_F);                  // Trivial bad solution has 1000 cost
             REQUIRE(sol.cost >= as_real(sol.idxs.size()));  // Min col cost is 1.0

@@ -13,7 +13,7 @@
 #include "utils/utility.hpp"
 
 
-#define CFT_ENUM_VARS 10
+#define CFT_ENUM_VARS 10_C
 
 namespace cft {
 // Data structure to store the redundancy set and related information

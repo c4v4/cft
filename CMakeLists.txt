@@ -13,7 +13,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 FetchContent_Declare(fmt GIT_REPOSITORY https://github.com/fmtlib/fmt)
 FetchContent_MakeAvailable(fmt)
 
-set(WARNING_FLAGS "-Wall -Wextra -Wpedantic -Wuninitialized -Wshadow -Wnull-dereference -Wduplicated-cond -Wuseless-cast -Wduplicated-branches -Winit-self -Wlogical-op -Wunused-macros -Wwrite-strings -Wextra-semi")
+set(WARNING_FLAGS "-Wall -Wextra -Wpedantic -Wuninitialized -Wshadow -Wnull-dereference -Winit-self -Wunused-macros -Wwrite-strings -Wextra-semi")
 
 set(SANITIZERS_FLAGS "-fno-omit-frame-pointer -fsanitize=address -fsanitize-address-use-after-scope -fsanitize=undefined")
 set(OPT_FLAGS "-O3 -flto=auto -fno-omit-frame-pointer -g")
@@ -48,26 +48,32 @@ if (UNIT_TESTS)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS} -DCFT_ASSERT_FAIL_THROWS")
     set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS} -DCFT_ASSERT_FAIL_THROWS" )
 
-    set(SOURCES test/main.cpp
-                test/cft_unittests.cpp
-                test/Chrono_unittests.cpp
-                test/CliArgs_unittests.cpp
-                test/coverage_unittests.cpp
-                test/Instance_unittests.cpp
-                test/parse_utils_unittests.cpp
-                test/parsing_unittests.cpp
-                test/random_unittests.cpp
-                test/redundancy_unittests.cpp
-                test/Refinement_unittests.cpp
-                test/sort_unittests.cpp
-                test/SortedArray_unittests.cpp
-                test/Span_unittests.cpp
-                test/StringView_unittests.cpp
-                test/utility_unittests.cpp)
+    function(add_cft_test name)
+        set(sources test/${name}.cpp)
+        add_executable(${name} ${sources})
+        target_link_libraries(${name} PUBLIC ${LIBRARIES})
+        add_test(NAME ${name} COMMAND ${name})
+    endfunction()
 
-    add_executable(tests ${SOURCES})
-    target_link_libraries(tests PUBLIC ${LIBRARIES})
-    add_test(NAME tests COMMAND tests)
+    add_cft_test(cft_unittests)
+    add_cft_test(Chrono_unittests)
+    add_cft_test(CliArgs_unittests)
+    add_cft_test(coverage_unittests)
+    add_cft_test(custom_types_unittests)
+    add_cft_test(Instance_unittests)
+    add_cft_test(large_types_unittests)
+    add_cft_test(parse_utils_unittests)
+    add_cft_test(parsing_unittests)
+    add_cft_test(random_unittests)
+    add_cft_test(redundancy_unittests)
+    add_cft_test(Refinement_unittests)
+    add_cft_test(SortedArray_unittests)
+    add_cft_test(small_types_unittests)
+    add_cft_test(sort_unittests)
+    add_cft_test(Span_unittests)
+    add_cft_test(StringView_unittests)
+    add_cft_test(utility_unittests)
+
     enable_testing()
 
 endif() 

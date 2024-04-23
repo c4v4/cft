@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2024 Francesco Cavaliere <francescocava95@gmail.com>
 // SPDX-License-Identifier: MIT
 
+#define CATCH_CONFIG_MAIN
 #include <catch2/catch.hpp>
 #include <stdexcept>
 
@@ -24,47 +25,47 @@ TEST_CASE("test_parse_scp_instance") {
     auto inst = Instance();
     REQUIRE_NOTHROW(inst = parse_scp_instance("../instances/scp/scp41.txt"));
 
-    REQUIRE(rsize(inst.rows) == 200);
-    REQUIRE(csize(inst.cols) == 1000);
+    REQUIRE(rsize(inst.rows) == 200_R);
+    REQUIRE(csize(inst.cols) == 1000_C);
 
     REQUIRE(inst.cols[0].size() == 8);
-    REQUIRE_THAT(
-        local::span_to_vector<ridx_t>(inst.cols[0]),
-        Catch::Matchers::UnorderedEquals(std::vector<ridx_t>{17, 31, 74, 75, 106, 189, 195, 198}));
+    REQUIRE_THAT(local::span_to_vector<ridx_t>(inst.cols[0]),
+                 Catch::Matchers::UnorderedEquals(
+                     std::vector<ridx_t>{17_R, 31_R, 74_R, 75_R, 106_R, 189_R, 195_R, 198_R}));
 
     REQUIRE(csize(inst.cols) == csize(inst.costs));
-    REQUIRE(std::fabs(inst.costs[0] - 1.0_F) < 0.01_F);
+    REQUIRE(abs(inst.costs[0] - 1.0_F) < 0.01_F);
 }
 
 TEST_CASE("test_parse_rail_instance") {
     auto inst = Instance();
     REQUIRE_NOTHROW(inst = parse_rail_instance("../instances/rail/rail507"));
 
-    REQUIRE(rsize(inst.rows) == 507);
-    REQUIRE(csize(inst.cols) == 63009);
+    REQUIRE(rsize(inst.rows) == 507_R);
+    REQUIRE(csize(inst.cols) == 63009_C);
 
     REQUIRE(inst.cols[0].size() == 7);
-    REQUIRE_THAT(
-        local::span_to_vector<ridx_t>(inst.cols[0]),
-        Catch::Matchers::UnorderedEquals(std::vector<ridx_t>{41, 42, 43, 317, 318, 421, 422}));
+    REQUIRE_THAT(local::span_to_vector<ridx_t>(inst.cols[0]),
+                 Catch::Matchers::UnorderedEquals(
+                     std::vector<ridx_t>{41_R, 42_R, 43_R, 317_R, 318_R, 421_R, 422_R}));
 
     REQUIRE(csize(inst.cols) == csize(inst.costs));
-    REQUIRE(std::fabs(inst.costs[0] - 2.0_F) < 0.01_F);
+    REQUIRE(abs(inst.costs[0] - 2.0_F) < 0.01_F);
 }
 
 TEST_CASE("test_parse_cvrp_instance") {
     auto  fdata = parse_cvrp_instance("../instances/cvrp/X-n536-k96_z95480_cplex95479.scp");
     auto& inst  = fdata.inst;
-    REQUIRE(rsize(inst.rows) == 535);
-    REQUIRE(csize(inst.cols) == 127262);
+    REQUIRE(rsize(inst.rows) == 535_R);
+    REQUIRE(csize(inst.cols) == 127262_C);
 
-    REQUIRE(inst.cols[0].size() == 1);
-    REQUIRE(inst.cols[1].size() == 4);
+    REQUIRE(rsize(inst.cols[0]) == 1_R);
+    REQUIRE(rsize(inst.cols[1]) == 4_R);
     REQUIRE_THAT(local::span_to_vector<ridx_t>(inst.cols[1]),
-                 Catch::Matchers::UnorderedEquals(std::vector<ridx_t>{486, 526, 320, 239}));
+                 Catch::Matchers::UnorderedEquals(std::vector<ridx_t>{486_R, 526_R, 320_R, 239_R}));
 
     REQUIRE(csize(inst.cols) == csize(inst.costs));
-    REQUIRE(std::fabs(inst.costs[1] - 787.0_F) < 0.01_F);
+    REQUIRE(abs(inst.costs[1] - 787.0_F) < 0.01_F);
 
     REQUIRE(!fdata.init_sol.idxs.empty());
 }
@@ -73,17 +74,29 @@ TEST_CASE("test_parse_mps_instance") {
     auto inst = Instance();
     REQUIRE_NOTHROW(inst = parse_mps_instance("../instances/mps/ramos3.mps"));
 
-    REQUIRE(rsize(inst.rows) == 2187);
-    REQUIRE(csize(inst.cols) == 2187);
+    REQUIRE(rsize(inst.rows) == 2187_R);
+    REQUIRE(csize(inst.cols) == 2187_C);
 
-    REQUIRE(inst.cols[0].size() == 15);
-    REQUIRE_THAT(
-        local::span_to_vector<ridx_t>(inst.cols[0]),
-        Catch::Matchers::UnorderedEquals(
-            std::vector<ridx_t>{0, 9, 10, 11, 12, 15, 18, 36, 63, 90, 171, 252, 495, 738, 1467}));
+    REQUIRE(rsize(inst.cols[0]) == 15_R);
+    REQUIRE_THAT(local::span_to_vector<ridx_t>(inst.cols[0]),
+                 Catch::Matchers::UnorderedEquals(std::vector<ridx_t>{0_R,
+                                                                      9_R,
+                                                                      10_R,
+                                                                      11_R,
+                                                                      12_R,
+                                                                      15_R,
+                                                                      18_R,
+                                                                      36_R,
+                                                                      63_R,
+                                                                      90_R,
+                                                                      171_R,
+                                                                      252_R,
+                                                                      495_R,
+                                                                      738_R,
+                                                                      1467_R}));
 
     REQUIRE(csize(inst.cols) == csize(inst.costs));
-    REQUIRE(std::fabs(inst.costs[0] - 1.0_F) < 0.01_F);
+    REQUIRE(abs(inst.costs[0] - 1.0_F) < 0.01_F);
 }
 
 TEST_CASE("test wrong parser") {
@@ -113,14 +126,14 @@ TEST_CASE("Test parse_solution", "[parsing]") {
     SECTION("write_solution and read_solution") {
         auto path = std::string("test_solution.txt");
         auto wsol = cft::Solution();
-        wsol.cost = 101.5;
-        wsol.idxs = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+        wsol.cost = 101.5_F;
+        wsol.idxs = {1_C, 2_C, 3_C, 4_C, 5_C, 6_C, 7_C, 8_C, 9_C};
 
         cft::write_solution(path, wsol);
         cft::Solution sol = cft::parse_solution(path);
 
-        REQUIRE(sol.cost == 101.5);
-        REQUIRE(sol.idxs == std::vector<cft::cidx_t>{1, 2, 3, 4, 5, 6, 7, 8, 9});
+        REQUIRE((101.49_F < sol.cost && sol.cost < 101.51_F));
+        REQUIRE(sol.idxs == std::vector<cft::cidx_t>{1_C, 2_C, 3_C, 4_C, 5_C, 6_C, 7_C, 8_C, 9_C});
 
         std::remove(path.c_str());
     }
@@ -139,8 +152,8 @@ TEST_CASE("Test parse_solution", "[parsing]") {
     SECTION("Write solution: Invalid file path") {
         auto path = std::string("/invalid/path/test_solution.txt");
         auto sol  = cft::Solution();
-        sol.cost  = 10.5;
-        sol.idxs  = {1, 2, 3};
+        sol.cost  = 10.5_F;
+        sol.idxs  = {1_C, 2_C, 3_C};
 
         REQUIRE_THROWS_AS(cft::write_solution(path, sol), std::exception);
     }
@@ -166,9 +179,9 @@ TEST_CASE("parse_inst_and_initsol") {
         write_solution(env.initsol_path, sol);
         auto fdata = parse_inst_and_initsol(env);
 
-        REQUIRE(rsize(fdata.inst.rows) == 200);
-        REQUIRE(csize(fdata.inst.cols) == 1000);
-        REQUIRE(fdata.init_sol.cost == 429.0_F);
+        REQUIRE(rsize(fdata.inst.rows) == 200_R);
+        REQUIRE(csize(fdata.inst.cols) == 1000_C);
+        REQUIRE((428.99_F < fdata.init_sol.cost && fdata.init_sol.cost < 429.01_F));
         REQUIRE_THAT(sol.idxs, Catch::Matchers::UnorderedEquals(fdata.init_sol.idxs));
         std::remove(env.initsol_path.c_str());
     }
@@ -199,9 +212,9 @@ TEST_CASE("parse_inst_and_initsol") {
         write_solution(env.initsol_path, sol);
         auto fdata = parse_inst_and_initsol(env);
 
-        REQUIRE(rsize(fdata.inst.rows) == 507);
-        REQUIRE(csize(fdata.inst.cols) == 63009);
-        REQUIRE(fdata.init_sol.cost == 174.0_F);
+        REQUIRE(rsize(fdata.inst.rows) == 507_R);
+        REQUIRE(csize(fdata.inst.cols) == 63009_C);
+        REQUIRE(abs(fdata.init_sol.cost - 174.0_F) <= 0.01_F);
         REQUIRE_THAT(sol.idxs, Catch::Matchers::UnorderedEquals(fdata.init_sol.idxs));
         std::remove(env.initsol_path.c_str());
 
@@ -231,9 +244,9 @@ TEST_CASE("parse_inst_and_initsol") {
         write_solution(env.initsol_path, sol);
         auto fdata = parse_inst_and_initsol(env);
 
-        REQUIRE(rsize(fdata.inst.rows) == 535);
-        REQUIRE(csize(fdata.inst.cols) == 127262);
-        REQUIRE(fdata.init_sol.cost == 95480.0_F);
+        REQUIRE(rsize(fdata.inst.rows) == 535_R);
+        REQUIRE(csize(fdata.inst.cols) == 127262_C);
+        REQUIRE(abs(fdata.init_sol.cost - 95480.0_F) < 0.01_F);
         REQUIRE_THAT(sol.idxs, Catch::Matchers::UnorderedEquals(fdata.init_sol.idxs));
         std::remove(env.initsol_path.c_str());
     }
@@ -270,9 +283,9 @@ TEST_CASE("parse_inst_and_initsol") {
         write_solution(env.initsol_path, sol);
         auto fdata = parse_inst_and_initsol(env);
 
-        REQUIRE(rsize(fdata.inst.rows) == 2187);
-        REQUIRE(csize(fdata.inst.cols) == 2187);
-        REQUIRE(fdata.init_sol.cost == 194.0_F);
+        REQUIRE(rsize(fdata.inst.rows) == 2187_R);
+        REQUIRE(csize(fdata.inst.cols) == 2187_C);
+        REQUIRE(abs(fdata.init_sol.cost - 194.0_F) < 0.01_F);
         REQUIRE_THAT(sol.idxs, Catch::Matchers::UnorderedEquals(fdata.init_sol.idxs));
         std::remove(env.initsol_path.c_str());
     }

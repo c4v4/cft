@@ -15,25 +15,26 @@ namespace cft {
 inline Instance make_easy_inst(uint64_t seed, cidx_t max_ncols) {
 
     auto cols = SparseBinMat<ridx_t>();
-    cols.push_back({1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
-    cols.push_back({11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
-    cols.push_back({21, 22, 23, 24, 25, 26, 27, 28, 29, 30});
-    cols.push_back({31, 32, 33, 34, 35, 36, 37, 38, 39, 40});
-    cols.push_back({41, 42, 43, 44, 45, 46, 47, 48, 49, 50});
-    cols.push_back({51, 52, 53, 54, 55, 56, 57, 58, 59, 60});
-    cols.push_back({61, 62, 63, 64, 65, 66, 67, 68, 69, 70});
-    cols.push_back({71, 72, 73, 74, 75, 76, 77, 78, 79, 80});
-    cols.push_back({81, 82, 83, 84, 85, 86, 87, 88, 89, 90});
-    cols.push_back({91, 92, 93, 94, 95, 96, 97, 98, 99, 0});
-    auto costs = std::vector<real_t>{100, 100, 100, 100, 100, 100, 100, 100, 100, 100};
+    cols.push_back({1_R, 2_R, 3_R, 4_R, 5_R, 6_R, 7_R, 8_R, 9_R, 10_R});
+    cols.push_back({11_R, 12_R, 13_R, 14_R, 15_R, 16_R, 17_R, 18_R, 19_R, 20_R});
+    cols.push_back({21_R, 22_R, 23_R, 24_R, 25_R, 26_R, 27_R, 28_R, 29_R, 30_R});
+    cols.push_back({31_R, 32_R, 33_R, 34_R, 35_R, 36_R, 37_R, 38_R, 39_R, 40_R});
+    cols.push_back({41_R, 42_R, 43_R, 44_R, 45_R, 46_R, 47_R, 48_R, 49_R, 50_R});
+    cols.push_back({51_R, 52_R, 53_R, 54_R, 55_R, 56_R, 57_R, 58_R, 59_R, 60_R});
+    cols.push_back({61_R, 62_R, 63_R, 64_R, 65_R, 66_R, 67_R, 68_R, 69_R, 70_R});
+    cols.push_back({71_R, 72_R, 73_R, 74_R, 75_R, 76_R, 77_R, 78_R, 79_R, 80_R});
+    cols.push_back({81_R, 82_R, 83_R, 84_R, 85_R, 86_R, 87_R, 88_R, 89_R, 90_R});
+    cols.push_back({91_R, 92_R, 93_R, 94_R, 95_R, 96_R, 97_R, 98_R, 99_R, 0_R});
+    auto costs = std::vector<real_t>(
+        {100.0_F, 100.0_F, 100.0_F, 100.0_F, 100.0_F, 100.0_F, 100.0_F, 100.0_F, 100.0_F, 100.0_F});
 
     auto rows = std::vector<ridx_t>{};
-    for (ridx_t i = 0; i < 100; ++i)
+    for (ridx_t i = 0_R; i < 100_R; ++i)
         rows.push_back(i);
 
-    auto rnd      = prng_t{seed};
-    int  num_cols = roll_dice(rnd, 0, max_ncols);
-    for (int i = 0; i < num_cols; ++i) {
+    auto   rnd      = prng_t{seed};
+    cidx_t num_cols = roll_dice(rnd, 0_C, max_ncols);
+    for (cidx_t i = 0_C; i < num_cols; ++i) {
         std::shuffle(rows.begin(), rows.end(), rnd);
         size_t c_size = rnd() % 10;
         cols.push_back(make_span(rows.data(), c_size));
@@ -43,7 +44,7 @@ inline Instance make_easy_inst(uint64_t seed, cidx_t max_ncols) {
     auto inst    = Instance();
     inst.cols    = std::move(cols);
     inst.costs   = std::move(costs);
-    ridx_t nrows = 100;
+    ridx_t nrows = 100_R;
     fill_rows_from_cols(inst.cols, nrows, inst.rows);
     return inst;
 }

@@ -30,7 +30,7 @@ public:
         cidx_t const ncols = csize(inst.cols);
 
         assert(nrows == rsize(lagr_mult));
-        if (nrows == 0 || ncols == 0)
+        if (nrows == 0_R || ncols == 0_C)
             return 0.0_F;
 
         core.col_map.clear();
@@ -78,9 +78,9 @@ private:
             if (reduced_costs[j] < 0.1_F)
                 idxs.push_back(j);
 
-        cidx_t const maxsize = as_cidx(5 * rsize(inst.rows));
+        cidx_t const maxsize = as_cidx(5_R * rsize(inst.rows));
         if (csize(idxs) > maxsize) {
-            cft::nth_element(idxs, maxsize - 1, [&](cidx_t i) { return reduced_costs[i]; });
+            cft::nth_element(idxs, maxsize - 1_C, [&](cidx_t i) { return reduced_costs[i]; });
             idxs.resize(maxsize);
         }
 

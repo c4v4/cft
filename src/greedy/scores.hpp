@@ -58,7 +58,7 @@ namespace local { namespace {
         auto& scores = score_info.scores;  // shorthand
 
         for (cidx_t j : row) {
-            score_info.covered_rows[j] -= 1;
+            score_info.covered_rows[j] -= 1_R;
             score_info.gammas[j] += i_lagr_mult;
 
             cidx_t s = score_info.score_map[j];
@@ -130,11 +130,11 @@ inline void update_changed_scores(Instance const&            inst,          // i
 inline score_subspan_t select_good_scores(Scores& score_info,  // in
                                           cidx_t  how_many     // in
 ) {
-    assert(how_many > 0 && "Good size must be greater than 0");
+    assert(how_many > 0_C && "Good size must be greater than 0");
     auto& scores = score_info.scores;  // shorthand
 
     how_many = std::min(how_many, csize(scores));
-    cft::nth_element(scores, how_many - 1, ScoreKey{});
+    cft::nth_element(scores, how_many - 1_C, ScoreKey{});
     for (cidx_t s = 0_C; s < csize(scores); ++s)
         score_info.score_map[scores[s].idx] = s;
 

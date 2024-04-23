@@ -4,8 +4,9 @@
 #ifndef CFT_SRC_CORE_LIMITS_HPP
 #define CFT_SRC_CORE_LIMITS_HPP
 
-
 #include <limits>
+
+#include "utils/custom_types.hpp"
 
 namespace cft {
 
@@ -14,15 +15,15 @@ namespace cft {
 template <typename T>
 struct limits {
     static constexpr T max() {
-        return std::numeric_limits<T>::max();
+        return T{std::numeric_limits<native_t<T>>::max()};
     }
 
     static constexpr T min() {
-        return std::numeric_limits<T>::lowest();
+        return T{std::numeric_limits<native_t<T>>::lowest()};
     }
 
     static constexpr T inf() {
-        return std::numeric_limits<T>::infinity();
+        return T{std::numeric_limits<native_t<T>>::infinity()};
     }
 };
 

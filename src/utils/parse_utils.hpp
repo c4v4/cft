@@ -62,11 +62,15 @@ inline std::vector<StringView> split(StringView str) {
 // Parse a string to a specific native scalar type
 template <typename T>
 struct string_to {
+    using val_t = native_t<T>;
+    static_assert(std::is_integral<val_t>::value || std::is_floating_point<val_t>::value,
+                  "Only integral and floating point types are supported");
+
     template <bool C, typename T1, typename T2>
     using if_t = typename std::conditional<C, T1, T2>::type;
 
-    using safe_type = if_t<std::is_integral<T>::value,
-                           if_t<std::is_signed<T>::value, int64_t, uint64_t>,
+    using safe_type = if_t<std::is_integral<val_t>::value,
+                           if_t<std::is_signed<val_t>::value, int64_t, uint64_t>,
                            long double>;
 
     // Parse without modifying the string view  (note the pass by value)
@@ -85,18 +89,18 @@ struct string_to {
         char*     end      = nullptr;
         errno              = 0;
 
-        if (std::is_floating_point<T>::value) {
+        if (std::is_floating_point<val_t>::value) {
             val      = std::strtold(str.data(), &end);
             oo_range = !std::isfinite(val);
-        } else if (std::is_signed<T>::value) {
+        } else if (std::is_signed<val_t>::value) {
             val      = std::strtoll(str.data(), &end, 10);
-            oo_range = val == limits<T>::max() && errno == ERANGE;
+            oo_range = val == limits<val_t>::max() && errno == ERANGE;
         } else {  // unsigned
             val      = std::strtoull(str.data(), &end, 10);
-            oo_range = val == limits<T>::max() && errno == ERANGE;
+            oo_range = val == limits<val_t>::max() && errno == ERANGE;
         }
 
-        if (oo_range || val < limits<T>::min() || limits<T>::max() < val)
+        if (oo_range || val < limits<val_t>::min() || limits<val_t>::max() < val)
             throw std::out_of_range(
                 fmt::format("Out of range parsing {} (as {})", str.data(), typeid(T).name()));
 

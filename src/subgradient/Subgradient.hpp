@@ -40,17 +40,17 @@ public:
                       real_t&              step_size,      // inout
                       std::vector<real_t>& best_lagr_mult  // inout
     ) {
-        ridx_t const nrows       = rsize(orig_inst.rows);
+        size_t const nrows       = size(orig_inst.rows);
         real_t const max_real_lb = cutoff - env.epsilon;
 
         assert(!orig_inst.cols.empty() && "Empty instance");
         assert(!core.inst.cols.empty() && "Empty core instance");
-        assert(nrows == rsize(core.inst.rows) && "Incompatible instances");
+        assert(nrows == size(core.inst.rows) && "Incompatible instances");
 
         auto   timer          = Chrono<>();
         auto   next_step_size = local::StepSizeManager(20, step_size);
         auto   should_exit    = local::ExitConditionManager(300);
-        auto   should_price   = local::PricingManager(10, std::min<size_t>(1000, nrows / 3));
+        auto   should_price   = local::PricingManager(10ULL, min(1000ULL, nrows / 3ULL));
         real_t best_core_lb   = limits<real_t>::min();
         auto   best_real_lb   = limits<real_t>::min();
         _reset_red_costs_and_lb(core.inst.costs, lb_sol, reduced_costs, best_core_lb);

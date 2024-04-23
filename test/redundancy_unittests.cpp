@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2024 Francesco Cavaliere <francescocava95@gmail.com>
 // SPDX-License-Identifier: MIT
 
+#define CATCH_CONFIG_MAIN 
 #include <catch2/catch.hpp>
 
 #include "greedy/redundancy.hpp"
@@ -12,15 +13,15 @@ namespace cft {
 
 TEST_CASE("enumeration_removal removes redundant columns using implicit enumeration", "[cft]") {
     auto rnd  = prng_t(0);
-    auto inst = make_easy_inst(0, 1000);
+    auto inst = make_easy_inst(0, 1000_C);
     for (int k = 0; k < 1000; ++k) {
         if ((k - 1) % 10 == 0)
-            inst = make_easy_inst(k, 1000);
+            inst = make_easy_inst(k, 1000_C);
 
-        cidx_t sol_size = roll_dice(rnd, 0, min(csize(inst.cols) - 1_C, 200_C));
+        cidx_t sol_size = roll_dice(rnd, 0_C, min(csize(inst.cols) - 1_C, 200_C));
         auto   sol      = Solution();
-        for (int n = 0; n < sol_size; ++n) {
-            cidx_t j = roll_dice(rnd, 0, csize(inst.cols) - 1_C);
+        for (cidx_t n = 0_C; n < sol_size; ++n) {
+            cidx_t j = roll_dice(rnd, 0_C, csize(inst.cols) - 1_C);
             if (!any(sol.idxs, [j](cidx_t sj) { return sj == j; }))
                 sol.idxs.push_back(j);
         }
@@ -47,7 +48,7 @@ TEST_CASE("enumeration_removal removes redundant columns using implicit enumerat
             return any(red_set.cols_to_remove, [j](cidx_t r) { return r == j; });
         });
 
-        for (ridx_t i = 0; i < rsize(inst.rows); ++i)
+        for (ridx_t i = 0_R; i < rsize(inst.rows); ++i)
             REQUIRE((init_cov[i] >= red_set.total_cover[i]));
     }
 }

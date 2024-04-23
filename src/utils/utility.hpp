@@ -6,10 +6,10 @@
 
 
 #include <cstddef>
-#include <type_traits>
 #include <utility>
 
 #include "utils/assert.hpp"  // IWYU pragma: keep
+#include "utils/custom_types.hpp"
 #include "utils/limits.hpp"
 
 namespace cft {
@@ -27,10 +27,6 @@ struct NoOp {
     }
 };
 
-// Remove const, volatile and reference from a type
-template <typename T>
-using no_cvr = typename std::remove_reference<typename std::remove_cv<T>::type>::type;
-
 // SFINAE helpers, activate overload if T is integral or floating point
 template <typename T>
 using requires_integral = typename std::enable_if<std::is_integral<T>::value, bool>::type;
@@ -47,19 +43,21 @@ using requires_floating_point = typename std::enable_if<std::is_floating_point<T
 // NOTE: this is NOT a `narrow-cast`, information might be lost with floating points.
 // NOTE: integral -> floating point must be in the range where the floating point can represent the
 // integral with precision at least 1
-template <typename ResT, typename T, requires_integral<T> = true>
+template <typename ResT, typename T, requires_integral<native_t<T>> = true>
 constexpr ResT checked_cast(T val) {
-    return assert(static_cast<T>(static_cast<ResT>(val)) == val),             // Lossless round-trip
-           assert(std::is_signed<T>::value == std::is_signed<ResT>::value ||  // Sign match
-                  (static_cast<ResT>(val) < ResT{}) == (val < T{})),
-           static_cast<ResT>(val);
+    using res_t = native_t<ResT>;
+    return assert(static_cast<T>(static_cast<res_t>(val)) == val),  // Round-trip check
+           assert(std::is_signed<native_t<T>>::value == std::is_signed<res_t>::value ||
+                  (static_cast<res_t>(val) < res_t{}) == (val < T{})),  // Sign check
+           ResT{static_cast<res_t>(val)};
 }
 
-template <typename ResT, typename T, requires_floating_point<T> = true>
+template <typename ResT, typename T, requires_floating_point<native_t<T>> = true>
 constexpr ResT checked_cast(T val) {
     // Here ResT can be integral, if val in in range, then any floating point can be casted to it
-    return assert(limits<ResT>::min() <= val && val <= limits<ResT>::max()),  // Range check
-           static_cast<ResT>(val);
+    return assert(static_cast<long double>(limits<ResT>::min()) <= static_cast<long double>(val) &&
+                  static_cast<long double>(val) <= static_cast<long double>(limits<ResT>::max())),
+           ResT{static_cast<native_t<ResT>>(val)};
 }
 
 ///////////// COMPARISON STUFF /////////////
@@ -75,9 +73,9 @@ T abs(T val) {
 }
 
 /// Multi-arg max. NOTE: to avoid ambiguity, return type is always the first argument type
-template <typename T>
-T max(T v) {
-    return v;
+template <typename T1, typename T2>
+constexpr T1 max(T1 v1, T2 v2) {
+    return v1 > checked_cast<T1>(v2) ? v1 : checked_cast<T1>(v2);
 }
 
 template <typename T1, typename T2, typename... Ts>
@@ -87,9 +85,9 @@ T1 max(T1 v1, T2 v2, Ts... tail) {
 }
 
 /// Multi-arg min. NOTE: to avoid ambiguity, return type is always the first argument type
-template <typename T>
-T min(T v) {
-    return v;
+template <typename T1, typename T2>
+constexpr T1 min(T1 v1, T2 v2) {
+    return v1 < checked_cast<T1>(v2) ? v1 : checked_cast<T1>(v2);
 }
 
 template <typename T1, typename T2, typename... Ts>

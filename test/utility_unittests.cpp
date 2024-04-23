@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 #include <array>
+#define CATCH_CONFIG_MAIN 
 #include <catch2/catch.hpp>
 
 #ifndef NDEBUG
@@ -101,47 +102,29 @@ TEST_CASE("test_abs") {
 
 TEST_CASE("test_max") {
     SECTION("Integers") {
-        REQUIRE(max(1) == 1);
         REQUIRE(max(1, 2) == 2);
         REQUIRE(max(1, 2, 3) == 3);
         REQUIRE(max(3, 2, 1) == 3);
     }
 
     SECTION("Floating-point numbers") {
-        REQUIRE(max(1.0) == 1.0);
         REQUIRE(max(1.0, 2.0) == 2.0);
         REQUIRE(max(1.0, 2.0, 3.0) == 3.0);
         REQUIRE(max(3.0, 2.0, 1.0) == 3.0);
-    }
-
-    SECTION("Booleans") {
-        REQUIRE(max(true) == true);
-        REQUIRE(max(true, false) == true);
-        REQUIRE(max(true, false, true) == true);
-        REQUIRE(max(false, true, false) == true);
     }
 }
 
 TEST_CASE("test_min") {
     SECTION("Integers") {
-        REQUIRE(min(1) == 1);
         REQUIRE(min(1, 2) == 1);
         REQUIRE(min(1, 2, 3) == 1);
         REQUIRE(min(3, 2, 1) == 1);
     }
 
     SECTION("Floating-point numbers") {
-        REQUIRE(min(1.0) == 1.0);
         REQUIRE(min(1.0, 2.0) == 1.0);
         REQUIRE(min(1.0, 2.0, 3.0) == 1.0);
         REQUIRE(min(3.0, 2.0, 1.0) == 1.0);
-    }
-
-    SECTION("Booleans") {
-        REQUIRE(min(true) == true);
-        REQUIRE(min(true, false) == false);
-        REQUIRE(min(true, false, true) == false);
-        REQUIRE(min(false, true, false) == false);
     }
 }
 

@@ -115,7 +115,7 @@ namespace local { namespace {
         }
         cidx_t new_ncols          = new_j;
         inst.cols.begs[new_ncols] = n;
-        inst.cols.begs.resize(new_ncols + 1);
+        inst.cols.begs.resize(new_ncols + 1_C);
         inst.cols.idxs.resize(n);
         inst.costs.resize(new_ncols);
     }

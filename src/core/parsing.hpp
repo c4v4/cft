@@ -59,7 +59,7 @@ inline Instance parse_scp_instance(std::string const& path) {
             assert(0_C < cidx && cidx <= ncols);
             if (cidx <= 0_C || ncols < cidx)
                 throw std::invalid_argument("Invalid column index: not a SCP instance?");
-            cols[cidx - 1].push_back(i);
+            cols[cidx - 1_C].push_back(i);
         }
     }
 
