@@ -1,8 +1,10 @@
 // SPDX-FileCopyrightText: 2024 Francesco Cavaliere <francescocava95@gmail.com>
 // SPDX-License-Identifier: MIT
 
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#define DOCTEST_CONFIG_SUPER_FAST_ASSERTS
+
+#include <doctest/doctest.h>
 
 #include "utils/random.hpp"
 
@@ -19,42 +21,42 @@ TEST_CASE("test_canonical_gen") {
     for (int i = 0; i < 100000; i++) {
         // Test for u32 -> f32 conversion
         auto result1 = canonical_gen<float>(rnd_u32);
-        REQUIRE(result1 >= 0.0F);
-        REQUIRE(result1 < 1.0F);
+        CHECK(result1 >= 0.0F);
+        CHECK(result1 < 1.0F);
         over_half += result1 > 0.5F ? 1 : 0;
         ++total;
 
         // Test for u32 -> f64 conversion
         auto result2 = canonical_gen<double>(rnd_float);
-        REQUIRE(result2 >= 0.0);
-        REQUIRE(result2 < 1.0);
+        CHECK(result2 >= 0.0);
+        CHECK(result2 < 1.0);
         over_half += result2 > 0.5 ? 1 : 0;
         ++total;
 
         // Test for u64 -> f32 conversion
         auto result3 = canonical_gen<float>(rnd_u64);
-        REQUIRE(result3 >= 0.0F);
-        REQUIRE(result3 < 1.0F);
+        CHECK(result3 >= 0.0F);
+        CHECK(result3 < 1.0F);
         over_half += result3 > 0.5F ? 1 : 0;
         ++total;
 
         // Test for u64 -> f64 conversion
         auto result4 = canonical_gen<double>(rnd_double);
-        REQUIRE(result4 >= 0.0);
-        REQUIRE(result4 < 1.0);
+        CHECK(result4 >= 0.0);
+        CHECK(result4 < 1.0);
         over_half += result4 > 0.5 ? 1 : 0;
         ++total;
 
         // Test for u64 -> f128 conversion
         auto result5 = canonical_gen<long double>(rnd_double);
-        REQUIRE(result5 >= 0.0L);
-        REQUIRE(result5 < 1.0L);
+        CHECK(result5 >= 0.0L);
+        CHECK(result5 < 1.0L);
         over_half += result5 > 0.5L ? 1 : 0;
         ++total;
     }
     double over_half_frac = over_half / static_cast<double>(total);
-    REQUIRE(0.49 < over_half_frac);
-    REQUIRE(over_half_frac < 0.51);
+    CHECK(0.49 < over_half_frac);
+    CHECK(over_half_frac < 0.51);
 }
 
 TEST_CASE("test_rnd_real") {
@@ -70,8 +72,8 @@ TEST_CASE("test_rnd_real") {
             // Test for u32 -> f32 conversion
             float min = -10.0F * i, max = 10.0F * i + 1;
             auto  res = rnd_real<float>(rnd_u32, min, max);
-            REQUIRE(res >= min);
-            REQUIRE(res < max);
+            CHECK(res >= min);
+            CHECK(res < max);
             over_half += res > (min + max) / 2.0F ? 1 : 0;
             ++total;
         }
@@ -79,8 +81,8 @@ TEST_CASE("test_rnd_real") {
             // Test for u32 -> f64 conversion
             double min = -10.0 * i, max = 10.0 * i + 1;
             auto   res = rnd_real<double>(rnd_float, min, max);
-            REQUIRE(res >= min);
-            REQUIRE(res < max);
+            CHECK(res >= min);
+            CHECK(res < max);
             over_half += res > (min + max) / 2.0 ? 1 : 0;
             ++total;
         }
@@ -88,8 +90,8 @@ TEST_CASE("test_rnd_real") {
             // Test for u64 -> f32 conversion
             float min = -10.0F * i, max = 10.0F * i + 1;
             auto  res = rnd_real<float>(rnd_u64, min, max);
-            REQUIRE(res >= min);
-            REQUIRE(res < max);
+            CHECK(res >= min);
+            CHECK(res < max);
             over_half += res > (min + max) / 2.0F ? 1 : 0;
             ++total;
         }
@@ -97,8 +99,8 @@ TEST_CASE("test_rnd_real") {
             // Test for u64 -> f64 conversion
             double min = -10.0 * i, max = 10.0 * i + 1;
             auto   res = rnd_real<double>(rnd_double, min, max);
-            REQUIRE(res >= min);
-            REQUIRE(res < max);
+            CHECK(res >= min);
+            CHECK(res < max);
             over_half += res > (min + max) / 2.0 ? 1 : 0;
             ++total;
         }
@@ -106,15 +108,15 @@ TEST_CASE("test_rnd_real") {
             // Test for u64 -> f64 conversion
             long double min = -10.0L * i, max = 10.0L * i + 1;
             auto        res = rnd_real<long double>(rnd_double, min, max);
-            REQUIRE(res >= min);
-            REQUIRE(res < max);
+            CHECK(res >= min);
+            CHECK(res < max);
             over_half += res > (min + max) / 2.0L ? 1 : 0;
             ++total;
         }
     }
     double over_half_frac = over_half / static_cast<double>(total);
-    REQUIRE(0.49 < over_half_frac);
-    REQUIRE(over_half_frac < 0.51);
+    CHECK(0.49 < over_half_frac);
+    CHECK(over_half_frac < 0.51);
 }
 
 TEST_CASE("test_roll_dice") {
@@ -127,23 +129,23 @@ TEST_CASE("test_roll_dice") {
         {
             int32_t min = -10 * i, max = 10 * i + 1;
             auto    res = roll_dice<int32_t>(rnd_u32, min, max);
-            REQUIRE(res >= min);
-            REQUIRE(res <= max);
+            CHECK(res >= min);
+            CHECK(res <= max);
             over_half += res > (min + max) / 2 ? 1 : 0;
             ++total;
         }
         {
             int64_t min = -10L * i, max = 10L * i + 1;
             auto    res = roll_dice<int64_t>(rnd_u64, min, max);
-            REQUIRE(res >= min);
-            REQUIRE(res <= max);
+            CHECK(res >= min);
+            CHECK(res <= max);
             over_half += res > (min + max) / 2 ? 1 : 0;
             ++total;
         }
     }
     double over_half_frac = over_half / static_cast<double>(total);
-    REQUIRE(0.49 < over_half_frac);
-    REQUIRE(over_half_frac < 0.51);
+    CHECK(0.49 < over_half_frac);
+    CHECK(over_half_frac < 0.51);
 }
 
 TEST_CASE("test_coin_flip") {
@@ -167,8 +169,8 @@ TEST_CASE("test_coin_flip") {
         }
     }
     double true_frac = true_count / static_cast<double>(total);
-    REQUIRE(0.49 < true_frac);
-    REQUIRE(true_frac < 0.51);
+    CHECK(0.49 < true_frac);
+    CHECK(true_frac < 0.51);
 }
 
 

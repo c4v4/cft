@@ -1,80 +1,71 @@
 // SPDX-FileCopyrightText: 2024 Francesco Cavaliere <francescocava95@gmail.com>
 // SPDX-License-Identifier: MIT
 
-#define CATCH_CONFIG_MAIN 
-#include <catch2/catch.hpp>
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#define DOCTEST_CONFIG_SUPER_FAST_ASSERTS
+
+#include <doctest/doctest.h>
+
 #include <stdexcept>
 
 #include "core/CliArgs.hpp"
 #include "core/cft.hpp"
 
 namespace cft {
-TEST_CASE("parse_cli_args parses command line arguments correctly", "[parse_cli_args]") {
+TEST_CASE("parse_cli_args parses command line arguments correctly") {
     char const* argv[] = {"program_name", "-i",       "input.txt", "-p", "rail", "-o",
                           "output.sol",   "-s",       "12345",     "-t", "10.0", "-v",
                           " 5",           "-e",       "1E-3",      "-g", "100",  "-b",
                           "0.5",          "-a",       "1e-2",      "-r", "1E-1", "-h",
                           "-w",           "test.sol", "-U"};
 
-    int argc = sizeof(argv) / sizeof(argv[0]);
+    int  argc = sizeof(argv) / sizeof(argv[0]);
+    auto env  = parse_cli_args(argc, argv);
 
-    SECTION("parse_cli_args parses command line arguments correctly") {
+    CHECK(env.inst_path == "input.txt");
+    CHECK(env.parser == "rail");
+    CHECK(env.sol_path == "output.sol");
+    CHECK(env.initsol_path == "test.sol");
+    CHECK(env.seed == 12345);
+    CHECK(env.time_limit == 10.0);
+    CHECK(env.verbose == 5);
+    CHECK(env.epsilon == 0.001_F);
+    CHECK(env.heur_iters == 100);
+    CHECK(env.beta == 0.5_F);
+    CHECK(env.abs_subgrad_exit == 0.01_F);
+    CHECK(env.rel_subgrad_exit == 0.1_F);
 
-        auto env = parse_cli_args(argc, argv);
-
-        REQUIRE(env.inst_path == "input.txt");
-        REQUIRE(env.parser == "rail");
-        REQUIRE(env.sol_path == "output.sol");
-        REQUIRE(env.initsol_path == "test.sol");
-        REQUIRE(env.seed == 12345);
-        REQUIRE(env.time_limit == 10.0);
-        REQUIRE(env.verbose == 5);
-        REQUIRE(env.epsilon == 0.001_F);
-        REQUIRE(env.heur_iters == 100);
-        REQUIRE(env.beta == 0.5_F);
-        REQUIRE(env.abs_subgrad_exit == 0.01_F);
-        REQUIRE(env.rel_subgrad_exit == 0.1_F);
-
-        REQUIRE_NOTHROW(print_cli_help_msg());
-        REQUIRE_NOTHROW(print_arg_values(env));
-    }
+    CHECK_NOTHROW(print_cli_help_msg());
+    CHECK_NOTHROW(print_arg_values(env));
 }
 
-TEST_CASE("parse_cli_args no args", "[parse_cli_args]") {
+TEST_CASE("parse_cli_args no args") {
     char const* argv[] = {"program_name"};
-
-    int argc = sizeof(argv) / sizeof(argv[0]);
-
-    SECTION("parse_cli_args parses no arguments correctly") {
-        REQUIRE_THROWS_AS(parse_cli_args(argc, argv), std::runtime_error);
-    }
+    int         argc   = sizeof(argv) / sizeof(argv[0]);
+    CHECK_THROWS_AS(parse_cli_args(argc, argv), std::runtime_error);
 }
 
-TEST_CASE("parse_cli_args instance only", "[parse_cli_args]") {
+TEST_CASE("parse_cli_args instance only") {
     char const* argv[] = {"program_name", "-i", "input.txt"};
+    int         argc   = sizeof(argv) / sizeof(argv[0]);
+    auto        env    = parse_cli_args(argc, argv);
 
-    int argc = sizeof(argv) / sizeof(argv[0]);
-
-    SECTION("parse_cli_args parses instance only correclty") {
-        auto env = parse_cli_args(argc, argv);
-
-        REQUIRE(env.inst_path == "input.txt");
-        REQUIRE(env.parser == "RAIL");
-        REQUIRE(env.sol_path == "input.sol");
-        REQUIRE(env.initsol_path.empty());
-        REQUIRE(env.seed == 0);
-        REQUIRE(env.time_limit == limits<double>::inf());
-        REQUIRE(env.verbose == 4);
-        REQUIRE(env.epsilon == 0.999999_F);
-        REQUIRE(env.heur_iters == 250);
-        REQUIRE(env.alpha == 1.1_F);
-        REQUIRE(env.beta == 1.0_F);
-        REQUIRE(env.abs_subgrad_exit == 1.0_F);
-        REQUIRE(env.rel_subgrad_exit == 0.001_F);
-    }
+    CHECK(env.inst_path == "input.txt");
+    CHECK(env.parser == "RAIL");
+    CHECK(env.sol_path == "input.sol");
+    CHECK(env.initsol_path.empty());
+    CHECK(env.seed == 0);
+    CHECK(env.time_limit == limits<double>::inf());
+    CHECK(env.verbose == 4);
+    CHECK(env.epsilon == 0.999999_F);
+    CHECK(env.heur_iters == 250);
+    CHECK(env.alpha == 1.1_F);
+    CHECK(env.beta == 1.0_F);
+    CHECK(env.abs_subgrad_exit == 1.0_F);
+    CHECK(env.rel_subgrad_exit == 0.001_F);
 }
 
-TEST_CASE("parse_cli_args parses command line arguments correctly (long)", "[parse_cli_args]") {
+TEST_CASE("parse_cli_args parses command line arguments correctly (long)") {
     char const* argv[] = {"program_name",
                           "--inst",
                           "input.txt",
@@ -103,53 +94,49 @@ TEST_CASE("parse_cli_args parses command line arguments correctly (long)", "[par
                           "test.sol",
                           "--unrecognized"};
 
-    int argc = sizeof(argv) / sizeof(argv[0]);
+    int  argc = sizeof(argv) / sizeof(argv[0]);
+    auto env  = parse_cli_args(argc, argv);
 
-    SECTION("parse_cli_args parses command line arguments correctly") {
-        auto env = parse_cli_args(argc, argv);
+    CHECK(env.inst_path == "input.txt");
+    CHECK(env.parser == CFT_RAIL_PARSER);
+    CHECK(env.sol_path == "output.sol");
+    CHECK(env.initsol_path == "test.sol");
+    CHECK(env.seed == 12345);
+    CHECK(env.time_limit == 10.0);
+    CHECK(env.verbose == 2);
+    CHECK(env.epsilon == 0.001_F);
+    CHECK(env.heur_iters == 100);
+    CHECK(env.beta == 0.5_F);
+    CHECK(env.abs_subgrad_exit == 0.01_F);
+    CHECK(env.rel_subgrad_exit == 0.1_F);
 
-        REQUIRE(env.inst_path == "input.txt");
-        REQUIRE(env.parser == CFT_RAIL_PARSER);
-        REQUIRE(env.sol_path == "output.sol");
-        REQUIRE(env.initsol_path == "test.sol");
-        REQUIRE(env.seed == 12345);
-        REQUIRE(env.time_limit == 10.0);
-        REQUIRE(env.verbose == 2);
-        REQUIRE(env.epsilon == 0.001_F);
-        REQUIRE(env.heur_iters == 100);
-        REQUIRE(env.beta == 0.5_F);
-        REQUIRE(env.abs_subgrad_exit == 0.01_F);
-        REQUIRE(env.rel_subgrad_exit == 0.1_F);
-
-        REQUIRE_NOTHROW(print_cli_help_msg());
-        REQUIRE_NOTHROW(print_arg_values(env));
-    }
+    CHECK_NOTHROW(print_cli_help_msg());
+    CHECK_NOTHROW(print_arg_values(env));
 }
 
-TEST_CASE("make_sol_name returns correct solution name", "[make_sol_name]") {
-    SECTION("With path and extension") {
-        std::string inst_path         = "/home/user/repos/cft/instances/problem.txt";
-        std::string expected_sol_name = "problem.sol";
-        REQUIRE(local::make_sol_name(inst_path) == expected_sol_name);
-    }
+TEST_CASE("make_sol_name returns correct solution name with path and extension") {
+    std::string inst_path         = "/home/user/repos/cft/instances/problem.txt";
+    std::string expected_sol_name = "problem.sol";
+    CHECK(local::make_sol_name(inst_path) == expected_sol_name);
+}
 
-    SECTION("With path and multiple dots in filename") {
-        std::string inst_path         = "../../cft/instances/problem.test.txt";
-        std::string expected_sol_name = "problem.test.sol";
-        REQUIRE(local::make_sol_name(inst_path) == expected_sol_name);
-    }
+TEST_CASE("make_sol_name returns correct solution name with path and multiple dots in "
+          "filename") {
+    std::string inst_path         = "../../cft/instances/problem.test.txt";
+    std::string expected_sol_name = "problem.test.sol";
+    CHECK(local::make_sol_name(inst_path) == expected_sol_name);
+}
 
-    SECTION("Without path") {
-        std::string inst_path         = "problem.txt";
-        std::string expected_sol_name = "problem.sol";
-        REQUIRE(local::make_sol_name(inst_path) == expected_sol_name);
-    }
+TEST_CASE("make_sol_name returns correct solution name without path") {
+    std::string inst_path         = "problem.txt";
+    std::string expected_sol_name = "problem.sol";
+    CHECK(local::make_sol_name(inst_path) == expected_sol_name);
+}
 
-    SECTION("Without extension") {
-        std::string inst_path         = "./cft/instances/problem";
-        std::string expected_sol_name = "problem.sol";
-        REQUIRE(local::make_sol_name(inst_path) == expected_sol_name);
-    }
+TEST_CASE("make_sol_name returns correct solution name without extension") {
+    std::string inst_path         = "./cft/instances/problem";
+    std::string expected_sol_name = "problem.sol";
+    CHECK(local::make_sol_name(inst_path) == expected_sol_name);
 }
 
 }  // namespace cft

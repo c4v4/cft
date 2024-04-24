@@ -1,8 +1,10 @@
 // SPDX-FileCopyrightText: 2024 Francesco Cavaliere <francescocava95@gmail.com>
 // SPDX-License-Identifier: MIT
 
-#define CATCH_CONFIG_MAIN 
-#include <catch2/catch.hpp>
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#define DOCTEST_CONFIG_SUPER_FAST_ASSERTS
+ 
+#include <doctest/doctest.h>
 
 #include "utils/SortedArray.hpp"
 
@@ -16,15 +18,15 @@ TEST_CASE("test_sorted_sequence") {
     arr.insert(4);
     arr.insert(5);
 
-    REQUIRE(arr.size() == 5);
-    REQUIRE(arr.back() == 5);
+    CHECK(arr.size() == 5);
+    CHECK(arr.back() == 5);
 
     int expected[] = {1, 2, 3, 4, 5};
     for (size_t i = 0; i < arr.size(); ++i)
-        REQUIRE(arr[i] == expected[i]);
+        CHECK(arr[i] == expected[i]);
     int prev = -1;
     for (int elem : arr) {
-        REQUIRE(prev < elem);
+        CHECK(prev < elem);
         prev = elem;
     }
 }
@@ -37,15 +39,15 @@ TEST_CASE("test_unsorted_sequence") {
     arr.insert(2);
     arr.insert(4);
 
-    REQUIRE(arr.size() == 5);
-    REQUIRE(arr.back() == 5);
+    CHECK(arr.size() == 5);
+    CHECK(arr.back() == 5);
 
     int expected[] = {1, 2, 3, 4, 5};
     for (size_t i = 0; i < arr.size(); ++i)
-        REQUIRE(arr[i] == expected[i]);
+        CHECK(arr[i] == expected[i]);
     int prev = -1;
     for (int elem : arr) {
-        REQUIRE(prev < elem);
+        CHECK(prev < elem);
         prev = elem;
     }
 }
@@ -53,8 +55,8 @@ TEST_CASE("test_unsorted_sequence") {
 TEST_CASE("test_empty_sequence") {
     auto arr = SortedArray<int, 5>();
 
-    REQUIRE(arr.size() == 0);
-    REQUIRE(arr.begin() == arr.end());
+    CHECK(arr.size() == 0);
+    CHECK(arr.begin() == arr.end());
 }
 
 TEST_CASE("test_ovefull_sequence") {
@@ -70,15 +72,15 @@ TEST_CASE("test_ovefull_sequence") {
     arr.try_insert(10);
     arr.try_insert(8);
 
-    REQUIRE(arr.size() == 5);
-    REQUIRE(arr.back() == 5);
+    CHECK(arr.size() == 5);
+    CHECK(arr.back() == 5);
 
     int expected[] = {1, 2, 3, 4, 5};
     for (size_t i = 0; i < arr.size(); ++i)
-        REQUIRE(arr[i] == expected[i]);
+        CHECK(arr[i] == expected[i]);
     int prev = -1;
     for (int elem : arr) {
-        REQUIRE(prev < elem);
+        CHECK(prev < elem);
         prev = elem;
     }
 }
@@ -92,14 +94,14 @@ TEST_CASE("test_custom_key") {
     arr.insert(1);
     arr.insert(3);
 
-    REQUIRE(arr.size() == 5);
-    REQUIRE(arr.back() == 0);
+    CHECK(arr.size() == 5);
+    CHECK(arr.back() == 0);
 
     for (size_t i = 0; i < arr.size(); ++i)
-        REQUIRE(arr[i] == idx_array[i]);
+        CHECK(arr[i] == idx_array[i]);
     int prev = -1;
     for (int elem : arr) {
-        REQUIRE(prev < idx_array[elem]);
+        CHECK(prev < idx_array[elem]);
         prev = idx_array[elem];
     }
 }
@@ -109,11 +111,11 @@ TEST_CASE("test_custom_key") {
 TEST_CASE("Test SortedArray assert fails") {
     auto arr = SortedArray<int, 5>();
 
-    REQUIRE_THROWS_AS(arr.back(), std::runtime_error);
+    CHECK_THROWS_AS(arr.back(), std::runtime_error);
     arr.insert(1);
-    REQUIRE(arr.back() == 1);
-    REQUIRE(arr[0] == 1);
-    REQUIRE_THROWS_AS(arr[1], std::runtime_error);
+    CHECK(arr.back() == 1);
+    CHECK(arr[0] == 1);
+    CHECK_THROWS_AS(arr[1], std::runtime_error);
 }
 
 #endif
