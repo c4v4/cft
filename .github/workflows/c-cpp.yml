@@ -42,10 +42,10 @@ jobs:
         -S ${{ github.workspace }}
 
     - name: Build
-      run: cmake --build ${{ github.workspace }}/build --config ${{ matrix.build_type }}
+      run: cmake --build ${{ github.workspace }}/build --config ${{ matrix.build_type }} -j
 
     - name: Test
-      run: ctest  --test-dir ${{ github.workspace }}/build --output-on-failure --build-config ${{ matrix.build_type }} --timeout 600
+      run: ctest  --test-dir ${{ github.workspace }}/build --output-on-failure --build-config ${{ matrix.build_type }} --timeout 600 -j
 
     - name: Install lcov
       if: matrix.cpp_compiler == 'g++'

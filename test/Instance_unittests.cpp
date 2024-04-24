@@ -1,8 +1,10 @@
 // SPDX-FileCopyrightText: 2024 Francesco Cavaliere <francescocava95@gmail.com>
 // SPDX-License-Identifier: MIT
 
-#define CATCH_CONFIG_MAIN 
-#include <catch2/catch.hpp>
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#define DOCTEST_CONFIG_SUPER_FAST_ASSERTS
+ 
+#include <doctest/doctest.h>
 #include <stdexcept>
 
 #include "core/Instance.hpp"
@@ -39,38 +41,38 @@ namespace local { namespace {
 
 TEST_CASE("Test fill_rows_from_cols") {
     auto inst = local::make_partial_inst();
-    REQUIRE_NOTHROW(fill_rows_from_cols(inst.cols, rsize(inst.rows), inst.rows));
-    REQUIRE_NOTHROW(col_and_rows_check(inst.cols, inst.rows));
+    CHECK_NOTHROW(fill_rows_from_cols(inst.cols, rsize(inst.rows), inst.rows));
+    CHECK_NOTHROW(col_and_rows_check(inst.cols, inst.rows));
 }
 
 TEST_CASE("Test fill_rows_from_cols fail") {
     auto inst = local::make_partial_inst();
-    REQUIRE_NOTHROW(fill_rows_from_cols(inst.cols, rsize(inst.rows), inst.rows));
+    CHECK_NOTHROW(fill_rows_from_cols(inst.cols, rsize(inst.rows), inst.rows));
     inst.rows.back().push_back(0_C);
-    REQUIRE_THROWS_AS(col_and_rows_check(inst.cols, inst.rows), std::runtime_error);
+    CHECK_THROWS_AS(col_and_rows_check(inst.cols, inst.rows), std::runtime_error);
 }
 #endif
 
 TEST_CASE("Test push_back_col_from") {
     auto inst1 = local::make_partial_inst();
     auto inst2 = local::make_partial_inst();
-    REQUIRE_NOTHROW(push_back_col_from(inst1, 0_C, inst2));
-    REQUIRE(inst2.cols.size() == inst1.cols.size() + 1);
+    CHECK_NOTHROW(push_back_col_from(inst1, 0_C, inst2));
+    CHECK(inst2.cols.size() == inst1.cols.size() + 1);
 
     auto last_col = inst2.cols[inst2.cols.size() - 1];
-    REQUIRE(last_col.size() == inst1.cols[0].size());
+    CHECK(last_col.size() == inst1.cols[0].size());
     for (size_t n = 0; n < inst1.cols[0].size(); ++n)
-        REQUIRE(last_col[n] == inst1.cols[0][n]);
+        CHECK(last_col[n] == inst1.cols[0][n]);
 
-    REQUIRE(inst2.costs.size() == inst1.costs.size() + 1);
+    CHECK(inst2.costs.size() == inst1.costs.size() + 1);
 }
 
 TEST_CASE("Test clear inst") {
     auto inst = local::make_partial_inst();
-    REQUIRE_NOTHROW(clear_inst(inst));
-    REQUIRE(inst.cols.empty());
-    REQUIRE(inst.rows.empty());
-    REQUIRE(inst.costs.empty());
+    CHECK_NOTHROW(clear_inst(inst));
+    CHECK(inst.cols.empty());
+    CHECK(inst.rows.empty());
+    CHECK(inst.costs.empty());
 }
 
 

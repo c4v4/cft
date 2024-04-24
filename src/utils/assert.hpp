@@ -4,10 +4,10 @@
 #ifndef CFT_SRC_UTILS_ASSERT_HPP
 #define CFT_SRC_UTILS_ASSERT_HPP
 
-// Testing for failed assertions is not trivial with Catch2.
+// Testing for failed assertions is not trivial with Catch2/doctest.
 // This header provides a way to throw exceptions on failed assertions in debug mode, which can be
-// caught by Catch2. In this way, we can test that out-of-contract input fails as expected (in
-// debug mode). To activare this special asserts, define CFT_ASSERT_FAIL_THROWS before including
+// caught by Catch2/doctest. In this way, we can test that out-of-contract input fails as expected
+// (in debug mode). To activare this special asserts, define CFT_ASSERT_FAIL_THROWS before including
 // this header or at compile time.
 
 #ifdef CFT_ASSERT_FAIL_THROWS  // Activates throwing exceptions on failed assertions
@@ -23,7 +23,6 @@
 // the issue.".
 // The assert should be at the location corresponding to the compiler error: "note: in expansion of
 // macro ‘assert’"
-// (This is the price to catch comptime errors with C++11)
 #define assert(expr)                                                                               \
     (static_cast<void>((expr) ? 0                                                                  \
                               : throw std::runtime_error(__FILE__ ":" + std::to_string(__LINE__) + \

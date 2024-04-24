@@ -1,8 +1,10 @@
 // SPDX-FileCopyrightText: 2024 Francesco Cavaliere <francescocava95@gmail.com>
 // SPDX-License-Identifier: MIT
 
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#define DOCTEST_CONFIG_SUPER_FAST_ASSERTS
+
+#include <doctest/doctest.h>
 #include <cstring>
 
 #ifndef NDEBUG
@@ -32,13 +34,13 @@ TEST_CASE("test_single_row_cover_set_coverage") {
 
 
     auto cs = CoverCounters(nrows);
-    REQUIRE(cs.cover(cols.idxs) == static_cast<size_t>(nrows));
+    CHECK(cs.cover(cols.idxs) == static_cast<size_t>(nrows));
 
     cs.reset(nrows);
     for (ridx_t i = 0_R; i < nrows; ++i)
-        REQUIRE(cs[i] == 0);
+        CHECK(cs[i] == 0);
     for (cidx_t j = 0_C; j < ncols; ++j)
-        REQUIRE(cs.cover(cols[j]) == cols[j].size());
+        CHECK(cs.cover(cols[j]) == cols[j].size());
 }
 
 TEST_CASE("test_multiples_rows_cover_set_coverage") {
@@ -56,31 +58,31 @@ TEST_CASE("test_multiples_rows_cover_set_coverage") {
     cols.push_back({5_R, 15_R, 25_R, 35_R, 6_R, 16_R, 26_R, 36_R});
 
     auto cs = CoverCounters(nrows);
-    REQUIRE(cs.cover(cols.idxs) == static_cast<size_t>(nrows));
+    CHECK(cs.cover(cols.idxs) == static_cast<size_t>(nrows));
 
     cs.reset(nrows);
     for (ridx_t i = 0_R; i < rsize(cs); ++i)
-        REQUIRE(cs[i] == 0);
+        CHECK(cs[i] == 0);
     for (cidx_t j = 0_C; j < 4_C; ++j)
-        REQUIRE(cs.cover(cols[j]) == cols[j].size());
+        CHECK(cs.cover(cols[j]) == cols[j].size());
     for (cidx_t j = 4_C; j < csize(cols); ++j) {
-        REQUIRE(cs.is_redundant_cover(cols[j]));
-        REQUIRE(!cs.is_redundant_uncover(cols[j]));
-        REQUIRE(cs.cover(cols[j]) == 0);
+        CHECK(cs.is_redundant_cover(cols[j]));
+        CHECK(!cs.is_redundant_uncover(cols[j]));
+        CHECK(cs.cover(cols[j]) == 0);
 
-        REQUIRE(cs.is_redundant_cover(cols[j]));
-        REQUIRE(cs.is_redundant_uncover(cols[j]));
-        REQUIRE(cs.uncover(cols[j]) == 0);
+        CHECK(cs.is_redundant_cover(cols[j]));
+        CHECK(cs.is_redundant_uncover(cols[j]));
+        CHECK(cs.uncover(cols[j]) == 0);
 
-        REQUIRE(cs.is_redundant_cover(cols[j]));
-        REQUIRE(!cs.is_redundant_uncover(cols[j]));
-        REQUIRE(cs.uncover(cols[j]) == cols[j].size());
+        CHECK(cs.is_redundant_cover(cols[j]));
+        CHECK(!cs.is_redundant_uncover(cols[j]));
+        CHECK(cs.uncover(cols[j]) == cols[j].size());
 
-        REQUIRE(!cs.is_redundant_cover(cols[j]));
+        CHECK(!cs.is_redundant_cover(cols[j]));
     }
 
     cs.reset(nrows);
-    REQUIRE(cs.cover(cols.idxs) == static_cast<size_t>(nrows));
+    CHECK(cs.cover(cols.idxs) == static_cast<size_t>(nrows));
 
     size_t cover_count = 0;
     size_t nnz         = 0;
@@ -88,7 +90,7 @@ TEST_CASE("test_multiples_rows_cover_set_coverage") {
         cover_count += cs[i];
     for (cidx_t j = 0_C; j < ncols; ++j)
         nnz += cols[j].size();
-    REQUIRE(cover_count == nnz);
+    CHECK(cover_count == nnz);
 }
 
 #ifndef NDEBUG
@@ -104,18 +106,18 @@ TEST_CASE("Test coverage assert fails") {
 
     auto cs = CoverCounters(nrows);
     for (cidx_t j = 0_C; j < 4; ++j) {
-        REQUIRE_THROWS_AS(cs.cover(cols[j]), std::runtime_error);
-        REQUIRE_THROWS_AS(cs.is_redundant_cover(cols[j]), std::runtime_error);
+        CHECK_THROWS_AS(cs.cover(cols[j]), std::runtime_error);
+        CHECK_THROWS_AS(cs.is_redundant_cover(cols[j]), std::runtime_error);
     }
 
     for (cidx_t j = 0_C; j < 4; ++j) {
-        REQUIRE_THROWS_AS(cs.uncover(cols[j]), std::runtime_error);
-        REQUIRE_THROWS_AS(cs.is_redundant_uncover(cols[j]), std::runtime_error);
+        CHECK_THROWS_AS(cs.uncover(cols[j]), std::runtime_error);
+        CHECK_THROWS_AS(cs.is_redundant_uncover(cols[j]), std::runtime_error);
     }
-    REQUIRE_THROWS_AS(cs.uncover(std::vector<int>{0, 0, 0, 0, 0}), std::runtime_error);
+    CHECK_THROWS_AS(cs.uncover(std::vector<int>{0, 0, 0, 0, 0}), std::runtime_error);
 
-    REQUIRE_THROWS_AS(cs[40], std::runtime_error);
-    REQUIRE_THROWS_AS(cs[-1], std::runtime_error);
+    CHECK_THROWS_AS(cs[40], std::runtime_error);
+    CHECK_THROWS_AS(cs[-1], std::runtime_error);
 }
 
 #endif

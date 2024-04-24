@@ -1,8 +1,10 @@
 // SPDX-FileCopyrightText: 2024 Francesco Cavaliere <francescocava95@gmail.com>
 // SPDX-License-Identifier: MIT
 
-#define CATCH_CONFIG_MAIN 
-#include <catch2/catch.hpp>
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#define DOCTEST_CONFIG_SUPER_FAST_ASSERTS
+ 
+#include <doctest/doctest.h>
 
 #include "utils/StringView.hpp"
 
@@ -11,77 +13,77 @@ namespace cft {
 TEST_CASE("test_ctor") {
 
     auto sv1 = StringView();
-    REQUIRE(sv1.empty());
-    REQUIRE(sv1.size() == 0);
-    REQUIRE(sv1.data() == nullptr);
-    REQUIRE(sv1.begin() == sv1.end());
+    CHECK(sv1.empty());
+    CHECK(sv1.size() == 0);
+    CHECK(sv1.data() == nullptr);
+    CHECK(sv1.begin() == sv1.end());
 
     char const* cstr = "Hello";
     auto        sv2  = StringView(cstr, cstr + 5);
-    REQUIRE(sv2.size() == 5);
-    REQUIRE(sv2.data() == cstr);
-    REQUIRE(sv2.begin() == cstr);
-    REQUIRE(sv2.end() == cstr + 5);
-    REQUIRE(sv2[0] == 'H');
-    REQUIRE(sv2[1] == 'e');
-    REQUIRE(sv2[2] == 'l');
-    REQUIRE(sv2[3] == 'l');
-    REQUIRE(sv2[4] == 'o');
+    CHECK(sv2.size() == 5);
+    CHECK(sv2.data() == cstr);
+    CHECK(sv2.begin() == cstr);
+    CHECK(sv2.end() == cstr + 5);
+    CHECK(sv2[0] == 'H');
+    CHECK(sv2[1] == 'e');
+    CHECK(sv2[2] == 'l');
+    CHECK(sv2[3] == 'l');
+    CHECK(sv2[4] == 'o');
 
     auto sv3 = StringView(cstr, 5);
-    REQUIRE(sv3.size() == 5);
-    REQUIRE(sv3.data() == cstr);
-    REQUIRE(sv3.begin() == cstr);
-    REQUIRE(sv3.end() == cstr + 5);
-    REQUIRE(sv3[0] == 'H');
-    REQUIRE(sv3[1] == 'e');
-    REQUIRE(sv3[2] == 'l');
-    REQUIRE(sv3[3] == 'l');
-    REQUIRE(sv3[4] == 'o');
+    CHECK(sv3.size() == 5);
+    CHECK(sv3.data() == cstr);
+    CHECK(sv3.begin() == cstr);
+    CHECK(sv3.end() == cstr + 5);
+    CHECK(sv3[0] == 'H');
+    CHECK(sv3[1] == 'e');
+    CHECK(sv3[2] == 'l');
+    CHECK(sv3[3] == 'l');
+    CHECK(sv3[4] == 'o');
 
     std::string cxxstr = "Hello, World!";
     auto        sv4    = StringView(cxxstr);
-    REQUIRE(sv4.size() == 13);
-    REQUIRE(sv4.data() == cxxstr.data());
-    REQUIRE(sv4.begin() == cxxstr.data());
-    REQUIRE(sv4.end() == cxxstr.data() + 13);
-    REQUIRE(sv4.get_substr(0, 5) == sv3);
+    CHECK(sv4.size() == 13);
+    CHECK(sv4.data() == cxxstr.data());
+    CHECK(sv4.begin() == cxxstr.data());
+    CHECK(sv4.end() == cxxstr.data() + 13);
+    CHECK(sv4.get_substr(0, 5) == sv3);
 
     auto sv5 = StringView(cstr);
-    REQUIRE(sv5 == sv4.get_substr(0, 5));
+    CHECK(sv5 == sv4.get_substr(0, 5));
 
     char bstr[] = "World!";
     auto sv6    = StringView(bstr, bstr + 6);
-    REQUIRE(sv6.size() == 6);
-    REQUIRE(sv6.data() == bstr);
-    REQUIRE(sv6.begin() == bstr);
-    REQUIRE(sv6.end() == bstr + 6);
-    REQUIRE(sv6 == sv4.get_substr(7, 13));
+    CHECK(sv6.size() == 6);
+    CHECK(sv6.data() == bstr);
+    CHECK(sv6.begin() == bstr);
+    CHECK(sv6.end() == bstr + 6);
+    CHECK(sv6 == sv4.get_substr(7, 13));
 }
 
 TEST_CASE("test_string_view_prefix_suffix") {
     auto sv = StringView("Hello, World!");
-    REQUIRE(sv.size() == 13);
-    REQUIRE(sv.find_first_true([](char c) { return std::isspace(c); }) == 6);
-    REQUIRE(sv.find_last_true([](char c) { return c == ','; }) == 5);
-    REQUIRE(sv.find_last_true([](char c) { return c == 'H'; }) == 0);
-    REQUIRE(sv.find_first_true([](char c) { return c == '#'; }) == 13);
-    REQUIRE(sv.find_last_true([](char c) { return c == '#'; }) == 13);
-    REQUIRE(sv.remove_prefix(7) == StringView("World!"));
-    REQUIRE(sv.remove_suffix(6) == StringView("Hello,"));
+    CHECK(sv.size() == 13);
+    CHECK(sv.find_first_true([](char c) { return std::isspace(c); }) == 6);
+    CHECK(sv.find_last_true([](char c) { return c == ','; }) == 5);
+    CHECK(sv.find_last_true([](char c) { return c == 'H'; }) == 0);
+    CHECK(sv.find_first_true([](char c) { return c == '#'; }) == 13);
+    CHECK(sv.find_last_true([](char c) { return c == '#'; }) == 13);
+    CHECK(sv.remove_prefix(7) == StringView("World!"));
+    CHECK(sv.remove_suffix(6) == StringView("Hello,"));
 }
 
 TEST_CASE("test_string_view_prefix_suffix_empty") {
     auto sv = StringView();
-    REQUIRE(sv.empty());
-    REQUIRE(sv.size() == 0);
-    REQUIRE(sv.find_first_true([](char c) { return std::isspace(c); }) == 0);
-    REQUIRE(sv.find_last_true([](char c) { return c == ','; }) == 0);
-    REQUIRE(sv.find_last_true([](char c) { return c == 'H'; }) == 0);
-    REQUIRE(sv.find_first_true([](char c) { return c == '#'; }) == 0);
-    REQUIRE(sv.find_last_true([](char c) { return c == '#'; }) == 0);
-    REQUIRE(sv.remove_prefix(0) == StringView(""));
-    REQUIRE(sv.remove_suffix(0) == StringView(""));
+    CHECK(sv.empty());
+    CHECK(sv.size() == 0);
+    CHECK(sv.find_first_true([](char c) { return std::isspace(c); }) == 0);
+    CHECK(sv.find_last_true([](char c) { return c == ','; }) == 0);
+    CHECK(sv.find_last_true([](char c) { return c == 'H'; }) == 0);
+    CHECK(sv.find_first_true([](char c) { return c == '#'; }) == 0);
+    CHECK(sv.find_last_true([](char c) { return c == '#'; }) == 0);
+    CHECK(sv.remove_prefix(0) == StringView(""));
+    CHECK(sv.remove_suffix(0) == StringView(""));
 }
 
 TEST_CASE("test_string_view_comparison") {
@@ -90,20 +92,20 @@ TEST_CASE("test_string_view_comparison") {
     auto sv3 = StringView("def");
     auto sv4 = StringView("abcd");
     auto sv5 = StringView("ab");
-    REQUIRE(sv1 == sv2);
-    REQUIRE(sv1 != sv3);
-    REQUIRE(sv1 < sv3);
-    REQUIRE(sv1 <= sv3);
-    REQUIRE(sv3 > sv1);
-    REQUIRE(sv3 >= sv1);
-    REQUIRE(sv1 < sv4);
-    REQUIRE(sv1 <= sv4);
-    REQUIRE(sv4 > sv1);
-    REQUIRE(sv4 >= sv1);
-    REQUIRE(sv5 < sv1);
-    REQUIRE(sv5 <= sv1);
-    REQUIRE(sv5 <= sv5);
-    REQUIRE(sv5 >= sv5);
+    CHECK(sv1 == sv2);
+    CHECK(sv1 != sv3);
+    CHECK(sv1 < sv3);
+    CHECK(sv1 <= sv3);
+    CHECK(sv3 > sv1);
+    CHECK(sv3 >= sv1);
+    CHECK(sv1 < sv4);
+    CHECK(sv1 <= sv4);
+    CHECK(sv4 > sv1);
+    CHECK(sv4 >= sv1);
+    CHECK(sv5 < sv1);
+    CHECK(sv5 <= sv1);
+    CHECK(sv5 <= sv5);
+    CHECK(sv5 >= sv5);
 }
 
 
@@ -111,19 +113,19 @@ TEST_CASE("test_string_view_comparison") {
 
 TEST_CASE("Test StringView assert fails") {
     char base[] = "Hello World!";
-    REQUIRE_THROWS_AS(StringView(base + 12, base), std::runtime_error);
+    CHECK_THROWS_AS(StringView(base + 12, base), std::runtime_error);
     auto illegal_span   = StringView{};
     illegal_span.start  = base + 12;
     illegal_span.finish = base;
 
-    REQUIRE_THROWS_AS(illegal_span.empty(), std::runtime_error);
-    REQUIRE_THROWS_AS(illegal_span.size(), std::runtime_error);
-    REQUIRE_THROWS_AS(illegal_span.begin(), std::runtime_error);
-    REQUIRE_THROWS_AS(illegal_span.end(), std::runtime_error);
+    CHECK_THROWS_AS(illegal_span.empty(), std::runtime_error);
+    CHECK_THROWS_AS(illegal_span.size(), std::runtime_error);
+    CHECK_THROWS_AS(illegal_span.begin(), std::runtime_error);
+    CHECK_THROWS_AS(illegal_span.end(), std::runtime_error);
 
     auto str = StringView(base);
-    REQUIRE_THROWS_AS(str[14], std::runtime_error);
-    REQUIRE_THROWS_AS(str[-1], std::runtime_error);
+    CHECK_THROWS_AS(str[14], std::runtime_error);
+    CHECK_THROWS_AS(str[-1], std::runtime_error);
 }
 
 #endif
