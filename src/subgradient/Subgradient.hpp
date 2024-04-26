@@ -53,7 +53,7 @@ public:
         auto   should_price   = local::PricingManager(10ULL, min(1000ULL, nrows / 3ULL));
         real_t best_core_lb   = limits<real_t>::min();
         auto   best_real_lb   = limits<real_t>::min();
-        _reset_red_costs_and_lb(core.inst.costs, lb_sol, reduced_costs, best_core_lb);
+        _reset_lower_bounds(lb_sol, best_core_lb);
         lagr_mult = best_lagr_mult;
 
         print<4>(env, "SUBG> Subgradient start: UB {:.2f}, cutoff {:.2f}\n", cutoff, max_real_lb);
@@ -96,7 +96,7 @@ public:
                          step_size);
 
                 best_real_lb = max(best_real_lb, real_lb);
-                _reset_red_costs_and_lb(core.inst.costs, lb_sol, reduced_costs, best_core_lb);
+                _reset_lower_bounds(lb_sol, best_core_lb);
 
                 if (env.timer.elapsed<sec>() > env.time_limit)
                     break;
@@ -121,7 +121,7 @@ public:
     ) {
         auto   timer        = Chrono<>();
         real_t best_core_lb = limits<real_t>::min();
-        _reset_red_costs_and_lb(core_inst.costs, lb_sol, reduced_costs, best_core_lb);
+        _reset_lower_bounds(lb_sol, best_core_lb);
         lagr_mult = best_lagr_mult;
 
         for (size_t iter = 0; iter < env.heur_iters; ++iter) {
@@ -172,15 +172,12 @@ private:
     // assumes to be called just before the start of a new iteration of the subgradient loop. In
     // this location, reduced_costs and lb_sol have the values corresponding to lagr_mult = 0s,
     // since they are updated at the start.
-    static void _reset_red_costs_and_lb(std::vector<real_t> const& col_costs,      // in
-                                        Solution&                  lb_sol,         // out
-                                        std::vector<real_t>&       reduced_costs,  // out
-                                        real_t&                    best_core_lb    // out
+    static void _reset_lower_bounds(Solution& lb_sol,       // out
+                                    real_t&   best_core_lb  // out
     ) {
         // Ready to be updated at the start of the loop
-        reduced_costs = col_costs;
-        best_core_lb  = limits<real_t>::min();
-        lb_sol.cost   = limits<real_t>::min();
+        best_core_lb = limits<real_t>::min();
+        lb_sol.cost  = limits<real_t>::min();
         lb_sol.idxs.clear();
     }
 
@@ -208,17 +205,12 @@ private:
         for (real_t const value : lagr_mult)
             lb_sol.cost += value;
 
-        for (cidx_t j = 0_C; j < csize(inst.cols); ++j) {
-
-            reduced_costs[j] = inst.costs[j];
-            for (ridx_t i : inst.cols[j])
-                reduced_costs[j] -= lagr_mult[i];
-
-            if (reduced_costs[j] < 0.0_F) {
+        compute_reduced_costs(inst, lagr_mult, reduced_costs, [&](real_t red_cost, cidx_t j) {
+            if (red_cost < 0.0_F) {
                 lb_sol.idxs.push_back(j);
-                lb_sol.cost += reduced_costs[j];
+                lb_sol.cost += red_cost;
             }
-        }
+        });
     }
 
     // Computes the row coverage of the given solution by including the best non-redundant columns.

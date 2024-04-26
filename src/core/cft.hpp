@@ -123,10 +123,10 @@ struct Environment {
     uint64_t    seed             = 0;                      // Seed for the random number generator
     double      time_limit       = limits<double>::inf();  // Time limit in seconds
     uint64_t    verbose          = 4;                      // Verbosity level
-    real_t      epsilon          = 0.999999_F;  // Epsilon value for objective comparisons
-    uint64_t    heur_iters       = 250;         // Number of iterations for the heuristic phase
-    real_t      alpha            = 1.1_F;       // Relative fixing fraction increment
-    real_t      beta             = 1.0_F;       // Relative cutoff value to terminate Refinement
+    real_t      epsilon          = 0.999_F;  // Epsilon value for objective comparisons
+    uint64_t    heur_iters       = 250;      // Number of iterations for the heuristic phase
+    real_t      alpha            = 1.1_F;    // Relative fixing fraction increment
+    real_t      beta             = 1.0_F;    // Relative cutoff value to terminate Refinement
     real_t      abs_subgrad_exit = 1.0_F;    // Minimum LBs delta to trigger subradient termination
     real_t      rel_subgrad_exit = 0.001_F;  // Minimum LBs gap to trigger subradient termination
 

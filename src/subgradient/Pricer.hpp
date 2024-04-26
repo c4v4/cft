@@ -9,6 +9,7 @@
 
 #include "core/Instance.hpp"
 #include "core/cft.hpp"
+#include "core/utils.hpp"
 #include "utils/SortedArray.hpp"
 #include "utils/sort.hpp"
 
@@ -55,15 +56,11 @@ private:
         for (real_t u : lagr_mult)
             real_lower_bound += u;
 
-        reduced_costs.resize(csize(inst.cols));
-        for (cidx_t j = 0_C; j < csize(inst.cols); ++j) {
-            reduced_costs[j] = inst.costs[j];
-            for (ridx_t i : inst.cols[j])
-                reduced_costs[j] -= lagr_mult[i];
+        compute_reduced_costs(inst, lagr_mult, reduced_costs, [&](real_t red_cost, cidx_t /*j*/) {
+            if (red_cost < 0.0_F)
+                real_lower_bound += red_cost;
+        });
 
-            if (reduced_costs[j] < 0.0_F)
-                real_lower_bound += reduced_costs[j];
-        }
         return real_lower_bound;
     }
 

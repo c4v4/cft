@@ -10,7 +10,10 @@
 
 #include "utils/assert.hpp"  // IWYU pragma: keep
 #include "utils/custom_types.hpp"
+
+#ifndef NDEBUG
 #include "utils/limits.hpp"
+#endif
 
 namespace cft {
 

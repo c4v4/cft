@@ -21,17 +21,13 @@ struct SparseBinMat {
     std::vector<size_t> begs = {0};
 
     Span<IdxT*> operator[](std::size_t i) {
-        assert(i < begs.size() - 1);
-        assert(begs[i] < idxs.size() || begs[i + 1] == idxs.size());
-        assert(begs[i + 1] <= idxs.size());
-        return make_span(idxs.data() + begs[i], begs[i + 1] - begs[i]);
+        assert(i < begs.size() - 1U && begs[i + 1U] <= idxs.size());
+        return make_span(idxs.data() + begs[i], idxs.data() + begs[i + 1]);
     }
 
     Span<IdxT const*> operator[](std::size_t i) const {
-        assert(i < begs.size());
-        assert(begs[i] < idxs.size() || begs[i + 1] == idxs.size());
-        assert(begs[i + 1] <= idxs.size());
-        return make_span(idxs.data() + begs[i], begs[i + 1] - begs[i]);
+        assert(i < begs.size() - 1U && begs[i + 1U] <= idxs.size());
+        return make_span(idxs.data() + begs[i], idxs.data() + begs[i + 1]);
     }
 
     std::size_t size() const {

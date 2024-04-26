@@ -22,8 +22,10 @@ TEST_CASE("Whole algorithm run test") {
     init_sol.cost  = 1000.0_F;
 
     for (int n = 0; n < 100; ++n) {
-        auto inst = make_easy_inst(n, 1000_C);
-        auto sol  = run(env, inst, init_sol);
+        auto inst = Instance();
+        auto sol  = Solution();
+        REQUIRE_NOTHROW(inst = make_easy_inst(n, 1000_C));
+        REQUIRE_NOTHROW(sol = run(env, inst, init_sol));
         CHECK(sol.cost <= 1000.0_F);                  // Trivial bad solution has 1000 cost
         CHECK(sol.cost >= as_real(sol.idxs.size()));  // Min col cost is 1.0
         if (abs(sol.cost - 1000.0_F) < 1e-6_F)
