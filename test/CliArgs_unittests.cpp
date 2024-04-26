@@ -57,7 +57,7 @@ TEST_CASE("parse_cli_args instance only") {
     CHECK(env.seed == 0);
     CHECK(env.time_limit == limits<double>::inf());
     CHECK(env.verbose == 4);
-    CHECK(env.epsilon == 0.999999_F);
+    CHECK(env.epsilon == 0.999_F);
     CHECK(env.heur_iters == 250);
     CHECK(env.alpha == 1.1_F);
     CHECK(env.beta == 1.0_F);
@@ -87,12 +87,12 @@ TEST_CASE("parse_cli_args parses command line arguments correctly (long)") {
                           "0.5",
                           "--abs-subg-exit",
                           "0.01",
+                          "--unrecognized",
                           "--rel-subg-exit",
                           "0.1",
                           "--help",
                           "--init-sol",
-                          "test.sol",
-                          "--unrecognized"};
+                          "test.sol"};
 
     int  argc = sizeof(argv) / sizeof(argv[0]);
     auto env  = parse_cli_args(argc, argv);

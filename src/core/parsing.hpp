@@ -19,135 +19,29 @@
 #include "utils/parse_utils.hpp"
 #include "utils/print.hpp"
 
+#ifndef NDEBUG
+#include "core/utils.hpp"
+#endif
+
 namespace cft {
 
-struct FileData {
-    Instance inst;
-    Solution init_sol;
-};
+namespace local { namespace {
+    struct InstSize {
+        ridx_t rows;
+        cidx_t cols;
+    };
 
-inline Instance parse_scp_instance(std::string const& path) {
-    auto file_iter = FileLineIterator(path);
-    auto line_view = file_iter.next();
-    auto inst      = Instance();
-
-    // Read nrows & ncols
-    ridx_t nrows = string_to<ridx_t>::consume(line_view);
-    cidx_t ncols = string_to<cidx_t>::consume(line_view);
-    if (!line_view.empty())
-        throw std::invalid_argument("Invalid file format: not a SCP instance?");
-
-    for (cidx_t j = 0_C; j < ncols; ++j) {
-        if (line_view.empty())
-            line_view = file_iter.next();
-        inst.costs.push_back(string_to<real_t>::consume(line_view));
-    }
-
-    // For each row: row_size
-    //               list of row_size columns that cover the row
-    auto cols = std::vector<std::vector<ridx_t>>(ncols);
-    for (ridx_t i = 0_R; i < nrows; ++i) {
-        line_view    = file_iter.next();
-        auto i_ncols = string_to<cidx_t>::consume(line_view);
+    InstSize read_nrows_and_ncols(FileLineIterator& file_iter) {
+        auto line_view = file_iter.next();
+        auto num       = InstSize();
+        num.rows       = string_to<ridx_t>::consume(line_view);
+        num.cols       = string_to<cidx_t>::consume(line_view);
         if (!line_view.empty())
-            throw std::invalid_argument("Invalid file format: not a SCP instance?");
-
-        for (cidx_t n = 0_C; n < i_ncols; ++n) {
-            if (line_view.empty())
-                line_view = file_iter.next();
-            cidx_t cidx = string_to<cidx_t>::consume(line_view);
-            assert(0_C < cidx && cidx <= ncols);
-            if (cidx <= 0_C || ncols < cidx)
-                throw std::invalid_argument("Invalid column index: not a SCP instance?");
-            cols[cidx - 1_C].push_back(i);
-        }
+            throw std::invalid_argument("Invalid file format: too many values in the first line.");
+        return num;
     }
-
-    for (auto const& col : cols) {
-        for (ridx_t i : col)
-            inst.cols.idxs.push_back(i);
-        inst.cols.begs.push_back(csize(inst.cols.idxs));
-    }
-
-    inst.cols = SparseBinMat<ridx_t>();
-    for (auto& col : cols)
-        inst.cols.push_back(col);
-
-    fill_rows_from_cols(inst.cols, nrows, inst.rows);
-    return inst;
-}
-
-inline Instance parse_rail_instance(std::string const& path) {
-    auto file_iter = FileLineIterator(path);
-    auto line_view = file_iter.next();
-    auto inst      = Instance();
-
-    // Read nrows & ncols
-    ridx_t nrows = string_to<ridx_t>::consume(line_view);
-    cidx_t ncols = string_to<cidx_t>::consume(line_view);
-    if (!line_view.empty())
-        throw std::invalid_argument("Invalid file format: not a RAIL instance?");
-    for (cidx_t j = 0_C; j < ncols; j++) {
-        line_view = file_iter.next();
-        inst.costs.push_back(string_to<real_t>::consume(line_view));
-        auto j_nrows = string_to<ridx_t>::consume(line_view);
-        auto tokens  = split(line_view);
-        if (rsize(tokens) != j_nrows)
-            throw std::invalid_argument("Invalid file format: not a RAIL instance?");
-
-        for (ridx_t n = 0_R; n < j_nrows; n++) {
-            inst.cols.idxs.push_back(string_to<ridx_t>::parse(tokens[n]) - 1_R);
-            if (inst.cols.idxs.back() >= nrows)
-                throw std::invalid_argument("Invalid file format: not a RAIL instance?");
-        }
-        inst.cols.begs.push_back(csize(inst.cols.idxs));
-    }
-
-    fill_rows_from_cols(inst.cols, nrows, inst.rows);
-    return inst;
-}
-
-inline FileData parse_cvrp_instance(std::string const& path) {
-    auto file_iter = FileLineIterator(path);
-    auto line_view = file_iter.next();
-    auto fdata     = FileData();
-
-    // Read nrows & ncols
-    ridx_t nrows = string_to<ridx_t>::consume(line_view);
-    cidx_t ncols = string_to<cidx_t>::consume(line_view);
-    if (!line_view.empty())
-        throw std::invalid_argument("Invalid file format: not a CVRP instance?");
-
-    for (cidx_t j = 0_C; j < ncols; j++) {
-        line_view = file_iter.next();
-        fdata.inst.costs.push_back(string_to<real_t>::consume(line_view));
-
-        real_t solcost = string_to<real_t>::consume(line_view);
-        if (solcost < fdata.inst.costs.back())
-            throw std::invalid_argument("Invalid file format: not a CVRP instance?");
-
-        while (!line_view.empty()) {
-            fdata.inst.cols.idxs.push_back(string_to<ridx_t>::consume(line_view));
-            if (fdata.inst.cols.idxs.back() >= nrows)
-                throw std::invalid_argument("Invalid file format: not a CVRP instance?");
-        }
-        fdata.inst.cols.begs.push_back(csize(fdata.inst.cols.idxs));
-    }
-
-    line_view = file_iter.next();
-    while (!line_view.empty()) {
-        cidx_t j = string_to<cidx_t>::consume(line_view);
-        fdata.init_sol.idxs.push_back(j);
-        fdata.init_sol.cost += fdata.inst.costs[j];
-    }
-
-    fill_rows_from_cols(fdata.inst.cols, nrows, fdata.inst.rows);
-    return fdata;
-}
-
 
 #ifndef NDEBUG
-namespace local { namespace {
     inline void mps_epilogue_check(FileLineIterator&                              file_iter,
                                    std::unordered_map<std::string, ridx_t> const& rows_map) {
         // Check RHSs
@@ -166,9 +60,119 @@ namespace local { namespace {
             line_view = file_iter.next();
         }
     }
+#endif
 }  // namespace
 }  // namespace local
-#endif
+
+inline Instance parse_scp_instance(std::string const& path) {
+    auto file_iter = FileLineIterator(path);
+    auto num       = local::read_nrows_and_ncols(file_iter);
+
+    auto line_view = StringView();
+    auto inst      = Instance();
+    for (cidx_t j = 0_C; j < num.cols; ++j) {
+        if (line_view.empty())
+            line_view = file_iter.next();
+        inst.costs.push_back(string_to<real_t>::consume(line_view));
+    }
+
+    // For each row: row_size
+    //               list of row_size columns that cover the row
+    auto cols = std::vector<std::vector<ridx_t>>(num.cols);
+    for (ridx_t i = 0_R; i < num.rows; ++i) {
+        line_view    = file_iter.next();
+        auto i_ncols = string_to<cidx_t>::consume(line_view);
+        if (!line_view.empty())
+            throw std::invalid_argument("Invalid file format: not a SCP instance?");
+
+        for (cidx_t n = 0_C; n < i_ncols; ++n) {
+            if (line_view.empty())
+                line_view = file_iter.next();
+            cidx_t cidx = string_to<cidx_t>::consume(line_view);
+            assert(0_C < cidx && cidx <= num.cols);
+            if (cidx <= 0_C || num.cols < cidx)
+                throw std::invalid_argument("Invalid column index: not a SCP instance?");
+            cols[cidx - 1_C].push_back(i);
+        }
+    }
+
+    for (auto const& col : cols) {
+        for (ridx_t i : col)
+            inst.cols.idxs.push_back(i);
+        inst.cols.begs.push_back(csize(inst.cols.idxs));
+    }
+
+    inst.cols = SparseBinMat<ridx_t>();
+    for (auto& col : cols)
+        inst.cols.push_back(col);
+
+    fill_rows_from_cols(inst.cols, num.rows, inst.rows);
+    return inst;
+}
+
+inline Instance parse_rail_instance(std::string const& path) {
+    auto file_iter = FileLineIterator(path);
+    auto num       = local::read_nrows_and_ncols(file_iter);
+
+    auto line_view = StringView();
+    auto inst      = Instance();
+    for (cidx_t j = 0_C; j < num.cols; j++) {
+        line_view = file_iter.next();
+        inst.costs.push_back(string_to<real_t>::consume(line_view));
+        auto j_nrows = string_to<ridx_t>::consume(line_view);
+        auto tokens  = split(line_view);
+        if (rsize(tokens) != j_nrows)
+            throw std::invalid_argument("Invalid file format: not a RAIL instance?");
+
+        for (ridx_t n = 0_R; n < j_nrows; n++) {
+            inst.cols.idxs.push_back(string_to<ridx_t>::parse(tokens[n]) - 1_R);
+            if (inst.cols.idxs.back() >= num.rows)
+                throw std::invalid_argument("Invalid file format: not a RAIL instance?");
+        }
+        inst.cols.begs.push_back(csize(inst.cols.idxs));
+    }
+
+    fill_rows_from_cols(inst.cols, num.rows, inst.rows);
+    return inst;
+}
+
+struct FileData {
+    Instance inst;
+    Solution init_sol;
+};
+
+inline FileData parse_cvrp_instance(std::string const& path) {
+    auto file_iter = FileLineIterator(path);
+    auto num       = local::read_nrows_and_ncols(file_iter);
+
+    auto line_view = StringView();
+    auto fdata     = FileData();
+    for (cidx_t j = 0_C; j < num.cols; j++) {
+        line_view = file_iter.next();
+        fdata.inst.costs.push_back(string_to<real_t>::consume(line_view));
+
+        real_t solcost = string_to<real_t>::consume(line_view);
+        if (solcost < fdata.inst.costs.back())
+            throw std::invalid_argument("Invalid file format: not a CVRP instance?");
+
+        while (!line_view.empty()) {
+            fdata.inst.cols.idxs.push_back(string_to<ridx_t>::consume(line_view));
+            if (fdata.inst.cols.idxs.back() >= num.rows)
+                throw std::invalid_argument("Invalid file format: not a CVRP instance?");
+        }
+        fdata.inst.cols.begs.push_back(csize(fdata.inst.cols.idxs));
+    }
+
+    line_view = file_iter.next();
+    while (!line_view.empty()) {
+        cidx_t j = string_to<cidx_t>::consume(line_view);
+        fdata.init_sol.idxs.push_back(j);
+        fdata.init_sol.cost += fdata.inst.costs[j];
+    }
+
+    fill_rows_from_cols(fdata.inst.cols, num.rows, fdata.inst.rows);
+    return fdata;
+}
 
 // Note: not a complete mps parser, best effort to parse a SCP instance, but can probably fail with
 // some formats, or parse non SCP instances as SCP.

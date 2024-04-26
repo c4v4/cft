@@ -15,22 +15,22 @@ namespace cft {
 namespace local {
     template <typename T>
     struct prng_picker_impl {
-        using type = Xoshiro256PlusPlus;
+        using type = Xoshiro256PP;
     };
 
     template <>
     struct prng_picker_impl<uint32_t> {
-        using type = Xoshiro128PlusPlus;
+        using type = Xoshiro128PP;
     };
 
     template <>
     struct prng_picker_impl<float> {
-        using type = Xoshiro128Plus;
+        using type = Xoshiro128P;
     };
 
     template <>
     struct prng_picker_impl<double> {
-        using type = Xoshiro256Plus;
+        using type = Xoshiro256P;
     };
 }  // namespace local
 
@@ -42,38 +42,39 @@ struct prng_picker : local::prng_picker_impl<native_t<TargetT>> {};
 
 // Generate a canonical uniform distribution in the [0,1) range (unbiased).
 // The gist of it is to only take the mantissa bits +1 of the PRNG result and scale it to [0,1).
-// Could use SFINAE here, but I preferred to rely o ncompiler optimizations for clarity.
+// Could use SFINAE here, but I preferred to rely on compiler optimizations for clarity.
 template <typename FlT, typename RndT>
 inline FlT canonical_gen(RndT& rnd) {
-    using fl_type                   = native_t<FlT>;
-    using gen_type                  = typename RndT::result_type;
-    static constexpr size_t gen_sz  = sizeof(gen_type);
-    static constexpr bool   is_u32  = std::is_same<gen_type, uint32_t>::value;
-    static constexpr bool   is_u64  = gen_sz == 8 && std::is_unsigned<gen_type>::value;
-    static constexpr bool   is_f32  = std::is_same<fl_type, float>::value;
-    static constexpr bool   is_f64  = std::is_same<fl_type, double>::value;
-    static constexpr bool   is_f128 = std::is_same<fl_type, long double>::value;
+    using fl_type                  = native_t<FlT>;
+    using gen_type                 = typename RndT::result_type;
+    static constexpr size_t gen_sz = sizeof(gen_type);
+    static constexpr bool   is_u32 = std::is_same<gen_type, uint32_t>::value;
+    static constexpr bool   ge_f32 = std::is_floating_point<fl_type>::value && sizeof(fl_type) >= 4;
+    static constexpr bool   ge_f64 = std::is_floating_point<fl_type>::value && sizeof(fl_type) >= 8;
+    static constexpr bool ge_f128 = std::is_floating_point<fl_type>::value && sizeof(fl_type) >= 16;
 
-    static_assert(is_u32 || is_u64, "PRNG results type is not a 32 or 64 bit unsigned type.");
-    static_assert(is_f32 || is_f64 || is_f128, "RetT type is not a floating point type.");
+    static_assert(std::is_unsigned<gen_type>::value && gen_sz >= 4,
+                  "PRNG results type is not a 32 or 64 bit unsigned type.");
+    static_assert(ge_f32, "Floating point type not supported.");
 
-    auto res = fl_type{};
-    if (is_f32) {
-        static constexpr uint64_t get_mantis_shift = 8 * (gen_sz - 3);  // to get usable bits
+    fl_type result = {};
+    if (ge_f128) {
+        static constexpr auto factor = 2.0L * checked_cast<fl_type>(1ULL << (gen_sz * 8U - 1U));
 
-        res = static_cast<fl_type>(rnd() >> get_mantis_shift) / checked_cast<double>(1U << 24U);
-    } else if (is_f64) {
-        static constexpr uint64_t get_mantis_shift = is_u32 ? 0 : 11;
-        static constexpr auto     factor = checked_cast<double>(1ULL << (is_u32 ? 32ULL : 53ULL));
+        result = checked_cast<fl_type>(rnd()) / factor;
+    } else if (ge_f64) {
+        static constexpr auto get_mantis_shift = is_u32 ? 0U : 11U;
+        static constexpr auto factor = checked_cast<fl_type>(1ULL << (is_u32 ? 32ULL : 53ULL));
 
-        res = static_cast<fl_type>(rnd() >> get_mantis_shift) / factor;
+        result = checked_cast<fl_type>(rnd() >> get_mantis_shift) / factor;
     } else {
-        assert(is_f128);
-        static constexpr auto factor = 2.0L * checked_cast<long double>(1ULL << (gen_sz * 8U - 1U));
+        assert(ge_f32);
+        static constexpr auto get_mantis_shift = 8U * (gen_sz - 3U);  // to get usable bits
 
-        res = static_cast<fl_type>(rnd()) / factor;
+        result = checked_cast<fl_type>(rnd() >> get_mantis_shift) /
+                 checked_cast<fl_type>(1U << 24U);
     }
-    return FlT{res};
+    return FlT{result};
 }
 
 // Generate a random real number in the [min, max) range

@@ -12,7 +12,6 @@
 #include "utils/assert.hpp"  // IWYU pragma:  keep
 
 #ifndef NDEBUG
-#include "utils/CoverCounters.hpp"
 #include "utils/utility.hpp"
 #endif
 
@@ -55,22 +54,6 @@ inline void col_and_rows_check(SparseBinMat<ridx_t> const&             cols,
     }
 }
 
-inline void check_inst_solution(Instance const& inst, Solution const& sol) {
-    ridx_t const nrows = rsize(inst.rows);
-
-    // check coverage
-    ridx_t covered_rows = 0_R;
-    auto   row_coverage = CoverCounters(nrows);
-    for (auto j : sol.idxs)
-        covered_rows += as_ridx(row_coverage.cover(inst.cols[j]));
-    assert(covered_rows == nrows);
-
-    // check cost
-    real_t total_cost = 0.0_F;
-    for (cidx_t j : sol.idxs)
-        total_cost += inst.costs[j];
-    assert(abs(total_cost - sol.cost) < 1e-6_F);
-}
 #endif
 
 // Completes instance initialization by creating rows

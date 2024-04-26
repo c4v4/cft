@@ -9,6 +9,7 @@
 
 #include "core/Instance.hpp"
 #include "core/cft.hpp"
+#include "core/utils.hpp"
 #include "fixing/FixingData.hpp"
 #include "greedy/Greedy.hpp"
 #include "utils/Chrono.hpp"
@@ -65,20 +66,15 @@ private:
     ) {
         static constexpr real_t col_fix_thresh = -0.001_F;
 
-        reduced_costs.resize(csize(inst.cols));
         row_coverage.reset(rsize(inst.rows));
         cols_to_fix.clear();
 
-        for (cidx_t j = 0_C; j < csize(inst.cols); ++j) {
-            reduced_costs[j] = inst.costs[j];
-            for (ridx_t i : inst.cols[j])
-                reduced_costs[j] -= lagr_mult[i];
-
-            if (reduced_costs[j] < col_fix_thresh) {
+        compute_reduced_costs(inst, lagr_mult, reduced_costs, [&](real_t red_cost, cidx_t j) {
+            if (red_cost < col_fix_thresh) {
                 cols_to_fix.push_back(j);
                 row_coverage.cover(inst.cols[j]);
             }
-        }
+        });
 
         for (cidx_t& j : cols_to_fix)
             // If you read the paper and do not understand this line, you are not alone.

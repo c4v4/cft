@@ -17,7 +17,7 @@ Implementation of the Caprara, Fischetti, and Toth algorithm for the [Set Coveri
 
 ## Building and Running the Project
 
-Configure the project for a release build and build it:
+Configure the project and build it:
 
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Release
@@ -28,7 +28,7 @@ The binary will be located at `build/accft`.
 You can run it with:
 
 ```bash
-./build/accft -i instances/rail/rail507 -p RAIL -t 30 
+./build/accft -i instances/rail/rail507 -p RAIL
 ```
 
 See `./build/accft --help` for the list of available parameters and their meaning.
@@ -45,7 +45,7 @@ cmake --build build -j
 Run the tests:
 
 ```bash
-ctest --test-dir build
+ctest --test-dir build -j
 ```
 
 Use the following commands to generate code coverage statistics, note that you need to have [`lcov`](https://github.com/linux-test-project/lcov) installed.
@@ -53,7 +53,7 @@ Use the following commands to generate code coverage statistics, note that you n
 ```bash
 mkdir -p coverage
 lcov -c -d build -o coverage/tests_cov.info
-lcov -r coverage/tests_cov.info build test /usr/include/ -o tests_cov.info
+lcov -e coverage/tests_cov.info cft/src/*/ -o coverage/tests_cov.info
 ```
 
 Finally, to generate an HTML-report that can be viewed from your browser:
@@ -71,7 +71,7 @@ _Coming soon..._
 
 In case you might be interested in reading the source code, here you can find the general set of rules that we try to enforce. Being this a stand-alone project at which we work in our spare time, we took the freedom to experiment a little with simple conventions, changing from time to time when we noticed that something didn't fit our needs.
 
-First of all, we constrained ourselves to the C++11 standard. The main reason for this choice has been to potentially reach a wider audience. This choice was also made to limit the use of fancy meta-programming features and abstractions which can easily result in moving the focus from the algorithm itself to the _how_ the algorithm is implemented.
+First of all, we constrained ourselves to the C++11 standard. The main reason is to potentially reach a wider audience. This choice was also made for us, to limit the use of fancy meta-programming features and abstractions which can easily result in moving the focus from the algorithm itself to the _how_ the algorithm is implemented.
 
 ### User Vs Library Code
 
@@ -105,14 +105,15 @@ Other rules:
 - _functors_ must always be in a valid state.
 - _functors_ cannot have public member variables, they can only be accessed as a function abstraction.
 
+Finally, to accommodate potential changes to the basic numeric types, we have introduced custom aliases, and, to minimize the use of implicit casts, we provide user-defined literals for defining numeric constants.
 
 ### Library Code
 
-Not much to say here, library code tries to adhere to _user-code_ rules, but has the freedom to break some of them for the sake of avoiding bugs or making the abstraction more intuitive/easier to use. Factory methods are often used to have a hand-made CTAD (which was not present in C++11). Templates are used but the meta-programming is kept at a low level.
+Not much to say here, library code tries to adhere to _user-code_ rules, but has the freedom to break some of them for the sake of avoiding bugs or making the abstraction more intuitive/easier to use. Factory methods are often used to have a hand-made CTAD. Templates are used but the meta-programming is kept low.
 
 ### Function Parameters
 
-Looking around you might notice that most function parameters are annotated with a tag. Although intuitive, here is the meaning:
+Looking around you might notice that most function parameters are annotated with tags. Although intuitive, here is their meaning:
 
 - **`in`**: Input parameter, read-only.
 - **`out`**: Ouput parameter, previous state is ignored and replaced with the new state.
@@ -123,11 +124,11 @@ Looking around you might notice that most function parameters are annotated with
 
 This project offers flexibility in choosing the numeric types used for column indexes, row indexes, and real values. We provide aliases (`cidx_t`, `ridx_t`, `real_t`) defined in [`src/core/cft.hpp`](src/core/cft.hpp) that you can customize by defining the corresponding macros (`CFT_CIDX_TYPE`, `CFT_RIDX_TYPE`, `CFT_REAL_TYPE`). This allows you to easily switch between native integer/floating-point types depending on your needs.
 
-Beyond basic types, we also support defining custom types through a simple interface. You can find an example implementation in [`test/custom_types_unittests.cpp`](test/custom_types_unittests.cpp). 
+Beyond native types, we also support defining custom types through a simple interface. You can find an example implementation in [`test/custom_types_unittests.cpp`](test/custom_types_unittests.cpp). 
 For instance, you can use this interface to:
 
-- Enforce Checks: Implement custom checks for every mathematical operation performed on your data.
-- Control Type Conversions: Restrict implicit casts, e.g., to avoid mixing row and column variables.
-- Introduce Specialized Types: Utilize alternative number representations like fixed-point types for specific use cases.
+- _Enforce Checks_: Implement custom checks for every mathematical operation performed.
+- _Control Type Conversions_: Restrict implicit casts, e.g., to avoid mixing row and column variables.
+- _Introduce Specialized Types_: Utilize alternative number representations like fixed-point types for specific use cases.
 
 This approach tries to strike a good a balance between ease of use for common numeric types and the ability to tailor the library to your specific requirements.

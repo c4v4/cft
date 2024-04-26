@@ -25,7 +25,7 @@ namespace local { namespace {
 
 TEST_CASE("test_parse_scp_instance") {
     auto inst = Instance();
-    CHECK_NOTHROW(inst = parse_scp_instance("../../instances/scp/scp41.txt"));
+    REQUIRE_NOTHROW(inst = parse_scp_instance("../../instances/scp/scp41.txt"));
 
     CHECK(rsize(inst.rows) == 200_R);
     CHECK(csize(inst.cols) == 1000_C);
@@ -41,7 +41,7 @@ TEST_CASE("test_parse_scp_instance") {
 
 TEST_CASE("test_parse_rail_instance") {
     auto inst = Instance();
-    CHECK_NOTHROW(inst = parse_rail_instance("../../instances/rail/rail507"));
+    REQUIRE_NOTHROW(inst = parse_rail_instance("../../instances/rail/rail507"));
 
     CHECK(rsize(inst.rows) == 507_R);
     CHECK(csize(inst.cols) == 63009_C);
@@ -74,7 +74,7 @@ TEST_CASE("test_parse_cvrp_instance") {
 
 TEST_CASE("test_parse_mps_instance") {
     auto inst = Instance();
-    CHECK_NOTHROW(inst = parse_mps_instance("../../instances/mps/ramos3.mps"));
+    REQUIRE_NOTHROW(inst = parse_mps_instance("../../instances/mps/ramos3.mps"));
 
     CHECK(rsize(inst.rows) == 2187_R);
     CHECK(csize(inst.cols) == 2187_C);

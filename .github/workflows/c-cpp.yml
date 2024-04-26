@@ -18,11 +18,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         build_type: [Release, Debug]
-        include:
-          - os: ubuntu-latest
-            cpp_compiler: g++
-          - os: ubuntu-latest
-            cpp_compiler: clang++
+        cpp_compiler: [g++, clang++]
 
     steps:
     - uses: actions/checkout@v4
@@ -50,16 +46,20 @@ jobs:
     - name: Install lcov
       if: matrix.cpp_compiler == 'g++'
       run: sudo apt-get install lcov
+
+    - name: Make coverage directory
+      if: matrix.cpp_compiler == 'g++'
+      run: mkdir -p ${{ github.workspace }}/coverage
     
     - name: Build coverage report
       if: matrix.cpp_compiler == 'g++'
       run: lcov -c -d build -o ${{ github.workspace }}/coverage/tests_${{ matrix.build_type }}_cov.info
 
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       if: matrix.cpp_compiler == 'g++'
       with:
-        name: coverage
-        path: ${{ github.workspace }}/coverage/tests_*_cov.info
+        name: coverage_${{ matrix.build_type }}_${{ matrix.cpp_compiler }}
+        path: ${{ github.workspace }}/coverage/tests_${{ matrix.build_type }}_cov.info
 
 
   Coverage:
@@ -68,17 +68,22 @@ jobs:
     needs: build
     steps:
       - uses: actions/checkout@v4
+     
+      - name: Make coverage directory
+        run: mkdir -p ${{ github.workspace }}/coverage
 
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: coverage
+            pattern: coverage_*
+            merge-multiple: true
+            path: ${{ github.workspace }}/coverage
 
       - name: Install lcov
         run: sudo apt-get install lcov
 
       - name: Merge Release and Debug reports
-        run: lcov -a ${{ github.workspace }}/coverage/tests_release_cov.info -a ${{ github.workspace }}/coverage/tests_debug_cov.info -o ${{ github.workspace }}/coverage/tests_cov.info
+        run: lcov -a ${{ github.workspace }}/coverage/tests_Release_cov.info -a ${{ github.workspace }}/coverage/tests_Debug_cov.info -o ${{ github.workspace }}/coverage/tests_cov.info
 
       - name: Only select CFT library files
         run: lcov -e ${{ github.workspace }}/coverage/tests_cov.info cft/src/*/ -o ${{ github.workspace }}/coverage/tests_cov.info
