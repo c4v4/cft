@@ -42,4 +42,4 @@ run_for_dataset() {
 run_for_dataset "../instances/rail/rail*" RAIL $NRUNS rail
 run_for_dataset "../instances/scp/*.txt" SCP $NRUNS scp
 run_for_dataset "../instances/mps/*.mps" MPS $NRUNS mps
-run_for_dataset "../instances/cvrp/*.scp" CVRP $NRUNS cvrp
+# run_for_dataset "../instances/cvrp/*.scp" CVRP $NRUNS cvrp

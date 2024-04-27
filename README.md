@@ -4,13 +4,17 @@ SPDX-License-Identifier: MIT
 -->
 
 # AC-CFT
-
+[![Language](https://img.shields.io/badge/C++-11-purple.svg)](https://en.cppreference.com/w/cpp/11)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Ubuntu CI](https://github.com/c4v4/cft/actions/workflows/c-cpp.yml/badge.svg?branch=main)](https://github.com/c4v4/cft/actions/workflows/c-cpp.yml)
 [![codecov](https://codecov.io/gh/c4v4/cft/graph/badge.svg?token=2KKRX2KK7J)](https://codecov.io/gh/c4v4/cft)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/e1b326b8671444f3ad1d2c767a28a115)](https://app.codacy.com?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
-<!-- TODO(cava): add REUSE badge -->
+[![REUSE status](https://api.reuse.software/badge/github.com/c4v4/cft)](https://api.reuse.software/info/github.com/c4v4/cft)
+
+
 Implementation of the Caprara, Fischetti, and Toth algorithm for the [Set Covering problem](https://en.wikipedia.org/wiki/Set_cover_problem).
+
+The project is implemented using the C++11 standars. All its algorithmic components are placed into header files to simplify the integration into other projects.
 
 ## References
 *Caprara, A., Fischetti, M., & Toth, P. (1999). A Heuristic Method for the Set Covering Problem. Operations Research, 47(5), 730–743. [doi:10.1287/opre.47.5.730](https://doi.org/10.1287/opre.47.5.730)*
@@ -65,17 +69,38 @@ genhtml coverage/tests_cov.info --legend --output-directory=./coverage
 You can check out the coverage statistics by opening `coverage/index.html`.
 
 ## Benchmarks
-_Coming soon..._
+Benchmark results were obtained using a ThinkPad P16v with an [Intel i7-13700H](https://www.cpubenchmark.net/cpu.php?cpu=Intel+Core+i7-13700H) processor and 32GB of RAM on an Arch system.
+
+We run the tests using the script located in [`benchmarks/run_all.sh`](benchmarks/run_all.sh) with the project compiled in `Release` mode.
+
+We tested each instance with 10 different random seeds.
+The runs were not subject to any time limit, since we used the termination criterion described in the original paper.
+
+### Rail Instances
+
+| Instance                               |   #Rows|    #Cols|  Best Sol |   Avg Sol | Avg Time(s) |
+|:---                                    |    ---:|     ---:|       ---:|       ---:|         ---:|
+| [`rail516`](instances/rail/rail516)    |    516 |   47311 |    182.00 |    182.00 |        2.10 |
+| [`rail582`](instances/rail/rail582)    |    582 |   55515 |    211.00 |    211.00 |        1.02 |
+| [`rail507`](instances/rail/rail507)    |    507 |   63009 |    174.00 |    175.00 |        3.77 |
+| [`rail2586`](instances/rail/rail2586)  |   2586 |  920683 |    950.00 |    950.80 |       57.14 |
+| [`rail4872`](instances/rail/rail4872)  |   4872 |  968672 |   1533.00 |   1534.60 |      160.09 |
+| [`rail2536`](instances/rail/rail2536)  |   2536 | 1081841 |    692.00 |    694.00 |       85.69 |
+| [`rail4284`](instances/rail/rail4284)  |   4284 | 1092610 |   1066.00 |   1067.50 |       91.58 |
+
+_Note: for rail2586, better results can be obtained emphasizing multipliers quality._
+
+The results for the other datasets can be found in the [`benchmarks`](benchmarks/) directory.
 
 ## Coding Style
 
-In case you might be interested in reading the source code, here you can find the general set of rules that we try to enforce. Being this a stand-alone project at which we work in our spare time, we took the freedom to experiment a little with simple conventions, changing from time to time when we noticed that something didn't fit our needs.
+In case you might be interested in reading the source code, here you can find the general set of rules that we try to enforce. As this is a stand-alone project at which we work in our spare time, we took the freedom to experiment a little with simple conventions, changing from time to time when we noticed that something didn't fit our needs.
 
-First of all, we constrained ourselves to the C++11 standard. The main reason is to potentially reach a wider audience. This choice was also made for us, to limit the use of fancy meta-programming features and abstractions which can easily result in moving the focus from the algorithm itself to the _how_ the algorithm is implemented.
+First of all, we constrained ourselves to the C++11 standard. The main reason is to potentially reach a wider audience. We also made this choice to limit the use of fancy meta-programming features and abstractions introduced in recent standards, which can easily result in moving the focus from the algorithm itself to the _how_ the algorithm is implemented.
 
 ### User Vs Library Code
 
-C++ is a hefty language. One of its main perks is its ability to define abstractions that can be general enough to serve a wide variety of use-cases (the STL is a clear example of that). However, most of the features that this language provides are redundant, unnecessary and simply add up to the overall complexity of the language, which often makes code very hard to understand. For this reason, for the algorithm implementation, we chose to limit ourselves to a _small_ set of language features. When an abstraction can really streamline both the coding process and the understanding of the code, we allow ourselves to use and write simple and carefully chosen abstractions. They are placed in the `utils` folder. This division creates two coding contexts:
+C++ is a hefty language. One of its main perks is its ability to define abstractions that can be general enough to serve a wide variety of use-cases (the STL is a clear example of that). However, a large part of the features that this language provides are redundant, unnecessary and simply add up to the overall complexity of the language, which often makes code very hard to understand. For this reason, for the algorithm implementation, we chose to limit ourselves to a _small_ set of language features. When an abstraction can really streamline both the coding process and the understanding of the code, we use and write simple and carefully chosen abstractions. They are placed in the `utils` folder. This approach creates two coding contexts:
 
 - `user-code`: which is pretty much C code extended with a fairly small set of C++ features that we think really add value.
 - `library-code`: which provide a carefully chosen set of abstractions we find useful.
