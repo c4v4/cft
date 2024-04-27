@@ -190,7 +190,9 @@ private:
 
             real_t old_mult   = lagr_mult[i];
             real_t delta_mult = step_factor * violation;
-            lagr_mult[i]      = max(0.0_F, old_mult + delta_mult);
+
+            // Clamp to avoid numerical issues
+            lagr_mult[i] = clamp(old_mult + delta_mult, 0.0_F, 1e6_F);
             assert(std::isfinite(lagr_mult[i]) && "Multiplier is not finite");
         }
     }
