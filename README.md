@@ -14,12 +14,12 @@ SPDX-License-Identifier: MIT
 
 Implementation of the Caprara, Fischetti, and Toth algorithm for the [Set Covering problem](https://en.wikipedia.org/wiki/Set_cover_problem).
 
-The project is implemented using the C++11 standars. All its algorithmic components are placed into header files to simplify the integration into other projects.
+The project uses the C++11 standard. All the algorithmic components are placed in header files ([`src`](src/) folder) to simplify the integration into other projects.
 
 ## References
 *Caprara, A., Fischetti, M., & Toth, P. (1999). A Heuristic Method for the Set Covering Problem. Operations Research, 47(5), 730–743. [doi:10.1287/opre.47.5.730](https://doi.org/10.1287/opre.47.5.730)*
 
-## Building and Running the Project
+## Building and Running
 
 Configure the project and build it:
 
@@ -28,18 +28,18 @@ cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j
 ```
 
-The binary will be located at `build/accft`.
+The binary will be located in `build/accft`.
 You can run it with:
 
 ```bash
 ./build/accft -i instances/rail/rail507 -p RAIL
 ```
 
-See `./build/accft --help` for the list of available parameters and their meaning.
+See `./build/accft --help` for the list of available command line arguments and their meaning.
 
 ## Tests and Coverage
 
-To build the project with unit tests in debug mode:
+To produce a debug build with tests enabled:
 
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Debug -DUNIT_TESTS=ON 
@@ -69,9 +69,10 @@ genhtml coverage/tests_cov.info --legend --output-directory=./coverage
 You can check out the coverage statistics by opening `coverage/index.html`.
 
 ## Benchmarks
-Benchmark results were obtained using a ThinkPad P16v with an [Intel i7-13700H](https://www.cpubenchmark.net/cpu.php?cpu=Intel+Core+i7-13700H) processor and 32GB of RAM on an Arch system.
 
-We run the tests using the script located in [`benchmarks/run_all.sh`](benchmarks/run_all.sh) with the project compiled in `Release` mode.
+Benchmarks have been run on ThinkPad P16v with an [`intel i7-13700H`](https://www.cpubenchmark.net/cpu.php?cpu=Intel+Core+i7-13700H) processor and 32GB of RAM on an Arch system, compiled with `g++ 13.2.1`.
+
+We run the tests using the script located in [`benchmarks/run_all.sh`](benchmarks/run_all.sh) with the project compiled in `Release`.
 
 We tested each instance with 10 different random seeds.
 The runs were not subject to any time limit, since we used the termination criterion described in the original paper.
@@ -94,47 +95,47 @@ The results for the other datasets can be found in the [`benchmarks`](benchmarks
 
 ## Coding Style
 
-In case you might be interested in reading the source code, here you can find the general set of rules that we try to enforce. As this is a stand-alone project at which we work in our spare time, we took the freedom to experiment a little with simple conventions, changing from time to time when we noticed that something didn't fit our needs.
+Regarding the source code, here you can find the general set of rules that we try to enforce. Since this is a project we work on in our free time, we haven't been afraid to experiment with simple rules and convention that we adjusted along the way when we felt something wasn't working for us.
 
-First of all, we constrained ourselves to the C++11 standard. The main reason is to potentially reach a wider audience. We also made this choice to limit the use of fancy meta-programming features and abstractions introduced in recent standards, which can easily result in moving the focus from the algorithm itself to the _how_ the algorithm is implemented.
+We decided to stick with the C++11 standard for a couple of reasons. First, it keeps the code accessible to more people. Second, it helped us avoid the temptation of using fancy meta-programming features and abstractions introduced in recent standards, which can easily result in moving the focus from the algorithm itself to the _how_ the algorithm is implemented.
 
 ### User Vs Library Code
 
-C++ is a hefty language. One of its main perks is its ability to define abstractions that can be general enough to serve a wide variety of use-cases (the STL is a clear example of that). However, a large part of the features that this language provides are redundant, unnecessary and simply add up to the overall complexity of the language, which often makes code very hard to understand. For this reason, for the algorithm implementation, we chose to limit ourselves to a _small_ set of language features. When an abstraction can really streamline both the coding process and the understanding of the code, we use and write simple and carefully chosen abstractions. They are placed in the `utils` folder. This approach creates two coding contexts:
+C++ is a hefty language. One of its main perks is its ability to define abstractions that can be general enough to serve a wide variety of use-cases (the STL is a clear example of that). However, a large part of the features that this language provides are redundant, unnecessary and simply add up to the overall complexity, which often makes code very hard to understand. 
 
-- `user-code`: which is pretty much C code extended with a fairly small set of C++ features that we think really add value.
-- `library-code`: which provide a carefully chosen set of abstractions we find useful.
+For the algorithm implementation, we chose to limit ourselves to a _small_ set of language features, with the freedom of ignoring these restrinctions when doing so can really improve both the coding process and the understanding of the code. We place these helpers tools in the [`utils`](src/utils/) folder to keep them separated from the algorithm implementation. This approach creates two coding contexts:
 
-We do not report here classic rules like upper/lower-case naming conventions, trailing return type or not, etc., just open the source-files and you'll see what we like, at the end, these things are mostly a matter of taste, so we avoid spending time justifying these kinds of choices.
+- `user-code`: which is pretty much C code extended with a fairly small set of C++ features.
+- `library-code`: which provides a carefully chosen set of abstractions.
 
 ### User Code
 
 Along with the classic entities proper of the C programming language, we **define** other two types of "objects":
 
 - `C-like structs`: (_structs_ in the following) simple aggregates of other objects (even C++ objects). There are not many rules about this kind of objects, they simply aim to be the _"sum of their types"_.
-- `Function objects`: (improperly called _functor_ in the following) which simply are functions with an associated state, implemented as structs that define the `operator()` member function.
+- `Function objects`: (improperly called _functor_ in the following) which are functions with an associated state, implemented as structs that define the `operator()` member function.
 
 Other rules:
 
-- Limit implicit casts as much as reasonably possible.
-- No storage of references or pointers within either _structs_ or _functors_, clearly they can be stored by other abstractions defined in _library code_.
-- No direct storage of resources that require special handling (e.g., pointers to allocated memory or file handles).
+- We limit implicit casts as much as reasonably possible.
+- No direct storage of resources that require special handling in constructors/destructors (e.g., pointers to allocated memory or file handles).
+- No storage of references or pointers within either _structs_ or _functors_. They can be stored by other abstractions defined in _library code_.
 - No `const` member variables.
 - No explicit memory management in general, everything is wrapped within a proper abstraction.
 - No (user-defined) copy/move constructors/assignment operators, no destructors.
-- Entities must always be default-constructible.
+- All objects must be default-constructible.
 - _structs_ have only public member variables.
 - _structs_ state validity is user's responsibility.
-- _structs_ can be initialized by factories (or manually), no constructors or other user-defined member functions.
+- _structs_ have no constructors or other user-defined member functions.
 - _functors_ can have non-default constructors.
 - _functors_ must always be in a valid state.
-- _functors_ cannot have public member variables, they can only be accessed as a function abstraction.
+- _functors_ cannot have public member variables, they can only be used as a function abstraction.
 
-Finally, to accommodate potential changes to the basic numeric types, we have introduced custom aliases, and, to minimize the use of implicit casts, we provide user-defined literals for defining numeric constants.
+To accommodate potential changes to the basic numeric types, we have introduced custom type-aliases and user-defined literals to express the corresponding numeric constants.
 
 ### Library Code
 
-Not much to say here, library code tries to adhere to _user-code_ rules, but has the freedom to break some of them for the sake of avoiding bugs or making the abstraction more intuitive/easier to use. Factory methods are often used to have a hand-made CTAD. Templates are used but the meta-programming is kept low.
+Not much to say here, library code tries to adhere to _user-code_ rules, but has the freedom to break some of them for the sake of avoiding bugs or making the abstraction more intuitive/easier to use. Factory methods are often used to have a hand-made CTAD. Templates are used but we avoid meta-programming when possible.
 
 ### Function Parameters
 
@@ -147,7 +148,7 @@ Looking around you might notice that most function parameters are annotated with
 
 ### Custom Types
 
-This project offers flexibility in choosing the numeric types used for column indexes, row indexes, and real values. We provide aliases (`cidx_t`, `ridx_t`, `real_t`) defined in [`src/core/cft.hpp`](src/core/cft.hpp) that you can customize by defining the corresponding macros (`CFT_CIDX_TYPE`, `CFT_RIDX_TYPE`, `CFT_REAL_TYPE`). This allows you to easily switch between native integer/floating-point types depending on your needs.
+This project offers flexibility in choosing the numeric types used for column indexes, row indexes, and real values. We provide type-aliases (`cidx_t`, `ridx_t`, `real_t`) defined in [`src/core/cft.hpp`](src/core/cft.hpp) that you can customize by defining the corresponding macros (`CFT_CIDX_TYPE`, `CFT_RIDX_TYPE`, `CFT_REAL_TYPE`). This allows you to easily switch between native integer/floating-point types depending on your needs.
 
 Beyond native types, we also support defining custom types through a simple interface. You can find an example implementation in [`test/custom_types_unittests.cpp`](test/custom_types_unittests.cpp). 
 For instance, you can use this interface to:
@@ -156,4 +157,4 @@ For instance, you can use this interface to:
 - _Control Type Conversions_: Restrict implicit casts, e.g., to avoid mixing row and column variables.
 - _Introduce Specialized Types_: Utilize alternative number representations like fixed-point types for specific use cases.
 
-This approach tries to strike a good a balance between ease of use for common numeric types and the ability to tailor the library to your specific requirements.
+This approach tries to strike a good a balance between ease of use for common numeric types and the ability to tailor the library to your specific needs.

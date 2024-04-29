@@ -4,7 +4,7 @@ SPDX-License-Identifier: MIT
 -->
 
 # Benchmarks
-Benchmark results were obtained using a ThinkPad P16v with an [Intel i7-13700H](https://www.cpubenchmark.net/cpu.php?cpu=Intel+Core+i7-13700H) processor and 32GB of RAM on an Arch system.
+Benchmark have been run on ThinkPad P16v with an [`intel i7-13700H`](https://www.cpubenchmark.net/cpu.php?cpu=Intel+Core+i7-13700H) processor and 32GB of RAM on an Arch system, compiled with `g++ 13.2.1`.
 
 We run the tests using the script located in [`benchmarks/run_all.sh`](../benchmarks/run_all.sh) with the project compiled in `Release` mode.
 
