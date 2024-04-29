@@ -43,6 +43,10 @@ namespace cft { namespace local { namespace {
                     curr_step_size /= 2.0_F;
                 if (diff <= 0.001_F)
                     curr_step_size *= 1.5_F;
+
+                // Not described in the paper, but in rare cases the subgradient diverges
+                curr_step_size = clamp(curr_step_size, 1e-6_F, 10.0_F);
+
                 min_lower_bound = limits<real_t>::max();
                 max_lower_bound = limits<real_t>::min();
             }

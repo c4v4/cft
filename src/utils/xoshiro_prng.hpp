@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2024 Francesco Cavaliere <francescocava95@gmail.com>
 // SPDX-License-Identifier: MIT
 
-// Stripped-down Xoshiro pseudo random number generators based on David Blackman and Sebastiano Vigna's
-// xoshiro generators (prng.di.unimi.it/)
+// Stripped-down Xoshiro pseudo random number generators based on David Blackman and Sebastiano
+// Vigna's xoshiro generators (prng.di.unimi.it/)
 
 #ifndef CFT_SRC_CORE_XOSHIRO_PRNG_HPP
 #define CFT_SRC_CORE_XOSHIRO_PRNG_HPP
