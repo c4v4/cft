@@ -129,6 +129,7 @@ struct Environment {
     real_t      beta             = 1.0_F;    // Relative cutoff value to terminate Refinement
     real_t      abs_subgrad_exit = 1.0_F;    // Minimum LBs delta to trigger subradient termination
     real_t      rel_subgrad_exit = 0.001_F;  // Minimum LBs gap to trigger subradient termination
+    bool        use_unit_costs   = false;    // Solve the given instance setting columns cost to one
 
     // Working params
     Chrono<>       timer;            // Keeps track of the elapsed time
