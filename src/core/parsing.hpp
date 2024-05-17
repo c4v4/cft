@@ -286,6 +286,12 @@ inline FileData parse_inst_and_initsol(Environment const& env) {
         fdata.init_sol = parse_solution(env.initsol_path);
         CFT_IF_DEBUG(check_inst_solution(fdata.inst, fdata.init_sol));
     }
+
+    if (env.use_unit_costs) {
+        fdata.inst.costs.assign(csize(fdata.inst.costs), 1.0_F);
+        fdata.init_sol.cost = as_real(size(fdata.init_sol.idxs));
+    }
+
     print<1>(env, "CFT> Instance size: {} x {}.\n", rsize(fdata.inst.rows), csize(fdata.inst.cols));
     return fdata;
 }

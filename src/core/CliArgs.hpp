@@ -69,6 +69,10 @@ namespace cft {
 #define CFT_RELSGEXIT_LONG_FLAG "--rel-subg-exit"
 #define CFT_RELSGEXIT_HELP      "Minimum LBs gap to trigger subradient termination."
 
+#define CFT_UNITCOST_FLAG      "-u"
+#define CFT_UNITCOST_LONG_FLAG "--unit-costs"
+#define CFT_UNITCOST_HELP      "Solve the given instance setting columns costs to one."
+
 namespace local { namespace {
     inline std::string make_sol_name(std::string const& inst_path) {
         auto out_name = cft::StringView(inst_path);
@@ -103,9 +107,14 @@ inline void print_arg_values(Environment const& env) {
              CFT_ABSSGEXIT_FLAG "," CFT_ABSSGEXIT_LONG_FLAG,
              env.abs_subgrad_exit);
     print<3>(env,
-             " {:20} = {}\n\n",
+             " {:20} = {}\n",
              CFT_RELSGEXIT_FLAG "," CFT_RELSGEXIT_LONG_FLAG,
              env.rel_subgrad_exit);
+    print<3>(env,
+             " {:20} = {}\n",
+             CFT_UNITCOST_FLAG "," CFT_UNITCOST_LONG_FLAG,
+             env.use_unit_costs);
+    print<3>(env, "\n");
     std::fflush(stdout);
 }
 
@@ -124,6 +133,7 @@ inline void print_cli_help_msg() {
     fmt::print("  {:20} " CFT_BETA_HELP "\n", CFT_BETA_FLAG "," CFT_BETA_LONG_FLAG);
     fmt::print("  {:20} " CFT_ABSSGEXIT_HELP "\n", CFT_ABSSGEXIT_FLAG "," CFT_ABSSGEXIT_LONG_FLAG);
     fmt::print("  {:20} " CFT_RELSGEXIT_HELP "\n", CFT_RELSGEXIT_FLAG "," CFT_RELSGEXIT_LONG_FLAG);
+    fmt::print("  {:20} " CFT_UNITCOST_HELP "\n", CFT_UNITCOST_FLAG "," CFT_UNITCOST_LONG_FLAG);
     fmt::print("\n");
     fmt::print("Default values:\n");
     print_arg_values(Environment{});
@@ -140,8 +150,10 @@ inline Environment parse_cli_args(int argc, char const** argv) {
     auto asize = size(args);
     for (size_t a = 1; a < asize; ++a) {
         auto arg = StringView(args[a]);
-        if (arg == CFT_HELP_FLAG || arg == CFT_HELP_LONG_FLAG)
+        if (CFT_FLAG_MATCH(arg, HELP))
             print_cli_help_msg();
+        else if (CFT_FLAG_MATCH(arg, UNITCOST))
+            env.use_unit_costs = true;
         else if (a + 1 >= asize)
             fmt::print("Missing value of argument {}.\n", arg.data());
         else if (CFT_FLAG_MATCH(arg, INST))
