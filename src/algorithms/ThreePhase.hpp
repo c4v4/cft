@@ -16,9 +16,9 @@
 namespace cft {
 
 struct ThreePhaseResult {
-    Solution            sol;                // Best feasible solution found
-    std::vector<real_t> unfixed_lagr_mult;  // Lagrangian multipliers before the first fixing
-    real_t              unfixed_lb;         // Lower bound before the first fixing
+    Solution            sol;              // Best feasible solution found
+    std::vector<real_t> nofix_lagr_mult;  // Lagrangian multipliers before the first fixing
+    real_t              nofix_lb;         // Lower bound before the first fixing
 };
 
 class ThreePhase {
