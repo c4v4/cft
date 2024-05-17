@@ -9,6 +9,7 @@
 #include "core/cft.hpp"
 #include "utils/Chrono.hpp"
 #include "utils/CoverCounters.hpp"
+#include "utils/limits.hpp"
 #include "utils/utility.hpp"
 
 namespace cft {
@@ -105,6 +106,7 @@ inline Solution run(Environment const& env,                // in
     auto three_phase        = ThreePhase();
     auto select_cols_to_fix = local::RefinementFixManager();
     auto nofix_lagr_mult    = std::vector<real_t>();
+    auto nofix_lb           = limits<real_t>::max();
     auto old2new            = IdxsMaps();
     auto fixing             = FixingData();
     auto max_cost           = limits<real_t>::max();
@@ -118,8 +120,9 @@ inline Solution run(Environment const& env,                // in
         }
 
         if (iter_counter == 0) {
-            nofix_lagr_mult = std::move(result_3p.unfixed_lagr_mult);
-            max_cost        = env.beta * result_3p.unfixed_lb + env.epsilon;
+            nofix_lagr_mult = std::move(result_3p.nofix_lagr_mult);
+            nofix_lb        = result_3p.nofix_lb;
+            max_cost        = env.beta * nofix_lb + env.epsilon;
         }
 
         if (best_sol.cost <= max_cost || env.timer.elapsed<sec>() > env.time_limit)
@@ -131,15 +134,19 @@ inline Solution run(Environment const& env,                // in
             make_identity_fixing_data(ncols, nrows, fixing);
             fix_columns_and_compute_maps(cols_to_fix, inst, fixing, old2new);
         }
-        real_t nrows_real  = as_real(rsize(orig_inst.rows));
-        real_t fixing_perc = as_real(rsize(inst.rows)) * 100.0_F / nrows_real;
+        real_t nrows_real = as_real(rsize(orig_inst.rows));
+        real_t free_perc  = as_real(rsize(inst.rows)) * 100.0_F / nrows_real;
         print<2>(env,
-                 "REFN> {:2}: Best solution {:.2f}, fixed cost {:.2f}, "
-                 "fixed rows {:.0f}%, time {:.2f}s\n\n",
+                 "REFN> {:2}: Best solution {:.2f}, lb {:.2f}, gap {:.2f}%\n",
                  iter_counter,
                  best_sol.cost,
+                 nofix_lb,
+                 100.0_F * (best_sol.cost - nofix_lb) / best_sol.cost);
+        print<2>(env,
+                 "REFN> {:2}: Fixed cost {:.2f}, free rows {:.0f}%, time {:.2f}s\n\n",
+                 iter_counter,
                  fixing.fixed_cost,
-                 fixing_perc,
+                 free_perc,
                  env.timer.elapsed<sec>());
 
         if (inst.rows.empty() || env.timer.elapsed<sec>() > env.time_limit)
