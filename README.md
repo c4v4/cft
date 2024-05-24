@@ -68,6 +68,81 @@ genhtml coverage/tests_cov.info --legend --output-directory=./coverage
 
 You can check out the coverage statistics by opening `coverage/index.html`.
 
+## Algorithm Structure
+The project comes in the form of an executable that accepts as input different types of instances. But if you want to integrate CFT into your own project, here we'll describe the key components you can use independently. For a more in-depth and formal description you can read the original paper [paper](https://doi.org/10.1287/opre.47.5.730), or directly look at the code.
+
+The CFT algorithm works in layers, with each layer applying different column selection techniques to simplify the problem for the next step. Here's a breakdown of the main components, starting from the outermost layer:
+
+- [`cft::run`](src/algorithms/Refinement.hpp): This function contains the full algorithm, it implements the "Refinement" step from the original paper, which fixes some columns from the best solution found so far and then invoke the 3-phase procedure on the obtained subinstance.
+
+- [`cft::ThreePhase`](src/algorithms/ThreePhase.hpp): This function, as the name suggests, involves three steps:
+    - A subgradient step that finds high-quality multipliers to guide the search, and also select a small set of high quality columns (core-instance) to intensify and speed-up the search.
+    - A heuristic phase that perform some other subgradient iterations to create diverse multipliers and invokes the greedy procedure with each set of multipliers to find a feasible solution.
+    - A column fixing step that selects and fixes some elements with a good probabily of being on high-quality solution, effectively reducing the problem size.
+
+- [`cft::Greedy`](src/greedy/Greedy.hpp): Fast greedy algorithm as it is described in the paper. It iteratively adds columns based on their quality and then removes any redundant elements from the obtained solution.
+
+## Integration in other projects
+A well formed instance is essential to run the algorithm correctly. The Instance type is defined in [`Instance.hpp`](src/core/Instance.hpp):
+```cpp
+    struct Instance {
+        SparseBinMat<ridx_t>             cols;
+        std::vector<std::vector<cidx_t>> rows;
+        std::vector<real_t>              costs;
+    };
+```
+
+- `cols`: it contains a sparse "column-major" representation of the constraint matrix, where each column in placed one after the other in a single `std::vector`, and a second vector contains the begin and end indexes of each column.
+
+- `row`: the same could be done to store the rows, however, since the "row-major" view is used less frequently in the algorithm and since we assume that the number of column is way larger than the number of rows, a vector of vector of indixes is used instead, since it is 
+simpler to manage and do not noticeable overhead.
+- `costs`: a vector containing the columns costs.
+
+Here an example of how to build a dummy instance:
+```cpp
+    auto inst = cft::Instance();
+
+    // Insert the columns one at a time
+    inst.cols.push_back({0, 1, 2, 3});
+    inst.cols.push_back({1, 3, 0, 4});
+    inst.cols.push_back({4, 1, 2});
+
+    // Define columns costs (Note, every column must have a cost)
+    inst.costs = {1.0, 2.0, 3.0};
+
+    // Rows can be automatically computed from columns using this helper function
+    cft::fill_rows_from_cols(inst.cols, cft::rsize(inst.rows), inst.rows);
+
+    // Check that the defined instance is well formed (costly operation)
+    CFT_IF_DEBUG(cft::col_and_rows_check(inst.cols, inst.rows));
+```
+
+To run the complete algorithm you have to fist declare an `Environment`, leaving the defaults arguments or customizing as you whish the algorithm parameters, look at [`cft.hpp`](src/core/cft.hpp) for more details. Then you can call the [`cft::run`](src/algorithms/Refinement.hpp#91) which, on completion, will return the best solution found.
+```cpp
+    auto env       = cft::Environment();
+    env.time_limit = 10.0;
+    env.verbose    = 1;
+    auto sol       = cft::run(env, inst);
+```
+
+If instead you are not interested in the outer-most column fixing (the *Refinement* fixing in the paper), you can call directly the 3-phase. Note that the 3-phase is provided as a functor:
+```cpp
+    auto three_phase = cft::ThreePhase();
+    auto result_3p   = three_phase(env, inst);
+    fmt::print("3-phase solution cost: {}, LB: {}\n", result_3p.sol.cost, result_3p.nofix_lb);
+```
+
+Finally, if you are only interested in a very quick solution, and do not bother too much about the quality, you can skip pretty much most of the "math-based" components of the algorithm, and directly run the greedy step like this:
+```cpp
+    auto lagr_mult     = std::vector<cft::real_t>(cft::rsize(inst.rows), 0.0);
+    auto reduced_costs = inst.costs;  // multipliers = 0  =>  red-costs = costs
+
+    auto greedy        = cft::Greedy();
+    auto sol           = cft::Solution();
+    sol.cost           = greedy(inst, lagr_mult, reduced_costs, sol.idxs);
+    fmt::print("Greedy solution cost: {}\n", sol.cost);
+```
+
 ## Benchmarks
 
 Benchmarks have been run on ThinkPad P16v with an [`intel i7-13700H`](https://www.cpubenchmark.net/cpu.php?cpu=Intel+Core+i7-13700H) processor and 32GB of RAM on an Arch system, compiled with `g++ 13.2.1`.
@@ -98,6 +173,11 @@ The results for the other datasets can be found in the [`benchmarks`](benchmarks
 Regarding the source code, here you can find the general set of rules that we try to enforce. Since this is a project we work on in our free time, we haven't been afraid to experiment with simple rules and convention that we adjusted along the way when we felt something wasn't working for us.
 
 We decided to stick with the C++11 standard for a couple of reasons. First, it keeps the code accessible to more people. Second, it helped us avoid the temptation of using fancy meta-programming features and abstractions introduced in recent standards, which can easily result in moving the focus from the algorithm itself to the _how_ the algorithm is implemented.
+
+### External Dependencies
+The only external dependecy that we have is [`fmtlib`](https://github.com/fmtlib/fmt), a printing/formatting library that is so much superior to `iostream` that it's a pain when we can't use it (luckily it got into the standard).
+If you build the project with CMake, it should download and configure it automatically. Note, however, that you'll need an internet connection for that to work.
+
 
 ### User Vs Library Code
 
