@@ -111,7 +111,7 @@ Here an example of how to build a dummy instance:
     inst.costs = {1.0, 2.0, 3.0};
 
     // Rows can be automatically computed from columns using this helper function
-    cft::fill_rows_from_cols(inst.cols, cft::rsize(inst.rows), inst.rows);
+    cft::fill_rows_from_cols(inst.cols, 5, inst.rows);
 
     // Check that the defined instance is well formed (costly operation)
     CFT_IF_DEBUG(cft::col_and_rows_check(inst.cols, inst.rows));
@@ -128,8 +128,8 @@ To run the complete algorithm you have to fist declare an `Environment`, leaving
 If instead you are not interested in the outer-most column fixing (the *Refinement* fixing in the paper), you can call directly the 3-phase. Note that the 3-phase is provided as a functor:
 ```cpp
     auto three_phase = cft::ThreePhase();
-    auto result_3p   = three_phase(env, inst);
-    fmt::print("3-phase solution cost: {}, LB: {}\n", result_3p.sol.cost, result_3p.nofix_lb);
+    auto result      = three_phase(env, inst);
+    fmt::print("3-phase solution cost: {}, LB: {}\n", result.sol.cost, result.nofix_lb);
 ```
 
 Finally, if you are only interested in a very quick solution, and do not bother too much about the quality, you can skip pretty much most of the "math-based" components of the algorithm, and directly run the greedy step like this:
@@ -137,9 +137,9 @@ Finally, if you are only interested in a very quick solution, and do not bother 
     auto lagr_mult     = std::vector<cft::real_t>(cft::rsize(inst.rows), 0.0);
     auto reduced_costs = inst.costs;  // multipliers = 0  =>  red-costs = costs
 
-    auto greedy        = cft::Greedy();
-    auto sol           = cft::Solution();
-    sol.cost           = greedy(inst, lagr_mult, reduced_costs, sol.idxs);
+    auto greedy = cft::Greedy();
+    auto sol    = cft::Solution();
+    sol.cost    = greedy(inst, lagr_mult, reduced_costs, sol.idxs);
     fmt::print("Greedy solution cost: {}\n", sol.cost);
 ```
 

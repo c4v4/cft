@@ -30,7 +30,7 @@ TEST_CASE("Define dummy Instance") {
     inst.costs = {1.0, 2.0, 3.0};
 
     // Rows can be automatically computed from columns using this helper function
-    CHECK_NOTHROW(cft::fill_rows_from_cols(inst.cols, cft::rsize(inst.rows), inst.rows));
+    CHECK_NOTHROW(cft::fill_rows_from_cols(inst.cols, 5, inst.rows));
 
     // Check that the defined instance is well formed (costly operation)
     CFT_IF_DEBUG(CHECK_NOTHROW(cft::col_and_rows_check(inst.cols, inst.rows)));
@@ -41,7 +41,6 @@ TEST_CASE("Invoke whole algorithm") {
     auto env       = cft::Environment();
     env.time_limit = 10.0;
     env.verbose    = 1;
-    env.heur_iters = 100;
 
     auto inst = cft::Instance();
     auto sol  = cft::Solution();
@@ -58,7 +57,6 @@ TEST_CASE("Invoke 3-phase algorithm") {
     // Setup
     auto env       = cft::Environment();
     env.time_limit = 10.0;
-    env.heur_iters = 100;
     env.verbose    = 1;
 
     auto inst = cft::Instance();
@@ -66,16 +64,15 @@ TEST_CASE("Invoke 3-phase algorithm") {
 
     // Test Readme example
     auto three_phase = cft::ThreePhase();
-    auto result_3p   = cft::ThreePhaseResult();
-    REQUIRE_NOTHROW(result_3p = three_phase(env, inst));
-    fmt::print("3-phase solution cost: {}, LB: {}\n", result_3p.sol.cost, result_3p.nofix_lb);
+    auto result      = cft::ThreePhaseResult();
+    REQUIRE_NOTHROW(result = three_phase(env, inst));
+    fmt::print("3-phase solution cost: {}, LB: {}\n", result.sol.cost, result.nofix_lb);
 }
 
 TEST_CASE("Invoke greedy algorithm") {
     // Setup
     auto env       = cft::Environment();
     env.time_limit = 10.0;
-    env.heur_iters = 100;
     env.verbose    = 1;
 
     auto inst = cft::Instance();
