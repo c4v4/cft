@@ -68,6 +68,90 @@ genhtml coverage/tests_cov.info --legend --output-directory=./coverage
 
 You can check out the coverage statistics by opening `coverage/index.html`.
 
+## Algorithm Structure
+Here we'll briefly describe the key components of the algorithm. For a more in-depth and formal description you can refer to the original [paper](https://doi.org/10.1287/opre.47.5.730), or directly look at the code.
+
+The CFT algorithm has a hierarchical structure, with each layer applying different column selection techniques to simplify the problem for the next step. Here's a breakdown of the main components, starting from the outermost layer:
+
+- [`cft::run`](src/algorithms/Refinement.hpp): This function contains the full algorithm, it implements what is called "Refinement" in the original paper, which fixes part of the best solution found so far and then invokes the 3-phase procedure on the obtained subinstance.
+
+- [`cft::ThreePhase`](src/algorithms/ThreePhase.hpp): This function, as the name suggests, involves three steps:
+    - A subgradient step that finds near optimal multipliers to guide the search and also selects a small set of high quality columns (core-instance) to intensify and speed-up the search.
+    - A heuristic phase that performs some other subgradient iterations to explore diversified multipliers and invokes the greedy procedure on each one of them to find good-quality solutions.
+    - A column fixing step that selects and fixes some elements that have a good probability of being part of high-quality solutions, incrementally reducing the problem size.
+
+- [`cft::Greedy`](src/greedy/Greedy.hpp): Fast greedy algorithm run during the heuristic phase of the 3-phase. It starts from a set of Lagrangian multipliers and then it iteratively selects columns based on their quality. At the end, it checks and removes redundant elements from the obtained solution (if any).
+
+## Integration in other projects
+The project comes in the form of an executable that reads an instance file and runs the full CFT algorithm. If you want to integrate the CFT into your own project, here we'll described some of it's main component that can be useful on their own.
+
+### Instance
+To start, a well formed instance is essential to run the algorithm correctly. The `Instance` struct is defined in [`Instance.hpp`](src/core/Instance.hpp):
+```cpp
+    struct Instance {
+        SparseBinMat<ridx_t>             cols;
+        std::vector<std::vector<cidx_t>> rows;
+        std::vector<real_t>              costs;
+    };
+```
+
+- `cols`: it contains a sparse "column-major" view of the constraint matrix, where each sparse-column in placed one after the other in a single `std::vector`, and a second vector contains the begin and end indexes of each column in the vector.
+
+- `row`: the same could be done for storing rows, however, since the "row-major" view is used less frequently and since we assume that the number of columns is way larger than the number of rows, a vector of vectors of indexes is used instead, since it is simpler to manage and does not add a noticeable overhead.
+
+- `costs`: a vector containing the cost for each column.
+
+Here's an example of how to build a dummy instance:
+```cpp
+    auto inst = cft::Instance();
+
+    // Insert the columns one at a time
+    inst.cols.push_back({0, 1, 2, 3});
+    inst.cols.push_back({1, 3, 0, 4});
+    inst.cols.push_back({4, 1, 2});
+
+    // Define columns costs (Note, every column must have a cost)
+    inst.costs = {1.0, 2.0, 3.0};
+
+    // Rows can be automatically filled from columns using this helper function
+    cft::fill_rows_from_cols(inst.cols, 5, inst.rows);
+
+    // Check that the defined instance is well formed (costly operation)
+    CFT_IF_DEBUG(cft::col_and_rows_check(inst.cols, inst.rows));
+```
+
+### Full run
+To run the full CFT algorithm you have to first declare an `Environment`, possibly changing the default parameters values, look at [`cft.hpp`](src/core/cft.hpp) for more details on the available parameters. Then you can call [`cft::run`](src/algorithms/Refinement.hpp) which, on completion, will return the best solution found.
+```cpp
+    auto env       = cft::Environment();
+    env.time_limit = 10.0;  // Time limit in seconds
+    env.verbose    = 2;     // Log verbosity level (from 0 to 5)
+    env.timer.restart();    // NOTE: the timer is used also to test the time limit
+    auto sol = cft::run(env, inst);
+    fmt::print("CFT solution cost: {}\n", sol.cost);
+
+```
+### 3-Phase
+If instead you are not interested in the outer-most column fixing (the "Refinement" step), you can call directly the 3-phase. Note that it is provided as a function object:
+```cpp
+    auto three_phase = cft::ThreePhase();
+    auto result      = three_phase(env, inst);
+    fmt::print("3-phase solution cost: {}, LB: {}\n", result.sol.cost, result.nofix_lb);
+```
+### Greedy
+Finally, if you are only interested in a quick solution and do not care too much about its quality, you can ignore most of the "math-based" techniques used to guide the search, and directly run the greedy step like this:
+```cpp
+    auto num_rows      = cft::rsize(inst.rows);
+    auto lagr_mult     = std::vector<cft::real_t>(num_rows, 0.0);
+    auto reduced_costs = inst.costs;  // Zero multipliers implies red-costs = costs
+
+    auto greedy = cft::Greedy();
+    auto sol    = cft::Solution();
+    sol.cost    = greedy(inst, lagr_mult, reduced_costs, sol.idxs);
+    fmt::print("Greedy solution cost: {}\n", sol.cost);
+```
+In this case, the multipliers can be viewed as a set of weigths that measure row importance, so they can be manipulated to guide the greedy (which is exactly what it is done within the 3-phase).
+
 ## Benchmarks
 
 Benchmarks have been run on ThinkPad P16v with an [`intel i7-13700H`](https://www.cpubenchmark.net/cpu.php?cpu=Intel+Core+i7-13700H) processor and 32GB of RAM on an Arch system, compiled with `g++ 13.2.1`.
@@ -98,6 +182,11 @@ The results for the other datasets can be found in the [`benchmarks`](benchmarks
 Regarding the source code, here you can find the general set of rules that we try to enforce. Since this is a project we work on in our free time, we haven't been afraid to experiment with simple rules and convention that we adjusted along the way when we felt something wasn't working for us.
 
 We decided to stick with the C++11 standard for a couple of reasons. First, it keeps the code accessible to more people. Second, it helped us avoid the temptation of using fancy meta-programming features and abstractions introduced in recent standards, which can easily result in moving the focus from the algorithm itself to the _how_ the algorithm is implemented.
+
+### External Dependencies
+The only external dependecy that we have is [`fmtlib`](https://github.com/fmtlib/fmt), a printing/formatting library that is so much superior to `iostream` that it's a pain when we can't use it (luckily it got into the standard).
+If you build the project with CMake, it should download and configure it automatically. Note, however, that you'll need an internet connection for that to work.
+
 
 ### User Vs Library Code
 

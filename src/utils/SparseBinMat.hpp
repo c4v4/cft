@@ -50,7 +50,8 @@ struct SparseBinMat {
         begs.push_back(idxs.size());
     }
 
-    void push_back(std::initializer_list<IdxT> elem) {
+    template <typename IdxT2>
+    void push_back(std::initializer_list<IdxT2> elem) {
         idxs.insert(idxs.end(), elem.begin(), elem.end());
         begs.push_back(idxs.size());
     }

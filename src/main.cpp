@@ -28,7 +28,6 @@ int main(int argc, char const** argv) {
     } catch (std::exception const& e) {
         fmt::print(stderr, "\nCFT> ERROR: {}\n", e.what());
         std::fflush(stdout);
-        std::fflush(stderr);
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;
