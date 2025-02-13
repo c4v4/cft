@@ -111,6 +111,7 @@ struct CidxAndCost {
 struct Solution {
     std::vector<cidx_t> idxs;
     real_t              cost;
+    real_t              lower_bound = 0.0;
 };
 
 // Environment struct to hold all the parameters and working variables

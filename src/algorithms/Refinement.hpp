@@ -152,7 +152,7 @@ inline Solution run(Environment const& env,                // in
         if (inst.rows.empty() || env.timer.elapsed<sec>() > env.time_limit)
             break;
     }
-
+    best_sol.lower_bound = nofix_lb;
     return best_sol;
 }
 
