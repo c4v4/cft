@@ -42,7 +42,7 @@ class SetCoverSolver:
     def solve(
         self,
         seed: int = 0,
-        time_limit: float = float('inf'),
+        time_limit: float = float("inf"),
         verbose: int = 2,
         epsilon: float = 0.999,
         heur_iters: int = 250,
@@ -94,13 +94,13 @@ class SetCoverSolver:
             return None
         return list(self._solution.idxs)
 
-    def get_objective(self) -> float | None:
+    def get_cost(self) -> float | None:
         """
         Return the cost of the solution.
         """
         if self._solution is None:
             return None
-        return self._solution.objective
+        return self._solution.cost
 
     def get_lower_bound(self) -> float:
         """
