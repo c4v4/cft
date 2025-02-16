@@ -6,6 +6,8 @@
 // fmt
 #include <fmt/core.h>
 
+#include <stdexcept>
+
 #include "../algorithms/Refinement.hpp"
 #include "../core/CliArgs.hpp"
 #include "../core/Instance.hpp"
@@ -13,30 +15,40 @@
 #include "../core/parsing.hpp"
 #include "../utils/print.hpp"
 
-int _main(int argc, char const** argv) {
+void check_and_fill_instance(cft::Instance& instance) {
+    auto& cols = instance.cols;
+    auto& rows = instance.rows;
+    using namespace cft;
+    size_t n = 0;
 
-    try {
-        auto env = cft::parse_cli_args(argc, argv);
+    // Determine the maximum index in cols
+    for (cidx_t j = 0_C; j < csize(cols); ++j)
+        for (ridx_t i : cols[j])
+            n = std::max(n, static_cast<size_t>(i + 1));
 
-        cft::print<1>(env, "CFT implementation by Luca Accorsi and Francesco Cavaliere.\n");
-        cft::print<2>(env, "Compiled on " __DATE__ " at " __TIME__ ".\n\n");
-        cft::print<3>(env, "Running with parameters set to:\n");
-        cft::print_arg_values(env);
-
-        auto fdata = cft::parse_inst_and_initsol(env);
-        auto sol   = cft::run(env, fdata.inst, fdata.init_sol);
-        cft::write_solution(env.sol_path, sol);
-        cft::print<1>(env,
-                      "CFT> Best solution {:.2f} time {:.2f}s\n",
-                      sol.cost,
-                      env.timer.elapsed<cft::sec>());
-
-    } catch (std::exception const& e) {
-        fmt::print(stderr, "\nCFT> ERROR: {}\n", e.what());
-        std::fflush(stdout);
-        return EXIT_FAILURE;
+    // Guard against the user entering huge indices because they
+    // might have misunderstood the 0-based indexing.
+    if (n > cols.idxs.size()) {
+        throw std::runtime_error(fmt::format("Item index out of bounds. Maximum index is {} but "
+                                             "size is {}. Please make sure that the n items are "
+                                             "indexed from 0 to n-1.",
+                                             n,
+                                             cols.idxs.size()));
     }
-    return EXIT_SUCCESS;
+
+    // Check if every element (row) is in at least one column
+    std::vector<bool> in_col(n, false);
+    // Mark every element that is in a column (set)
+    for (cidx_t j = 0_C; j < csize(cols); ++j)
+        for (ridx_t i : cols[j])
+            in_col[i] = true;
+    // Check if every element is in at least one column
+    for (size_t i = 0; i < n; ++i)
+        if (!in_col[i])
+            throw std::runtime_error(fmt::format("Item {} not contained in any set.", i));
+
+    // Fill rows from columns
+    fill_rows_from_cols(cols, n, rows);
 }
 
 // Pybind11 module definitions
@@ -62,6 +74,7 @@ PYBIND11_MODULE(_bindings, m) {
         .def_readwrite("abs_subgrad_exit", &Environment::abs_subgrad_exit)
         .def_readwrite("rel_subgrad_exit", &Environment::rel_subgrad_exit)
         .def_readwrite("use_unit_costs", &Environment::use_unit_costs)
+        .def_readwrite("min_fixing", &Environment::min_fixing)
         .def("__repr__", [](Environment const& a) {
             return fmt::format("Environment(inst_path='{}', sol_path='{}', initsol_path='{}', "
                                "parser={}, "
@@ -107,14 +120,14 @@ PYBIND11_MODULE(_bindings, m) {
         .def("add",
              [](Instance& self, std::vector<ridx_t> const& col, real_t cost) {
                  self.cols.push_back(col);
+                 if (cost < 0.0) {
+                        throw std::runtime_error("Costs must be non-negative.");
+                 }
                  self.costs.push_back(cost);
                  return self.costs.size() - 1;
              })
         .def("copy", [](Instance const& a) { return Instance(a); })
-        .def("fill_rows_from_cols", [](Instance& self, size_t no_elements) {
-            self.rows.clear();
-            fill_rows_from_cols(self.cols, no_elements, self.rows);
-        });
+        .def("prepare", [](Instance& self) { check_and_fill_instance(self); });
 
     py::class_<Solution>(m, "Solution")
         .def(py::init<>())

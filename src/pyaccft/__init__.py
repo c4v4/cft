@@ -11,22 +11,39 @@ __all__ = ["Environment", "parse_inst_and_initsol", "run"]
 
 
 class SetCoverSolver:
-    def __init__(self, num_elements: int = -1):
-        self.num_elements = num_elements
+    """
+    Defines a Set Cover Solver object that will solve the set cover problem using the CFT heuristic.
+    """
+
+    def __init__(self):
         self._solution = None
         self._instance = Instance()
         self._initialized = False
+        self._max_element = -1
 
     def add_set(self, elements: list[int], cost: float) -> int:
+        """
+        Add a set. Returns the index of the set which is also used in the solution.
+        """
         if cost < 0:
             raise ValueError("Costs must be non-negative")
-        if not all(0 <= e < self.num_elements for e in elements):
-            raise ValueError("Elements must be in range [0, num_elements)")
+        if not all(0 <= e for e in elements):
+            raise ValueError("Elements must be zero-indexed.")
+        max_element = max(elements)
+        if max_element > self._max_element:
+            self._max_element = max_element
+            self._solution = (
+                None  # in case there is a new element, the solution is no longer
+            )
+            # valid
         self._instance.add(elements, cost)
         self._initialized = False
         return len(self._instance.costs) - 1
 
     def from_file(self, filename: str | Path, parser: str = "RAIL") -> None:
+        """
+        Load an instance from a file.
+        """
         env = Environment()
         env.time_limit = 10
         env.verbose = 2
@@ -50,6 +67,7 @@ class SetCoverSolver:
         beta: float = 1.0,
         abs_subgrad_exit: float = 1.0,
         rel_subgrad_exit: float = 0.001,
+        min_fixing=0.3,
     ) -> None:
         """
         Solves the set cover problem using the specified parameters.
@@ -79,9 +97,10 @@ class SetCoverSolver:
         env.beta = beta
         env.abs_subgrad_exit = abs_subgrad_exit
         env.rel_subgrad_exit = rel_subgrad_exit
+        env.min_fixing = min_fixing
         if not self._initialized:
             self._instance.rows.clear()
-            self._instance.fill_rows_from_cols(self.num_elements)
+            self._instance.prepare()
             self._initialized = True
         init_sol = Solution() if self._solution is None else self._solution
         self._solution = run(env, self._instance, init_sol).copy()
