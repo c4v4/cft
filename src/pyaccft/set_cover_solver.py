@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Dominik Krupke <krupked@gmail.com>
+# SPDX-FileCopyrightText: 2025 Dominik Krupke <krupked@gmail.com>
 # SPDX-License-Identifier: MIT
 
 from pathlib import Path

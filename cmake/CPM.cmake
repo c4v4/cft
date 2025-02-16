@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2019-2023 Lars Melchior and contributors
+# SPDX-License-Identifier: MIT
 # CPM.cmake - CMake's missing package manager
 # ===========================================
 # See https://github.com/cpm-cmake/CPM.cmake for usage and update instructions.
