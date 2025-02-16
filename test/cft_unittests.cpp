@@ -17,7 +17,7 @@ TEST_CASE("Test CidxAndCost struct") {
 }
 
 TEST_CASE("Test Solution struct") {
-    auto s = Solution{{}, 0.0_F};
+    auto s = Solution{{}, 0.0_F, 0.0_F};
     CHECK(s.idxs.empty());
     CHECK(s.cost == 0.0_F);
 }
