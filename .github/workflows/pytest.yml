@@ -1,4 +1,4 @@
-name: Test on Linux
+name: Test Python-bindings on Linux
 
 on:
   push:

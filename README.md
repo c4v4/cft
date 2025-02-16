@@ -247,3 +247,10 @@ For instance, you can use this interface to:
 - _Introduce Specialized Types_: Utilize alternative number representations like fixed-point types for specific use cases.
 
 This approach tries to strike a good a balance between ease of use for common numeric types and the ability to tailor the library to your specific needs.
+
+
+### Python Bindings
+
+The project also provides Python bindings with a simplified interface for quick usage.
+While you can also access much of the C++-interface directly, the primary purpose is to provide a point and shoot interface for the algorithm.
+You can find more details in a separate [README](README.py.md).
