@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2024 Dominik Krupke <krupked@gmail.com>
+# SPDX-License-Identifier: MIT
+
 from pathlib import Path
 from ._bindings import (
     Environment,
@@ -24,7 +27,7 @@ class SetCoverSolver:
     Example:
     ```python
     from pyaccft import SetCoverSolver
-    
+
     solver = SetCoverSolver()
     # Set 0
     solver.add_set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], cost=10)

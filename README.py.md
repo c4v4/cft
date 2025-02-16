@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2024 Dominik Krupke <krupked@gmail.com>
+SPDX-License-Identifier: MIT
+ -->
+
 # Python Bindings for the AC-CFT Set Cover Heuristic
 
 ## Install

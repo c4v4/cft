@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2024 Dominik Krupke <krupked@gmail.com>
+# SPDX-License-Identifier: MIT
+
 from pathlib import Path
 
 from setuptools import find_packages

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2024 Dominik Krupke <krupked@gmail.com>
+// SPDX-License-Identifier: MIT
+
 // pybind11
 #include <pybind11/operators.h>  // To define operator overloading
 #include <pybind11/pybind11.h>   // Basic pybind11 functionality
