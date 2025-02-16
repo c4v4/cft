@@ -114,8 +114,8 @@ struct Solution {
     real_t              lower_bound = 0.0_F;
 
     Solution() = default;
-    Solution(std::vector<cidx_t> idxs, real_t cost, real_t lower_bound = 0.0_F)
-        : idxs(std::move(idxs)), cost(cost), lower_bound(lower_bound) {}
+    Solution(std::vector<cidx_t> idxs_, real_t cost_, real_t lower_bound_ = 0.0_F)
+        : idxs(std::move(idxs_)), cost(cost_), lower_bound(lower_bound_) {}
 
 };
 
