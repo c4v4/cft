@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 Dominik Krupke <krupked@gmail.com>
+# SPDX-License-Identifier: MIT
+
 import pyaccft
 import pytest
 
