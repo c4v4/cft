@@ -28,28 +28,31 @@ add_executable(accft ${SOURCE})
 set(LIBRARIES fmt::fmt pthread dl m)
 target_link_libraries(accft PUBLIC ${LIBRARIES})
 
-# CPM Dependencies ~~~~~~~~~~~~~~~~ CPM allows us to include some simple
-# dependencies without much fuss. Great default, for everything more
-# complicated, uses conan. Why not always use conan? CPM works without any
-# interaction (conan needs to be called externally). CPM also has no problems
-# with install PyBind11 (which conan has at the time). If the dependency has
-# complicated dependencies on its own or is slow to compile, better use conan.
-# Check out https://github.com/cpm-cmake/CPM.cmake
-include(./cmake/CPM.cmake) # Package manager for simple requirements.
+if (SKBUILD)
+  # CPM Dependencies ~~~~~~~~~~~~~~~~ 
+  # CPM allows us to include some simple
+  # dependencies without much fuss. Great default, for everything more
+  # complicated, uses conan. Why not always use conan? CPM works without any
+  # interaction (conan needs to be called externally). CPM also has no problems
+  # with install PyBind11 (which conan has at the time). If the dependency has
+  # complicated dependencies on its own or is slow to compile, better use conan.
+  # Check out https://github.com/cpm-cmake/CPM.cmake
+  include(./cmake/CPM.cmake) # Package manager for simple requirements.
 
-# PyBind11
-cpmaddpackage("gh:pybind/pybind11@2.10.0") # pybind11, essential
-set(CMAKE_POSITION_INDEPENDENT_CODE ON) # The code needs to be compiled as PIC
-                                        # to build the shared lib for python.
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+  # PyBind11
+  cpmaddpackage("gh:pybind/pybind11@2.10.0") # pybind11, essential
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON) # The code needs to be compiled as PIC
+                      # to build the shared lib for python.
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-pybind11_add_module(_bindings ./src/pyaccft/_bindings.cpp)
-target_link_libraries(_bindings PUBLIC fmt::fmt ${LIBRARIES})
-# enable compilation warnings
-target_compile_options(
-  _bindings PRIVATE "$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall>")
-target_compile_definitions(_bindings PRIVATE PYBIND11_DETAILED_ERROR_MESSAGES)
-install(TARGETS _bindings DESTINATION ./src/pyaccft/)
+  pybind11_add_module(_bindings ./src/pyaccft/_bindings.cpp)
+  target_link_libraries(_bindings PUBLIC fmt::fmt ${LIBRARIES})
+  # enable compilation warnings
+  target_compile_options(
+    _bindings PRIVATE "$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall>")
+  target_compile_definitions(_bindings PRIVATE PYBIND11_DETAILED_ERROR_MESSAGES)
+  install(TARGETS _bindings DESTINATION ./src/pyaccft/)
+endif()
 
 ########################################
 ############## Unit tests ##############
