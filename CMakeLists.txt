@@ -44,6 +44,8 @@ if (SKBUILD)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON) # The code needs to be compiled as PIC
                       # to build the shared lib for python.
   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+  # Ensure fmt is compiled with -fPIC
+  set_target_properties(fmt PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
   pybind11_add_module(_bindings ./src/pyaccft/_bindings.cpp)
   target_link_libraries(_bindings PUBLIC fmt::fmt ${LIBRARIES})
