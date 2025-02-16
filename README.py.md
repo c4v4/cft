@@ -7,7 +7,11 @@ SPDX-License-Identifier: MIT
 
 ## Install
 
-TODO
+We will publish the package on PyPI soon. For now, you can install the package by cloning the repository and running the following command in the root directory:
+
+```bash
+pip install --verbose .
+```
 
 ## Usage
 
