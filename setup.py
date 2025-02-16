@@ -9,7 +9,7 @@ def readme():
     :return: Content of README.md
     """
 
-    with Path("README.md").open() as file:
+    with Path("README.py.md").open() as file:
         return file.read()
 
 
