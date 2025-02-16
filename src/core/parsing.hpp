@@ -300,4 +300,4 @@ inline FileData parse_inst_and_initsol(Environment const& env) {
 }  // namespace cft
 
 
-#endif /* CFT_SRC_INSTANCE_PARSING_HPP */"but their code is in a half-working prototype state and it's completely messy"
+#endif /* CFT_SRC_INSTANCE_PARSING_HPP */
