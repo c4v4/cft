@@ -29,6 +29,12 @@ set(LIBRARIES fmt::fmt pthread dl m)
 target_link_libraries(accft PUBLIC ${LIBRARIES})
 
 if (SKBUILD)
+set(PYTHON_BINDINGS ON)
+endif()
+
+if (PYTHON_BINDINGS)
+message(STATUS "PYTHON_BINDINGS: ${PYTHON_BINDINGS}")
+
   # CPM Dependencies ~~~~~~~~~~~~~~~~ 
   # CPM allows us to include some simple
   # dependencies without much fuss. Great default, for everything more
