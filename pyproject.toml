@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2025 Dominik Krupke <krupked@gmail.com>
+# SPDX-License-Identifier: MIT
+
+[build-system]
+requires = [
+    "setuptools",
+    "scikit-build>=0.17.3",
+    "cmake>=3.23",
+    "ninja",
+]
+build-backend = "setuptools.build_meta"

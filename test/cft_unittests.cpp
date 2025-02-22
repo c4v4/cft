@@ -22,6 +22,20 @@ TEST_CASE("Test Solution struct") {
     CHECK(s.cost == 0.0_F);
 }
 
+TEST_CASE("Test DualState struct") {
+    auto d = DualState{{}, 0.0_F};
+    CHECK(d.mults.empty());
+    CHECK(d.lb == 0.0_F);
+}
+
+TEST_CASE("Test CftResult struct") {
+    auto r = CftResult{{{}, 1.2_F}, {{}, 2.3_F}};
+    CHECK(r.sol.idxs.empty());
+    CHECK(r.sol.cost == 1.2_F);
+    CHECK(r.dual.mults.empty());
+    CHECK(r.dual.lb == 2.3_F);
+}
+
 TEST_CASE("Test as_cidx function") {
     int    i = 10;
     cidx_t c = as_cidx(i);

@@ -28,6 +28,30 @@ add_executable(accft ${SOURCE})
 set(LIBRARIES fmt::fmt pthread dl m)
 target_link_libraries(accft PUBLIC ${LIBRARIES})
 
+if (SKBUILD)
+set(PYTHON_BINDINGS ON)
+endif()
+
+if (PYTHON_BINDINGS)
+message(STATUS "PYTHON_BINDINGS: ${PYTHON_BINDINGS}")
+
+  # PyBind11
+  FetchContent_Declare(pybind11 GIT_REPOSITORY https://github.com/pybind/pybind11.git GIT_TAG v2.13.6)
+  FetchContent_MakeAvailable(pybind11) # pybind11, essential
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON) # The code needs to be compiled as PIC
+                                          # to build the shared lib for python.
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+  # Ensure fmt is compiled with -fPIC
+  set_target_properties(fmt PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+  pybind11_add_module(_bindings ./src/pyaccft/_bindings.cpp)
+  target_link_libraries(_bindings PUBLIC fmt::fmt ${LIBRARIES})
+  # enable compilation warnings
+  target_compile_options(
+    _bindings PRIVATE "$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall>")
+  target_compile_definitions(_bindings PRIVATE PYBIND11_DETAILED_ERROR_MESSAGES)
+  install(TARGETS _bindings DESTINATION ./src/pyaccft/)
+endif()
 
 ########################################
 ############## Unit tests ##############

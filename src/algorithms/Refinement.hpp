@@ -88,25 +88,24 @@ namespace local { namespace {
 }  // namespace local
 
 // Complete CFT algorithm (Refinement + call to 3-phase)
-inline Solution run(Environment const& env,                // in
-                    Instance const&    orig_inst,          // in
-                    Solution const&    warmstart_sol = {}  // in
+inline CftResult run(Environment const& env,                // in
+                     Instance const&    orig_inst,          // in
+                     Solution const&    warmstart_sol = {}  // in
 ) {
 
     cidx_t const ncols = csize(orig_inst.cols);
     ridx_t const nrows = rsize(orig_inst.rows);
 
-    auto inst     = orig_inst;
-    auto best_sol = Solution();
-    best_sol.cost = limits<real_t>::max();
+    auto inst       = orig_inst;
+    auto nofix_dual = DualState();
+    auto best_sol   = Solution();
+    best_sol.cost   = limits<real_t>::max();
 
     if (!warmstart_sol.idxs.empty())
         best_sol = warmstart_sol;
 
     auto three_phase        = ThreePhase();
     auto select_cols_to_fix = local::RefinementFixManager();
-    auto nofix_lagr_mult    = std::vector<real_t>();
-    auto nofix_lb           = limits<real_t>::max();
     auto old2new            = IdxsMaps();
     auto fixing             = FixingData();
     auto max_cost           = limits<real_t>::max();
@@ -120,16 +119,15 @@ inline Solution run(Environment const& env,                // in
         }
 
         if (iter_counter == 0) {
-            nofix_lagr_mult = std::move(result_3p.nofix_lagr_mult);
-            nofix_lb        = result_3p.nofix_lb;
-            max_cost        = env.beta * nofix_lb + env.epsilon;
+            nofix_dual = std::move(result_3p.dual);
+            max_cost   = env.beta * nofix_dual.lb + env.epsilon;
         }
 
         if (best_sol.cost <= max_cost || env.timer.elapsed<sec>() > env.time_limit)
             break;
 
         inst             = orig_inst;
-        auto cols_to_fix = select_cols_to_fix(env, inst, nofix_lagr_mult, best_sol);
+        auto cols_to_fix = select_cols_to_fix(env, inst, nofix_dual.mults, best_sol);
         if (!cols_to_fix.empty()) {
             make_identity_fixing_data(ncols, nrows, fixing);
             fix_columns_and_compute_maps(cols_to_fix, inst, fixing, old2new);
@@ -140,8 +138,8 @@ inline Solution run(Environment const& env,                // in
                  "REFN> {:2}: Best solution {:.2f}, lb {:.2f}, gap {:.2f}%\n",
                  iter_counter,
                  best_sol.cost,
-                 nofix_lb,
-                 100.0_F * (best_sol.cost - nofix_lb) / best_sol.cost);
+                 nofix_dual.lb,
+                 100.0_F * (best_sol.cost - nofix_dual.lb) / best_sol.cost);
         print<2>(env,
                  "REFN> {:2}: Fixed cost {:.2f}, free rows {:.0f}%, time {:.2f}s\n\n",
                  iter_counter,
@@ -152,8 +150,7 @@ inline Solution run(Environment const& env,                // in
         if (inst.rows.empty() || env.timer.elapsed<sec>() > env.time_limit)
             break;
     }
-
-    return best_sol;
+    return {std::move(best_sol), std::move(nofix_dual)};
 }
 
 }  // namespace cft

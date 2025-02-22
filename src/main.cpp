@@ -18,11 +18,11 @@ int main(int argc, char const** argv) {
         cft::print_arg_values(env);
 
         auto fdata = cft::parse_inst_and_initsol(env);
-        auto sol   = cft::run(env, fdata.inst, fdata.init_sol);
-        cft::write_solution(env.sol_path, sol);
+        auto res   = cft::run(env, fdata.inst, fdata.init_sol);
+        cft::write_solution(env.sol_path, res.sol);
         cft::print<1>(env,
                       "CFT> Best solution {:.2f} time {:.2f}s\n",
-                      sol.cost,
+                      res.sol.cost,
                       env.timer.elapsed<cft::sec>());
 
     } catch (std::exception const& e) {
