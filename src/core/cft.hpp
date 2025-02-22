@@ -107,16 +107,21 @@ struct CidxAndCost {
     real_t cost;
 };
 
-// Solution represented by a vector of column indexes and the total cost
+// Solution for the Set Covering problem
 struct Solution {
-    std::vector<cidx_t> idxs;
-    real_t              cost;
-    real_t              lower_bound = 0.0_F;
+    std::vector<cidx_t> idxs;  // List of selected column indexes ...
+    real_t              cost;  // ... their total cost
+};
 
-    Solution() = default;
-    Solution(std::vector<cidx_t> idxs_, real_t cost_, real_t lower_bound_ = 0.0_F)
-        : idxs(std::move(idxs_)), cost(cost_), lower_bound(lower_bound_) {}
+// Dual solution for the Set Covering problem
+struct DualState {
+    std::vector<real_t> mults;  // Lagrangian multipliers
+    real_t              lb;     // Lower bound
+};
 
+struct CftResult {
+    Solution  sol;
+    DualState dual;
 };
 
 // Environment struct to hold all the parameters and working variables

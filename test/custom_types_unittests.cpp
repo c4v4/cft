@@ -68,12 +68,12 @@ TEST_CASE("Custom types, whole algorithm run test") {
 
     for (int n = 0; n < 20; ++n) {
         auto inst = make_easy_inst(n, 100_C);
-        auto sol  = run(env, inst, init_sol);
-        CHECK((sol.cost <= 1000.0_F));                  // Trivial bad solution has 1000 cost
-        CHECK((sol.cost >= as_real(sol.idxs.size())));  // Min col cost is 1.0
-        if (abs(sol.cost - 1000.0_F) < 1e-6_F)
-            DOCTEST_CHECK_EQ(sol.idxs, init_sol.idxs);
-        CFT_IF_DEBUG(CHECK_NOTHROW(check_inst_solution(inst, sol)));
+        auto res  = run(env, inst, init_sol);
+        CHECK((res.sol.cost <= 1000.0_F));  // Trivial bad solution has 1000 cost
+        CHECK((res.sol.cost >= as_real(res.sol.idxs.size())));  // Min col cost is 1.0
+        if (abs(res.sol.cost - 1000.0_F) < 1e-6_F)
+            DOCTEST_CHECK_EQ(res.sol.idxs, init_sol.idxs);
+        CFT_IF_DEBUG(CHECK_NOTHROW(check_inst_solution(inst, res.sol)));
     }
 }
 

@@ -17,9 +17,23 @@ TEST_CASE("Test CidxAndCost struct") {
 }
 
 TEST_CASE("Test Solution struct") {
-    auto s = Solution{{}, 0.0_F, 0.0_F};
+    auto s = Solution{{}, 0.0_F};
     CHECK(s.idxs.empty());
     CHECK(s.cost == 0.0_F);
+}
+
+TEST_CASE("Test DualState struct") {
+    auto d = DualState{{}, 0.0_F};
+    CHECK(d.mults.empty());
+    CHECK(d.lb == 0.0_F);
+}
+
+TEST_CASE("Test CftResult struct") {
+    auto r = CftResult{{{}, 1.2_F}, {{}, 2.3_F}};
+    CHECK(r.sol.idxs.empty());
+    CHECK(r.sol.cost == 1.2_F);
+    CHECK(r.dual.mults.empty());
+    CHECK(r.dual.lb == 2.3_F);
 }
 
 TEST_CASE("Test as_cidx function") {

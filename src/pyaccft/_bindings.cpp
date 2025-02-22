@@ -6,53 +6,52 @@
 #include <pybind11/pybind11.h>   // Basic pybind11 functionality
 #include <pybind11/stl.h>        // Automatic conversion of vectors
 
-// fmt
-#include <fmt/core.h>
-
 #include <stdexcept>
 
 #include "../algorithms/Refinement.hpp"
-#include "../core/CliArgs.hpp"
 #include "../core/Instance.hpp"
 #include "../core/cft.hpp"
 #include "../core/parsing.hpp"
-#include "../utils/print.hpp"
 
-void check_and_fill_instance(cft::Instance& instance) {
-    auto& cols = instance.cols;
-    auto& rows = instance.rows;
-    using namespace cft;
-    size_t n = 0;
+namespace local { namespace {
+    void check_and_fill_instance(cft::Instance& instance) {
+        auto& cols = instance.cols;
+        auto& rows = instance.rows;
+        using namespace cft;
+        size_t n = 0;
 
-    // Determine the maximum index in cols
-    for (cidx_t j = 0_C; j < csize(cols); ++j)
-        for (ridx_t i : cols[j])
-            n = std::max(n, static_cast<size_t>(i + 1));
+        // Determine the maximum index in cols
+        for (cidx_t j = 0_C; j < csize(cols); ++j)
+            for (ridx_t i : cols[j])
+                n = std::max(n, static_cast<size_t>(i + 1));
 
-    // Guard against the user entering huge indices because they
-    // might have misunderstood the 0-based indexing.
-    if (n > cols.idxs.size()) {
-        throw std::runtime_error(fmt::format("Item index out of bounds. Maximum index is {} but "
-                                             "size is {}. Please make sure that the n items are "
-                                             "indexed from 0 to n-1.",
-                                             n,
-                                             cols.idxs.size()));
+        // Guard against the user entering huge indices because they
+        // might have misunderstood the 0-based indexing.
+        if (n > cols.idxs.size()) {
+            throw std::runtime_error(
+                fmt::format("Item index out of bounds. Maximum index is {} but "
+                            "size is {}. Please make sure that the n items are "
+                            "indexed from 0 to n-1.",
+                            n,
+                            cols.idxs.size()));
+        }
+
+        // Check if every element (row) is in at least one column
+        std::vector<bool> in_col(n, false);
+        // Mark every element that is in a column (set)
+        for (cidx_t j = 0_C; j < csize(cols); ++j)
+            for (ridx_t i : cols[j])
+                in_col[i] = true;
+        // Check if every element is in at least one column
+        for (size_t i = 0; i < n; ++i)
+            if (!in_col[i])
+                throw std::runtime_error(fmt::format("Item {} not contained in any set.", i));
+
+        // Fill rows from columns
+        fill_rows_from_cols(cols, n, rows);
     }
-
-    // Check if every element (row) is in at least one column
-    std::vector<bool> in_col(n, false);
-    // Mark every element that is in a column (set)
-    for (cidx_t j = 0_C; j < csize(cols); ++j)
-        for (ridx_t i : cols[j])
-            in_col[i] = true;
-    // Check if every element is in at least one column
-    for (size_t i = 0; i < n; ++i)
-        if (!in_col[i])
-            throw std::runtime_error(fmt::format("Item {} not contained in any set.", i));
-
-    // Fill rows from columns
-    fill_rows_from_cols(cols, n, rows);
-}
+}  // namespace
+}  // namespace local
 
 // Pybind11 module definitions
 PYBIND11_MODULE(_bindings, m) {
@@ -123,27 +122,46 @@ PYBIND11_MODULE(_bindings, m) {
         .def("add",
              [](Instance& self, std::vector<ridx_t> const& col, real_t cost) {
                  self.cols.push_back(col);
-                 if (cost < 0.0) {
-                        throw std::runtime_error("Costs must be non-negative.");
-                 }
+                 if (cost < 0.0)
+                     throw std::runtime_error("Costs must be non-negative.");
                  self.costs.push_back(cost);
                  return self.costs.size() - 1;
              })
-        .def("copy", [](Instance const& a) { return Instance(a); })
-        .def("prepare", [](Instance& self) { check_and_fill_instance(self); });
+        .def("copy", [](Instance const& a) { return a; })
+        .def("prepare", [](Instance& self) { ::local::check_and_fill_instance(self); });
+
+
+    py::class_<CftResult>(m, "CftResult")
+        .def(py::init<>())
+        .def_readwrite("sol", &CftResult::sol)
+        .def_readwrite("dual", &CftResult::dual)
+        .def("copy", [](CftResult const& a) { return a; })
+        .def("__repr__", [](CftResult const& a) {
+            return fmt::format("CftResult(sol=({},{}), dual=({},{}))",
+                               a.sol.cost,
+                               a.sol.cost,
+                               a.dual.mults,
+                               a.dual.lb);
+        });
 
     py::class_<Solution>(m, "Solution")
         .def(py::init<>())
         .def_readwrite("idxs", &Solution::idxs)
         .def_readwrite("cost", &Solution::cost)
-        .def_readwrite("lower_bound", &Solution::lower_bound)
-        .def("copy", [](Solution const& a) { return Solution(a); })
+        .def("copy", [](Solution const& a) { return a; })
         .def("__repr__", [](Solution const& a) {
-            return fmt::format("Solution(idxs={}, cost={}, lower_bound={})",
-                               a.idxs,
-                               a.cost,
-                               a.lower_bound);
+            return fmt::format("Solution(idxs={}, cost={})", a.idxs, a.cost);
         });
+
+    py::class_<DualState>(m, "DualState")
+        .def(py::init<>())
+        .def_readwrite("idxs", &DualState::mults)
+        .def_readwrite("cost", &DualState::lb)
+        .def("copy", [](DualState const& a) { return a; })
+        .def("__repr__", [](DualState const& a) {
+            return fmt::format("DualState(mults={}, lb={})", a.mults, a.lb);
+        });
+
 
     py::class_<FileData>(m, "FileData")
         .def_readwrite("inst", &FileData::inst)

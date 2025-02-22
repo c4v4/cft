@@ -48,8 +48,8 @@ TEST_CASE("Invoke whole algorithm") {
         env.time_limit = 10.0;  // Time limit in seconds
         env.verbose    = 2;     // Log verbosity level (from 0 to 5)
         env.timer.restart();    // NOTE: the timer is used also for the time limit test
-        auto sol = cft::run(env, inst);
-        fmt::print("CFT solution cost: {}\n", sol.cost);
+        auto res = cft::run(env, inst);
+        fmt::print("CFT solution cost: {}\n", res.sol.cost);
     }());
 }
 
@@ -66,7 +66,7 @@ TEST_CASE("Invoke 3-phase algorithm") {
     REQUIRE_NOTHROW([&] {
         auto three_phase = cft::ThreePhase();
         auto result      = three_phase(env, inst);
-        fmt::print("3-phase solution cost: {}, LB: {}\n", result.sol.cost, result.nofix_lb);
+        fmt::print("3-phase solution cost: {}, LB: {}\n", result.sol.cost, result.dual.lb);
     }());
 }
 

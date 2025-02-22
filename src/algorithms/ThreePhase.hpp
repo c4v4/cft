@@ -15,37 +15,30 @@
 
 namespace cft {
 
-struct ThreePhaseResult {
-    Solution            sol;              // Best feasible solution found
-    std::vector<real_t> nofix_lagr_mult;  // Lagrangian multipliers before the first fixing
-    real_t              nofix_lb;         // Lower bound before the first fixing
-};
-
 class ThreePhase {
     static constexpr real_t init_step_size = 0.1_F;
 
     // Caches
-    Subgradient         subgrad;            // Subgradient functor
-    Greedy              greedy;             // Greedy functor
-    ColFixing           col_fixing;         // Column fixing functor
-    Pricer              pricer;             // Pricing functor
-    FixingData          fixing;             // Column fixing data
-    Solution            sol;                // Current solution
-    Solution            best_sol;           // Best solution
-    InstAndMap          core;               // Core instance
-    std::vector<real_t> lagr_mult;          // Lagrangian multipliers
-    std::vector<real_t> unfixed_lagr_mult;  // Best multipliers before the first fixing
+    Subgradient         subgrad;     // Subgradient functor
+    Greedy              greedy;      // Greedy functor
+    ColFixing           col_fixing;  // Column fixing functor
+    Pricer              pricer;      // Pricing functor
+    FixingData          fixing;      // Column fixing data
+    Solution            sol;         // Current solution
+    Solution            best_sol;    // Best solution
+    InstAndMap          core;        // Core instance
+    std::vector<real_t> lagr_mult;   // Lagrangian multipliers
+    DualState           nofix_dual;  // Best multipliers before the first fixing
 
 public:
     // 3-phase algorithm consisting in subgradient, greedy and column fixing.
     // NOTE: inst gets progressively fixed inplace, loosing its original state.
-    ThreePhaseResult operator()(Environment const& env,  // in
-                                Instance&          inst  // in/cache
+    CftResult operator()(Environment const& env,  // in
+                         Instance&          inst  // in/cache
     ) {
         ridx_t const orig_nrows = rsize(inst.rows);  // Original number of rows for ColFixing
 
-        auto tot_timer  = Chrono<>();
-        auto unfixed_lb = limits<real_t>::min();
+        auto tot_timer = Chrono<>();
         _three_phase_setup(inst, greedy, sol, best_sol, core, lagr_mult, fixing);
 
         CFT_IF_DEBUG(auto inst_copy = inst);
@@ -57,10 +50,8 @@ public:
             auto   cutoff    = best_sol.cost - fixing.fixed_cost;
             auto   real_lb   = subgrad(env, inst, cutoff, pricer, core, step_size, lagr_mult);
 
-            if (iter_counter == 0) {
-                unfixed_lagr_mult = lagr_mult;
-                unfixed_lb        = real_lb;
-            }
+            if (iter_counter == 0)
+                nofix_dual = {lagr_mult, real_lb};
 
             if (real_lb + fixing.fixed_cost >= best_sol.cost - env.epsilon ||
                 env.timer.elapsed<sec>() > env.time_limit)
@@ -96,7 +87,7 @@ public:
                  "3PHS> Best solution: {:.2f}, time: {:.2f}s\n\n",
                  best_sol.cost,
                  tot_timer.elapsed<sec>());
-        return {best_sol, unfixed_lagr_mult, unfixed_lb};
+        return {best_sol, nofix_dual};
     }
 
 private:
