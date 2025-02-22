@@ -8,7 +8,6 @@ from ._bindings import (
     run,
     Instance,
     Solution,
-    DualState,
     CftResult,
 )
 

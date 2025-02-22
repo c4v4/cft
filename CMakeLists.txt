@@ -35,20 +35,11 @@ endif()
 if (PYTHON_BINDINGS)
 message(STATUS "PYTHON_BINDINGS: ${PYTHON_BINDINGS}")
 
-  # CPM Dependencies ~~~~~~~~~~~~~~~~ 
-  # CPM allows us to include some simple
-  # dependencies without much fuss. Great default, for everything more
-  # complicated, uses conan. Why not always use conan? CPM works without any
-  # interaction (conan needs to be called externally). CPM also has no problems
-  # with install PyBind11 (which conan has at the time). If the dependency has
-  # complicated dependencies on its own or is slow to compile, better use conan.
-  # Check out https://github.com/cpm-cmake/CPM.cmake
-  include(./cmake/CPM.cmake) # Package manager for simple requirements.
-
   # PyBind11
-  cpmaddpackage("gh:pybind/pybind11@2.10.0") # pybind11, essential
+  FetchContent_Declare(pybind11 GIT_REPOSITORY https://github.com/pybind/pybind11.git GIT_TAG v2.13.6)
+  FetchContent_MakeAvailable(pybind11) # pybind11, essential
   set(CMAKE_POSITION_INDEPENDENT_CODE ON) # The code needs to be compiled as PIC
-                      # to build the shared lib for python.
+                                          # to build the shared lib for python.
   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
   # Ensure fmt is compiled with -fPIC
   set_target_properties(fmt PROPERTIES POSITION_INDEPENDENT_CODE ON)
