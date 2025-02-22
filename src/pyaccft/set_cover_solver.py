@@ -8,6 +8,8 @@ from ._bindings import (
     run,
     Instance,
     Solution,
+    DualState,
+    CftResult,
 )
 
 
@@ -46,7 +48,7 @@ class SetCoverSolver:
     """
 
     def __init__(self):
-        self._solution = None
+        self._result = None
         self._instance = Instance()
         self._initialized = False
         self._max_element = -1
@@ -62,7 +64,7 @@ class SetCoverSolver:
         max_element = max(elements)
         if max_element > self._max_element:
             self._max_element = max_element
-            self._solution = (
+            self._result = (
                 None  # in case there is a new element, the solution is no longer
             )
             # valid
@@ -81,8 +83,8 @@ class SetCoverSolver:
         env.parser = parser
         fdata = parse_inst_and_initsol(env)
         self._instance = fdata.inst.copy()
-        self._solution = fdata.init_sol.copy()
-        print(self._solution)
+        self._result.solution = fdata.init_sol.copy()
+        print(self._result)
         self.num_elements = len(self._instance.costs)
         self._initialized = True  # a file is always considered initialized
 
@@ -132,29 +134,37 @@ class SetCoverSolver:
             self._instance.rows.clear()
             self._instance.prepare()
             self._initialized = True
-        init_sol = Solution() if self._solution is None else self._solution
-        self._solution = run(env, self._instance, init_sol).copy()
+        init_sol = Solution() if self._result is None else self._result.solution
+        self._result = run(env, self._instance, init_sol).copy()
 
     def get_solution(self) -> list[int] | None:
         """
         Return the indices of the selected sets in the solution.
         """
-        if self._solution is None:
+        if self._result is None:
             return None
-        return list(self._solution.idxs)
+        return list(self._result.solution.idxs)
 
     def get_cost(self) -> float | None:
         """
         Return the cost of the solution.
         """
-        if self._solution is None:
+        if self._result is None:
             return None
-        return self._solution.cost
+        return self._result.cost
 
     def get_lower_bound(self) -> float:
         """
         Return a lower bound on the optimal solution.
         """
-        if self._solution is None:
+        if self._result is None:
             return 0
-        return self._solution.lower_bound
+        return self._result.lower_bound
+
+    def get_dual_multipliers(self) -> list[float] | None:
+        """
+        Return the dual multipliers of the solution.
+        """
+        if self._result is None:
+            return None
+        return list(self._result.dual.mults)
