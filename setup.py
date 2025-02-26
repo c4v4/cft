@@ -17,11 +17,11 @@ def readme():
 
 
 setup(  # https://scikit-build.readthedocs.io/en/latest/usage.html#setup-options
-    name="pyaccft",
+    name="pycft",
     version="0.0.1",
-    author="TODO",
+    author="Francesco Cavaliere and Dominik Krupke",
     license="LICENSE",
-    description="Pybinding for accft",
+    description="Python-Bindings for the C++-based Set Cover Algorithm CFT.",
     long_description=readme(),
     long_description_content_type="text/markdown",
     packages=find_packages("src"),  # Include all packages in `./src`.

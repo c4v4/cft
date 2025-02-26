@@ -1,12 +1,12 @@
 # SPDX-FileCopyrightText: 2025 Dominik Krupke <krupked@gmail.com>
 # SPDX-License-Identifier: MIT
 
-import pyaccft
+import pycft
 import pytest
 
 
 def test_simple():
-    solver = pyaccft.SetCoverSolver()
+    solver = pycft.SetCoverSolver()
     # solver.from_file("instances/rail/rail507", "RAIL")
     solver.add_set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], cost=10)
     solver.add_set([0, 1, 2, 3, 4, 5], cost=5)
@@ -22,7 +22,7 @@ def test_simple():
 
 
 def test_simple_infeasible():
-    solver = pyaccft.SetCoverSolver()
+    solver = pycft.SetCoverSolver()
     # solver.from_file("instances/rail/rail507", "RAIL")
     solver.add_set([0, 1, 2, 3, 4, 5, 6, 8, 9], cost=10)
     solver.add_set([0, 1, 2, 3, 4, 5], cost=5)
@@ -33,19 +33,19 @@ def test_simple_infeasible():
 
 
 def test_error_on_negative_cost():
-    solver = pyaccft.SetCoverSolver()
+    solver = pycft.SetCoverSolver()
     with pytest.raises(ValueError):
         solver.add_set([0, 1, 2, 3, 4, 5, 6, 8, 9], cost=-10)
 
 
 def test_error_on_negative_element():
-    solver = pyaccft.SetCoverSolver()
+    solver = pycft.SetCoverSolver()
     with pytest.raises(ValueError):
         solver.add_set([-1, 1, 2, 3, 4, 5, 6, 8, 9], cost=10)
 
 
 def test_simple_incremental():
-    solver = pyaccft.SetCoverSolver()
+    solver = pycft.SetCoverSolver()
     # solver.from_file("instances/rail/rail507", "RAIL")
     solver.add_set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], cost=10)
     solver.add_set([0, 1, 2, 3, 4, 5], cost=5)
@@ -65,7 +65,7 @@ def test_simple_incremental():
 
 
 def test_simple_incremental_new_element():
-    solver = pyaccft.SetCoverSolver()
+    solver = pycft.SetCoverSolver()
     # solver.from_file("instances/rail/rail507", "RAIL")
     solver.add_set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], cost=10)
     solver.add_set([0, 1, 2, 3, 4, 5], cost=5)

@@ -22,7 +22,7 @@ To use the `SetCoverSolver`, first create an instance of the solver. You can the
 Here is an example:
 
 ```python
-from pyaccft import SetCoverSolver
+from pycft import SetCoverSolver
 
 solver = SetCoverSolver()
 # Add sets with their respective costs

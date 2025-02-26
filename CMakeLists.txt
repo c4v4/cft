@@ -44,13 +44,13 @@ message(STATUS "PYTHON_BINDINGS: ${PYTHON_BINDINGS}")
   # Ensure fmt is compiled with -fPIC
   set_target_properties(fmt PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-  pybind11_add_module(_bindings ./src/pyaccft/_bindings.cpp)
+  pybind11_add_module(_bindings ./src/pycft/_bindings.cpp)
   target_link_libraries(_bindings PUBLIC fmt::fmt ${LIBRARIES})
   # enable compilation warnings
   target_compile_options(
     _bindings PRIVATE "$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall>")
   target_compile_definitions(_bindings PRIVATE PYBIND11_DETAILED_ERROR_MESSAGES)
-  install(TARGETS _bindings DESTINATION ./src/pyaccft/)
+  install(TARGETS _bindings DESTINATION ./src/pycft/)
 endif()
 
 ########################################
