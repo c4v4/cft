@@ -31,7 +31,13 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${OPT_FLAGS}")
 set(SOURCE src/main.cpp)
 include_directories(src)
 add_executable(accft ${SOURCE})
-set(LIBRARIES fmt::fmt pthread dl m)
+
+if (WIN32)
+    set(LIBRARIES fmt::fmt)
+else()
+    set(LIBRARIES fmt::fmt pthread dl m)
+endif()
+
 target_link_libraries(accft PUBLIC ${LIBRARIES})
 
 if (SKBUILD)
