@@ -40,7 +40,7 @@ public:
                       real_t&              step_size,      // inout
                       std::vector<real_t>& best_lagr_mult  // inout
     ) {
-        size_t const nrows       = size(orig_inst.rows);
+        size_t const nrows       = cft::size(orig_inst.rows);
         real_t const max_real_lb = cutoff - env.epsilon;
 
         assert(!orig_inst.cols.empty() && "Empty instance");
