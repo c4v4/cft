@@ -14,7 +14,8 @@ FetchContent_Declare(fmt GIT_REPOSITORY https://github.com/fmtlib/fmt)
 FetchContent_MakeAvailable(fmt)
 
 if (MSVC)
-    set(WARNING_FLAGS "/W4 /WX")
+    #set(WARNING_FLAGS "/W4 /WX")  # Treating all warnings as errors
+    set(WARNING_FLAGS "/W4")  # Highest warning level but not treating warnings as errors
     set(SANITIZERS_FLAGS "")
     set(OPT_FLAGS "/O2")
 else()

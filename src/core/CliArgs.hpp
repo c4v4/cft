@@ -147,7 +147,7 @@ inline Environment parse_cli_args(int argc, char const** argv) {
     auto args = cft::make_span(argv, checked_cast<size_t>(argc));
     auto env  = Environment{};
 
-    auto asize = size(args);
+    auto asize = cft::size(args);
     for (size_t a = 1; a < asize; ++a) {
         auto arg = StringView(args[a]);
         if (CFT_FLAG_MATCH(arg, HELP))

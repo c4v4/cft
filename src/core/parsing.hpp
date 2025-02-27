@@ -289,7 +289,7 @@ inline FileData parse_inst_and_initsol(Environment const& env) {
 
     if (env.use_unit_costs) {
         fdata.inst.costs.assign(csize(fdata.inst.costs), 1.0_F);
-        fdata.init_sol.cost = as_real(size(fdata.init_sol.idxs));
+        fdata.init_sol.cost = as_real(cft::size(fdata.init_sol.idxs));
     }
 
     print<1>(env, "CFT> Instance size: {} x {}.\n", rsize(fdata.inst.rows), csize(fdata.inst.cols));
