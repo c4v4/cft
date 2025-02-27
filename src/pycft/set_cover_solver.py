@@ -27,7 +27,7 @@ class SetCoverSolver:
 
     Example:
     ```python
-    from pyaccft import SetCoverSolver
+    from pycft import SetCoverSolver
 
     solver = SetCoverSolver()
     # Set 0

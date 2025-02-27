@@ -5,8 +5,6 @@
 #define CFT_SRC_CORE_SPAN_HPP
 
 
-#include <bits/iterator_concepts.h>
-
 #include <cstddef>
 #include <iterator>
 
