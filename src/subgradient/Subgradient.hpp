@@ -40,17 +40,17 @@ public:
                       real_t&              step_size,      // inout
                       std::vector<real_t>& best_lagr_mult  // inout
     ) {
-        size_t const nrows       = size(orig_inst.rows);
+        size_t const nrows       = cft::size(orig_inst.rows);
         real_t const max_real_lb = cutoff - env.epsilon;
 
         assert(!orig_inst.cols.empty() && "Empty instance");
         assert(!core.inst.cols.empty() && "Empty core instance");
-        assert(nrows == size(core.inst.rows) && "Incompatible instances");
+        assert(nrows == cft::size(core.inst.rows) && "Incompatible instances");
 
         auto   timer          = Chrono<>();
         auto   next_step_size = local::StepSizeManager(20, step_size);
         auto   should_exit    = local::ExitConditionManager(300);
-        auto   should_price   = local::PricingManager(10ULL, min(1000ULL, nrows / 3ULL));
+        auto   should_price   = local::PricingManager(10ULL, std::min(1000ULL, static_cast<unsigned long long>(nrows) / 3ULL));
         real_t best_core_lb   = limits<real_t>::min();
         auto   best_real_lb   = limits<real_t>::min();
         _reset_lower_bounds(lb_sol, best_core_lb);
@@ -95,7 +95,7 @@ public:
                          best_core_lb,
                          step_size);
 
-                best_real_lb = max(best_real_lb, real_lb);
+                best_real_lb = std::max(best_real_lb, real_lb);
                 _reset_lower_bounds(lb_sol, best_core_lb);
 
                 if (env.timer.elapsed<sec>() > env.time_limit)
@@ -127,7 +127,7 @@ public:
         for (size_t iter = 0; iter < env.heur_iters; ++iter) {
 
             _update_lbsol_and_reduced_costs(core_inst, lagr_mult, lb_sol, reduced_costs);
-            row_coverage.reset(rsize(core_inst.rows));
+            row_coverage.reset(cft::size(core_inst.rows));
             for (cidx_t j : lb_sol.idxs)
                 row_coverage.cover(core_inst.cols[j]);
             real_t sqr_norm = _compute_subgrad_sqr_norm(row_coverage);
@@ -185,7 +185,7 @@ private:
                                   real_t               step_factor,   // in
                                   std::vector<real_t>& lagr_mult      // inout
     ) {
-        for (ridx_t i = 0_R; i < rsize(row_coverage); ++i) {
+        for (ridx_t i = 0_R; i < static_cast<ridx_t>(cft::size(row_coverage)); ++i) {
             auto violation = 1.0_F - as_real(row_coverage[i]);
 
             real_t old_mult   = lagr_mult[i];
@@ -221,7 +221,7 @@ private:
                                               CoverCounters&             row_coverage,   // out
                                               Solution&                  lb_sol          // out
     ) {
-        row_coverage.reset(rsize(inst.rows));
+        row_coverage.reset(cft::size(inst.rows));
         cft::sort(lb_sol.idxs, [&](cidx_t j) { return reduced_costs[j]; });
 
         for (cidx_t j : lb_sol.idxs) {
@@ -234,7 +234,7 @@ private:
     // Computes the subgradient squared sqr_norm according to the given row coverage.
     static real_t _compute_subgrad_sqr_norm(CoverCounters const& row_coverage) {
         int64_t sqr_norm = 0;
-        for (ridx_t i = 0_R; i < rsize(row_coverage); ++i) {
+        for (ridx_t i = 0_R; i < static_cast<ridx_t>(cft::size(row_coverage)); ++i) {
             int64_t violation = 1 - checked_cast<int64_t>(row_coverage[i]);
             sqr_norm += violation * violation;
         }
