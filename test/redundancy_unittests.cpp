@@ -20,7 +20,7 @@ TEST_CASE("enumeration_removal removes redundant columns using implicit enumerat
         if ((k - 1) % 10 == 0)
             inst = make_easy_inst(k, 1000_C);
 
-        cidx_t sol_size = roll_dice(rnd, 0_C, min(csize(inst.cols) - 1_C, 200_C));
+        cidx_t sol_size = roll_dice(rnd, 0_C,std::min(csize(inst.cols) - 1_C, 200_C));
         auto   sol      = Solution();
         for (cidx_t n = 0_C; n < sol_size; ++n) {
             cidx_t j = roll_dice(rnd, 0_C, csize(inst.cols) - 1_C);

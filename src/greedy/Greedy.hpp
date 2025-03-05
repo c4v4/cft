@@ -66,7 +66,8 @@ public:
 
             // Get the column-fraction with best scores
             if (good_scores.empty()) {
-                auto good_size   = min(as_cidx(nrows_to_cover), csize(inst.cols) - csize(sol));
+                cidx_t good_size = csize(inst.cols) - csize(sol);
+                good_size        = std::min(good_size, as_cidx(nrows_to_cover));
                 good_scores      = select_good_scores(score_info, good_size);
                 worst_good_score = good_scores.back().score;
             }

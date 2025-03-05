@@ -75,48 +75,14 @@ T abs(T val) {
     return val < T{} ? -val : val;
 }
 
-/// Multi-arg max. NOTE: to avoid ambiguity, return type is always the first argument type
-template <typename T1, typename T2>
-constexpr T1 max(T1 v1, T2 v2) {
-    return v1 > checked_cast<T1>(v2) ? v1 : checked_cast<T1>(v2);
-}
-
-template <typename T1, typename T2, typename... Ts>
-T1 max(T1 v1, T2 v2, Ts... tail) {
-    T1 mtail = max<T1>(v2, tail...);
-    return (v1 >= mtail ? v1 : mtail);
-}
-
-/// Multi-arg min. NOTE: to avoid ambiguity, return type is always the first argument type
-template <typename T1, typename T2>
-constexpr T1 min(T1 v1, T2 v2) {
-    return v1 < checked_cast<T1>(v2) ? v1 : checked_cast<T1>(v2);
-}
-
-template <typename T1, typename T2, typename... Ts>
-T1 min(T1 v1, T2 v2, Ts... tail) {
-    T1 mtail = min<T1>(v2, tail...);
-    return v1 <= mtail ? v1 : mtail;
-}
-
 ///////////// RANGES STUFF /////////////
-
-template <typename C>
-size_t size(C const& container) {
-    return container.size();
-}
-
-template <typename C, size_t N>
-constexpr size_t size(C const (& /*unused*/)[N]) {
-    return N;
-}
 
 template <typename C>
 using container_iterator_t = decltype(std::begin(std::declval<C&>()));
 template <typename C>
 using container_value_type_t = no_cvr<decltype(*std::declval<container_iterator_t<C>>())>;
 template <typename C>
-using container_size_type_t = decltype(cft::size(std::declval<C>()));
+using container_size_type_t = decltype(std::declval<C>().size());
 
 // Condition test operations
 template <typename T, typename O>
@@ -138,9 +104,9 @@ bool all(T const& container, O op) {
 // Return minimum value of a non-empty range
 template <typename C, typename K = IdentityFtor>
 container_value_type_t<C> range_min(C const& container, K key = {}) {
-    assert(cft::size(container) > 0ULL);
+    assert(container.size() > 0ULL);
     auto min_elem = container[0];
-    for (size_t i = 1ULL; i < cft::size(container); ++i)
+    for (size_t i = 1ULL; i < container.size(); ++i)
         if (key(container[i]) < key(min_elem))
             min_elem = container[i];
     return min_elem;
@@ -150,7 +116,7 @@ container_value_type_t<C> range_min(C const& container, K key = {}) {
 template <typename C, typename Op>
 void remove_if(C& container, Op op) {
     size_t w = 0;
-    for (size_t i = 0ULL; i < cft::size(container); ++i)
+    for (size_t i = 0ULL; i < container.size(); ++i)
         if (!op(container[i]))
             container[w++] = container[i];
     container.resize(w);

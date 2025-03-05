@@ -182,7 +182,7 @@ TEST_CASE("Parsing SCP instance") {
 
     env.use_unit_costs = true;
     auto unit_fdata    = parse_inst_and_initsol(env);
-    CHECK(abs(unit_fdata.init_sol.cost - cft::size(unit_fdata.init_sol.idxs)) <= 0.001_F);
+    CHECK(abs(unit_fdata.init_sol.cost - unit_fdata.init_sol.idxs.size()) <= 0.001_F);
     std::remove(env.initsol_path.c_str());
 }
 
@@ -218,7 +218,7 @@ TEST_CASE("Parsing RAIL instance") {
 
     env.use_unit_costs = true;
     auto unit_fdata    = parse_inst_and_initsol(env);
-    CHECK(abs(unit_fdata.init_sol.cost - cft::size(unit_fdata.init_sol.idxs)) <= 0.001_F);
+    CHECK(abs(unit_fdata.init_sol.cost - unit_fdata.init_sol.idxs.size()) <= 0.001_F);
     std::remove(env.initsol_path.c_str());
 
     // Add more assertions as needed
@@ -254,7 +254,7 @@ TEST_CASE("Parsing CVRP instance") {
 
     env.use_unit_costs = true;
     auto unit_fdata    = parse_inst_and_initsol(env);
-    CHECK(abs(unit_fdata.init_sol.cost - cft::size(unit_fdata.init_sol.idxs)) <= 0.001_F);
+    CHECK(abs(unit_fdata.init_sol.cost - unit_fdata.init_sol.idxs.size()) <= 0.001_F);
     std::remove(env.initsol_path.c_str());
 }
 
@@ -297,7 +297,7 @@ TEST_CASE("Parsing MPS instance") {
 
     env.use_unit_costs = true;
     auto unit_fdata    = parse_inst_and_initsol(env);
-    CHECK(abs(unit_fdata.init_sol.cost - cft::size(unit_fdata.init_sol.idxs)) <= 0.001_F);
+    CHECK(abs(unit_fdata.init_sol.cost - unit_fdata.init_sol.idxs.size()) <= 0.001_F);
     std::remove(env.initsol_path.c_str());
 }
 

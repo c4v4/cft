@@ -136,7 +136,7 @@ private:
         for (ridx_t i = 0_R; i < rsize(inst.rows); ++i)
             for (cidx_t j : inst.rows[i]) {
                 real_t candidate = inst.costs[j] / as_real(inst.cols[j].size());
-                lagr_mult[i]     = cft::min(lagr_mult[i], candidate);
+                lagr_mult[i]     = std::min(lagr_mult[i], candidate);
             }
     }
 
@@ -153,16 +153,16 @@ private:
     static void _build_tentative_core_instance(Instance const& inst,      // in
                                                InstAndMap&     core_inst  // out
     ) {
-        static constexpr cidx_t min_row_coverage = 5_C;
+        static constexpr size_t min_row_coverage = 5;
         ridx_t const            nrows            = rsize(inst.rows);
 
         clear_inst(core_inst.inst);
         core_inst.col_map.clear();
 
         // Select the first n columns of each row (there might be duplicates)
-        core_inst.col_map.reserve(checked_cast<size_t>(as_cidx(nrows) * min_row_coverage));
+        core_inst.col_map.reserve(checked_cast<size_t>(nrows) * min_row_coverage);
         for (auto const& row : inst.rows)
-            for (size_t n = 0; n < min(row.size(), min_row_coverage); ++n) {
+            for (size_t n = 0; n < std::min(row.size(), min_row_coverage); ++n) {
                 cidx_t j = row[n];  // column covering row i
                 core_inst.col_map.push_back(j);
             }
