@@ -103,34 +103,6 @@ TEST_CASE("test_abs") {
     }
 }
 
-TEST_CASE("test_max") {
-    SUBCASE("Integers") {
-        CHECK(max(1, 2) == 2);
-        CHECK(max(1, 2, 3) == 3);
-        CHECK(max(3, 2, 1) == 3);
-    }
-
-    SUBCASE("Floating-point numbers") {
-        CHECK(max(1.0, 2.0) == 2.0);
-        CHECK(max(1.0, 2.0, 3.0) == 3.0);
-        CHECK(max(3.0, 2.0, 1.0) == 3.0);
-    }
-}
-
-TEST_CASE("test_min") {
-    SUBCASE("Integers") {
-        CHECK(min(1, 2) == 1);
-        CHECK(min(1, 2, 3) == 1);
-        CHECK(min(3, 2, 1) == 1);
-    }
-
-    SUBCASE("Floating-point numbers") {
-        CHECK(min(1.0, 2.0) == 1.0);
-        CHECK(min(1.0, 2.0, 3.0) == 1.0);
-        CHECK(min(3.0, 2.0, 1.0) == 1.0);
-    }
-}
-
 TEST_CASE("test_any") {
     SUBCASE("Empty container") {
         std::vector<int> empty_container;
@@ -172,23 +144,6 @@ TEST_CASE("test_all") {
     SUBCASE("Container with mixed values") {
         int container[5] = {-1, 0, 1, 2, 3};
         CHECK_FALSE(all(container, [](int x) { return x > 0; }));
-    }
-}
-
-TEST_CASE("test_size") {
-    SUBCASE("Empty container") {
-        std::vector<int> empty_container;
-        CHECK(cft::size(empty_container) == 0);
-    }
-
-    SUBCASE("Non-empty container") {
-        std::array<int, 5> container = {1, 2, 3, 4, 5};
-        CHECK(cft::size(container) == 5);
-    }
-
-    SUBCASE("Array") {
-        int arr[] = {1, 2, 3, 4, 5};
-        CHECK(size(arr) == 5);
     }
 }
 

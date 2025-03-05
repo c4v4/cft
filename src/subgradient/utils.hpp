@@ -33,8 +33,8 @@ namespace cft { namespace local { namespace {
 
         // Computes the next step size.
         real_t operator()(size_t iter, real_t lower_bound) {
-            min_lower_bound = min(min_lower_bound, lower_bound);
-            max_lower_bound = max(max_lower_bound, lower_bound);
+            min_lower_bound = std::min(min_lower_bound, lower_bound);
+            max_lower_bound = std::max(max_lower_bound, lower_bound);
             if (iter == next_update_iter) {
                 next_update_iter += period;
                 real_t diff = (max_lower_bound - min_lower_bound) / abs(max_lower_bound);
@@ -101,11 +101,11 @@ namespace cft { namespace local { namespace {
         void update(real_t core_lb, real_t real_lb, real_t ub) {
             real_t const delta = (core_lb - real_lb) / ub;
             if (delta <= 1e-6_F)
-                period = min(max_period_increment, 10 * period);
+                period = std::min(max_period_increment, 10 * period);
             else if (delta <= 0.02_F)
-                period = min(max_period_increment, 5 * period);
+                period = std::min(max_period_increment, 5 * period);
             else if (delta <= 0.2_F)
-                period = min(max_period_increment, 2 * period);
+                period = std::min(max_period_increment, 2 * period);
             else
                 period = 10;
 

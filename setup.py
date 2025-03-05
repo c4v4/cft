@@ -18,9 +18,9 @@ def readme():
 
 setup(  # https://scikit-build.readthedocs.io/en/latest/usage.html#setup-options
     name="pycft",
-    version="0.0.1",
-    author="Francesco Cavaliere and Dominik Krupke",
-    license="LICENSE",
+    version="1.0.0",
+    author="Luca Accorsi, Francesco Cavaliere, and Dominik Krupke",
+    license="MIT",
     description="Python-Bindings for the C++-based Set Cover Algorithm CFT.",
     long_description=readme(),
     long_description_content_type="text/markdown",

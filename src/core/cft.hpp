@@ -91,14 +91,14 @@ constexpr real_t operator""_F(long double f) {
 // container as cidx_t. It also allows to avoid narrowing conversion warnings.
 template <typename Cont>
 inline cidx_t csize(Cont const& cont) {
-    return as_cidx(cft::size(cont));
+    return as_cidx(cont.size());
 }
 
 // Since ridx_t could be any integer type, rsize provide a (debug) checked way to get the size of a
 // container as ridx_t. It also allows to avoid narrowing conversion warnings.
 template <typename Cont>
 inline ridx_t rsize(Cont const& cont) {
-    return as_ridx(cft::size(cont));
+    return as_ridx(cont.size());
 }
 
 // Simple pair of column index and cost of some sort

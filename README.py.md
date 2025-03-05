@@ -5,15 +5,21 @@ SPDX-License-Identifier: MIT
 
 # Python Bindings for the AC-CFT Set Cover Heuristic
 
+Implementation of the Caprara, Fischetti, and Toth algorithm for the [Set Covering problem](https://en.wikipedia.org/wiki/Set_cover_problem).
+The original code is written in C++ and can be found [here](https://github.com/c4v4/cft).
+This Python-packages wraps the C++ code using [pybind11](https://github.com/pybind/pybind11) and provides a simple interface to solve set cover instances.
 
+*Caprara, A., Fischetti, M., & Toth, P. (1999). A Heuristic Method for the Set Covering Problem. Operations Research, 47(5), 730–743. [doi:10.1287/opre.47.5.730](https://doi.org/10.1287/opre.47.5.730)*
 
 ## Install
 
-We will publish the package on PyPI soon. For now, you can install the package by cloning the repository and running the following command in the root directory:
+The package can be installed via pip:
 
 ```bash
-pip install --verbose .
+pip install pycft
 ```
+
+It should be precompiled for Windows, Linux, and MacOS. If not precompiled version is available, it should be able to compile itself if a C++-compiler is available on the system.
 
 ## Usage
 

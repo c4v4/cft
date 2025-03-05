@@ -131,7 +131,7 @@ struct StringView {
     }
 
     int compare(StringView other) const {
-        size_t min_size = cft::min(size(), other.size());
+        size_t min_size = std::min(size(), other.size());
         for (size_t n = 0; n < min_size; ++n) {
             if ((*this)[n] < other[n])
                 return -1;

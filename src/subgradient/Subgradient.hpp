@@ -40,19 +40,19 @@ public:
                       real_t&              step_size,      // inout
                       std::vector<real_t>& best_lagr_mult  // inout
     ) {
-        size_t const nrows       = size(orig_inst.rows);
+        size_t const nrows       = orig_inst.rows.size();
         real_t const max_real_lb = cutoff - env.epsilon;
 
         assert(!orig_inst.cols.empty() && "Empty instance");
         assert(!core.inst.cols.empty() && "Empty core instance");
-        assert(nrows == size(core.inst.rows) && "Incompatible instances");
+        assert(nrows == core.inst.rows.size() && "Incompatible instances");
 
         auto   timer          = Chrono<>();
         auto   next_step_size = local::StepSizeManager(20, step_size);
         auto   should_exit    = local::ExitConditionManager(300);
-        auto   should_price   = local::PricingManager(10ULL, min(1000ULL, nrows / 3ULL));
-        real_t best_core_lb   = limits<real_t>::min();
-        auto   best_real_lb   = limits<real_t>::min();
+        auto   should_price = local::PricingManager(10ULL, std::min<size_t>(1000ULL, nrows / 3ULL));
+        real_t best_core_lb = limits<real_t>::min();
+        auto   best_real_lb = limits<real_t>::min();
         _reset_lower_bounds(lb_sol, best_core_lb);
         lagr_mult = best_lagr_mult;
 
@@ -95,7 +95,7 @@ public:
                          best_core_lb,
                          step_size);
 
-                best_real_lb = max(best_real_lb, real_lb);
+                best_real_lb = std::max(best_real_lb, real_lb);
                 _reset_lower_bounds(lb_sol, best_core_lb);
 
                 if (env.timer.elapsed<sec>() > env.time_limit)

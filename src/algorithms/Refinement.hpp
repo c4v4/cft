@@ -43,7 +43,7 @@ namespace local { namespace {
         ) {
             ridx_t const nrows = rsize(inst.rows);
 
-            fix_fraction = min(1.0_F, fix_fraction * env.alpha);
+            fix_fraction = std::min(1.0_F, fix_fraction * env.alpha);
             if (best_sol.cost < prev_cost)
                 fix_fraction = env.min_fixing;
             prev_cost = best_sol.cost;
@@ -67,7 +67,7 @@ namespace local { namespace {
                     gap_contrib += best_lagr_mult[i] * (cov - 1.0_F) / cov;
                     reduced_cost -= best_lagr_mult[i];
                 }
-                gap_contrib += max(reduced_cost, 0.0_F);
+                gap_contrib += std::max(reduced_cost, 0.0_F);
                 gap_contributions.push_back({j, gap_contrib});
             }
             cft::sort(gap_contributions, [](CidxAndCost c) { return c.cost; });
